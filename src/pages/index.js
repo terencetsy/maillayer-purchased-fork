@@ -19,7 +19,7 @@ export default function Home() {
 
                 if (session) {
                     // If authenticated, go to dashboard
-                    router.push('/dashboard');
+                    router.push('/brands');
                 } else if (!data.adminExists) {
                     // If no admin, go to signup
                     router.push('/signup');

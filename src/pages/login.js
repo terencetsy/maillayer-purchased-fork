@@ -36,7 +36,7 @@ export default function Login() {
                 return;
             }
 
-            router.push('/dashboard');
+            router.push('/brands');
         } catch (error) {
             console.error('Login error:', error);
             setError('An unexpected error occurred');

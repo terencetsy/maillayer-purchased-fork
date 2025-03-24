@@ -81,7 +81,7 @@ export default function Signup() {
                 return;
             }
 
-            router.push('/dashboard');
+            router.push('/brands');
         } catch (error) {
             console.error('Signup error:', error);
             setError(error.message || 'An unexpected error occurred');

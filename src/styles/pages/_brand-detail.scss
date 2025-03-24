@@ -1,0 +1,127 @@
+/* Brand Detail Page Styles */
+.brand-header-nav {
+    margin-bottom: $spacing-lg;
+}
+
+.back-link {
+    color: $text-secondary;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.95rem;
+
+    &:hover {
+        color: $text-primary;
+    }
+}
+
+.brand-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: $spacing-xl;
+
+    h1 {
+        margin-bottom: $spacing-xs;
+    }
+
+    .brand-status {
+        display: flex;
+        align-items: center;
+        gap: $spacing-xs;
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+    }
+
+    .brand-actions {
+        display: flex;
+        gap: $spacing-md;
+    }
+}
+
+.brand-detail-container {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xl;
+}
+
+.brand-detail-section {
+    background-color: $bg-card;
+    border-radius: $border-radius-md;
+    padding: $spacing-xl;
+    border: 1px solid $border-color;
+
+    h2 {
+        margin-bottom: $spacing-lg;
+        font-size: 1.3rem;
+    }
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $spacing-lg;
+
+    @media (min-width: 768px) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (min-width: 1024px) {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.detail-item {
+    h3 {
+        font-size: 0.9rem;
+        color: $text-secondary;
+        margin-bottom: $spacing-xs;
+    }
+
+    p {
+        font-size: 1rem;
+    }
+
+    &.setup-notice {
+        grid-column: 1 / -1;
+        padding: $spacing-md;
+        background-color: rgba(116, 192, 252, 0.1);
+        border: 1px solid rgba(116, 192, 252, 0.2);
+        border-radius: $border-radius-sm;
+
+        h3 {
+            color: #74c0fc;
+        }
+
+        .btn {
+            margin-top: $spacing-xs;
+        }
+    }
+}
+
+.mt-sm {
+    margin-top: $spacing-sm;
+}
+
+.empty-campaigns {
+    text-align: center;
+    padding: $spacing-xl 0;
+
+    p {
+        color: $text-secondary;
+        margin-bottom: $spacing-lg;
+    }
+}
+
+.btn-danger {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #ff6b6b;
+    border: 1px solid rgba(220, 53, 69, 0.2);
+
+    &:hover:not(:disabled) {
+        background-color: rgba(220, 53, 69, 0.2);
+    }
+}

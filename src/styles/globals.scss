@@ -52,6 +52,8 @@ $header-height: 64px;
 $sidebar-width: 240px;
 $content-max-width: 1200px;
 
+@import 'pages/dashboard';
+@import 'pages/brand-detail';
 * {
     box-sizing: border-box;
     padding: 0;

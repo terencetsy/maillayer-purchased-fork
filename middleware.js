@@ -27,7 +27,7 @@ export async function middleware(req) {
 
     if (pathname === '/') {
         if (isAuthenticated) {
-            return NextResponse.redirect(new URL('/dashboard', req.url));
+            return NextResponse.redirect(new URL('/brands', req.url));
         } else {
             if (!adminExists) {
                 return NextResponse.redirect(new URL('/signup', req.url));
@@ -41,7 +41,7 @@ export async function middleware(req) {
     }
 
     if (isAuthenticated && isPublicPath) {
-        return NextResponse.redirect(new URL('/dashboard', req.url));
+        return NextResponse.redirect(new URL('/brands', req.url));
     }
 
     return NextResponse.next();

@@ -2,13 +2,18 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 import { MailSend02 } from '@/lib/icons';
+import BrandList from '@/components/BrandList';
+import BrandForm from '@/components/BrandForm';
 
 export default function Dashboard() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const [userProfile, setUserProfile] = useState(null);
+    const [brands, setBrands] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [showCreateForm, setShowCreateForm] = useState(false);
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -27,6 +32,7 @@ export default function Dashboard() {
             });
 
             fetchUserProfile();
+            fetchBrands();
         }
     }, [status, session, router]);
 
@@ -46,6 +52,30 @@ export default function Dashboard() {
             setUserProfile(data);
         } catch (error) {
             console.error('Error fetching profile:', error);
+        }
+    };
+
+    const fetchBrands = async () => {
+        try {
+            const res = await fetch('/api/brands', {
+                credentials: 'same-origin',
+            });
+
+            if (!res.ok) {
+                console.error('Failed to fetch brands:', res.status);
+                return;
+            }
+
+            const data = await res.json();
+            console.log('Brands data:', data);
+            setBrands(data);
+
+            // Automatically show create form if no brands exist
+            if (data.length === 0) {
+                setShowCreateForm(true);
+            }
+        } catch (error) {
+            console.error('Error fetching brands:', error);
         } finally {
             setIsLoading(false);
         }
@@ -53,6 +83,19 @@ export default function Dashboard() {
 
     const handleSignOut = () => {
         signOut({ callbackUrl: '/login' });
+    };
+
+    const handleCreateClick = () => {
+        setShowCreateForm(true);
+    };
+
+    const handleCancelCreate = () => {
+        setShowCreateForm(false);
+    };
+
+    const handleCreateSuccess = (newBrand) => {
+        setBrands((prevBrands) => [...prevBrands, newBrand]);
+        setShowCreateForm(false);
     };
 
     if (status === 'loading' || isLoading) {
@@ -79,9 +122,28 @@ export default function Dashboard() {
             <div className="dashboard">
                 <header className="dashboard-header">
                     <div className="dashboard-logo">
-                        <MailSend02 />
-                        <span>Maillayer</span>
+                        <Link href="/brands">
+                            <MailSend02 />
+                            <span>Maillayer</span>
+                        </Link>
                     </div>
+
+                    <nav className="main-nav">
+                        <ul>
+                            <li className="active">
+                                <Link href="/brands">Dashboard</Link>
+                            </li>
+                            <li>
+                                <Link href="/brands">Brands</Link>
+                            </li>
+                            <li>
+                                <Link href="/campaigns">Campaigns</Link>
+                            </li>
+                            <li>
+                                <Link href="/subscribers">Subscribers</Link>
+                            </li>
+                        </ul>
+                    </nav>
 
                     <div className="dashboard-user">
                         <span>{userProfile?.email || session.user.email}</span>
@@ -97,28 +159,23 @@ export default function Dashboard() {
                 <main className="dashboard-main">
                     <div className="dashboard-welcome">
                         <h1>Welcome{userProfile?.name ? `, ${userProfile.name}` : ' to Maillayer'}</h1>
-                        <p>You are logged in as {userProfile?.role === 'admin' ? 'an administrator' : 'a user'}.</p>
+                        <p>Manage your email sending brands below.</p>
                     </div>
 
                     <div className="dashboard-content">
-                        <div className="dashboard-card">
-                            <h2>Getting Started</h2>
-                            <p>This is your Maillayer dashboard. From here, you can manage your email campaigns, subscribers, and more.</p>
-                            <p>Start by exploring the menu on the left to access different features.</p>
-                        </div>
-
-                        <div className="dashboard-card">
-                            <h2>Recent Activity</h2>
-                            <p>Your account was created recently.</p>
-                            <p>No email campaigns have been sent yet.</p>
-                        </div>
-
-                        <div className="dashboard-card">
-                            <h2>Quick Actions</h2>
-                            <p>Create your first email campaign</p>
-                            <p>Import your subscribers</p>
-                            <p>Configure your sending settings</p>
-                        </div>
+                        {showCreateForm ? (
+                            <div className="form-container">
+                                <BrandForm
+                                    onCancel={handleCancelCreate}
+                                    onSuccess={handleCreateSuccess}
+                                />
+                            </div>
+                        ) : (
+                            <BrandList
+                                brands={brands}
+                                onCreateClick={handleCreateClick}
+                            />
+                        )}
                     </div>
                 </main>
             </div>

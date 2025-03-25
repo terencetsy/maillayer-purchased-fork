@@ -5,6 +5,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { Mail, Plus, Search, MoreVertical, Bell, LogOut, Grid, List, X, Filter } from 'lucide-react';
 import BrandForm from '@/components/BrandForm';
+import { MailSend02 } from '@/lib/icons';
 
 export default function Dashboard() {
     const { data: session, status } = useSession();
@@ -158,7 +159,7 @@ export default function Dashboard() {
                 <header className="dashboard-header">
                     <div className="dashboard-logo">
                         <Link href="/brands">
-                            <Mail size={24} />
+                            <MailSend02 size={24} />
                             <span>Iconbuddy</span>
                         </Link>
                     </div>

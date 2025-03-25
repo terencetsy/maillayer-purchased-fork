@@ -1,5 +1,5 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]';
+import { authOptions } from '../../auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getBrandById, updateBrand, deleteBrand } from '@/services/brandService';
 
@@ -16,9 +16,9 @@ export default async function handler(req, res) {
         }
 
         const userId = session.user.id;
-        const { id } = req.query;
+        const { brandId } = req.query;
 
-        if (!id) {
+        if (!brandId) {
             return res.status(400).json({ message: 'Missing brand ID' });
         }
 
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
         if (req.method === 'GET') {
             try {
                 const includeSecrets = req.query.includeSecrets === 'true';
-                const brand = await getBrandById(id, includeSecrets);
+                const brand = await getBrandById(brandId, includeSecrets);
 
                 if (!brand) {
                     return res.status(404).json({ message: 'Brand not found' });
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
         // PUT request - update brand
         if (req.method === 'PUT') {
             try {
-                const brand = await getBrandById(id);
+                const brand = await getBrandById(brandId);
 
                 if (!brand) {
                     return res.status(404).json({ message: 'Brand not found' });
@@ -71,7 +71,7 @@ export default async function handler(req, res) {
                 if (replyToEmail) updateData.replyToEmail = replyToEmail;
                 if (status) updateData.status = status;
 
-                const success = await updateBrand(id, updateData);
+                const success = await updateBrand(brandId, updateData);
 
                 if (success) {
                     return res.status(200).json({ message: 'Brand updated successfully' });
@@ -87,7 +87,7 @@ export default async function handler(req, res) {
         // DELETE request - delete brand
         if (req.method === 'DELETE') {
             try {
-                const brand = await getBrandById(id);
+                const brand = await getBrandById(brandId);
 
                 if (!brand) {
                     return res.status(404).json({ message: 'Brand not found' });
@@ -98,7 +98,7 @@ export default async function handler(req, res) {
                     return res.status(403).json({ message: 'Not authorized to delete this brand' });
                 }
 
-                const success = await deleteBrand(id);
+                const success = await deleteBrand(brandId);
 
                 if (success) {
                     return res.status(200).json({ message: 'Brand deleted successfully' });

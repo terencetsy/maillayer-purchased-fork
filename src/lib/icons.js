@@ -1,6 +1,3 @@
-import { Mail, Users, BarChart, Settings, Shield, ChevronLeft, ChevronRight, Trash, Edit, PlusCircle, Calendar, Clock, Send, ArrowLeft } from 'lucide-react';
-
-// Original MailSend02 icon - keeping for backward compatibility
 export const MailSend02 = (props) => (
     <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -22,14 +19,3 @@ export const MailSend02 = (props) => (
         </g>
     </svg>
 );
-
-// Export Lucide icons with standard names
-export { Mail, Users, BarChart, Settings, Shield, ChevronLeft, ChevronRight, Trash, Edit, PlusCircle, Calendar, Clock, Send, ArrowLeft };
-
-// Export custom components that combine Lucide icons
-export const IconCampaigns = (props) => <Mail {...props} />;
-export const IconContacts = (props) => <Users {...props} />;
-export const IconAnalytics = (props) => <BarChart {...props} />;
-export const IconSettings = (props) => <Settings {...props} />;
-export const IconVerification = (props) => <Shield {...props} />;
-export const IconBack = (props) => <ArrowLeft {...props} />;

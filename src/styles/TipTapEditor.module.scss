@@ -1,0 +1,302 @@
+/* TipTap Editor Styles */
+
+// Variables
+$editor-bg: #111111;
+$toolbar-bg: #1a1a1a;
+$border-color: #333333;
+$border-radius: 6px;
+$text-color: #ffffff;
+$text-secondary: rgba(255, 255, 255, 0.7);
+$hover-color: #2e2e2e;
+$active-color: #3b82f6;
+
+// Container for the entire editor
+.editorContainer {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
+    background-color: $editor-bg;
+    overflow: hidden;
+    max-width: 100%;
+}
+
+// Toolbar styles
+.editorToolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    background: $toolbar-bg;
+    padding: 8px 12px;
+    border-bottom: 1px solid $border-color;
+    gap: 4px;
+}
+
+.editorLoading {
+    padding: 20px;
+    text-align: center;
+    color: $text-secondary;
+}
+
+.fontFamilyContainer {
+    position: relative;
+    z-index: 1;
+}
+
+.fontFamilySelect {
+    appearance: none;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid $border-color;
+    color: $text-color;
+    padding: 6px 24px 6px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    width: 140px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='rgba(255, 255, 255, 0.7)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: calc(100% - 8px) center;
+
+    &:focus {
+        outline: none;
+        border-color: $active-color;
+    }
+
+    option {
+        background-color: $editor-bg;
+        color: $text-color;
+    }
+}
+
+.toolbarButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: $text-secondary;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        color: $text-color;
+        background-color: $hover-color;
+    }
+
+    &.isActive {
+        color: $active-color;
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+}
+
+.toolbarDivider {
+    width: 1px;
+    height: 20px;
+    background-color: $border-color;
+    margin: 0 4px;
+}
+
+// Editor content area
+.editorWrapper {
+    position: relative;
+    flex: 1;
+    overflow: auto;
+    background-color: $editor-bg;
+}
+
+.tipTapEditor {
+    min-height: 300px;
+    padding: 16px;
+    color: $text-color;
+
+    &:focus {
+        outline: none;
+    }
+
+    // Editor content styles
+    :global {
+        .ProseMirror {
+            min-height: 300px;
+            outline: none;
+
+            /* Placeholder text */
+            p.is-editor-empty:first-child::before {
+                content: attr(data-placeholder);
+                float: left;
+                color: $text-secondary;
+                pointer-events: none;
+                height: 0;
+            }
+
+            /* Basic block elements */
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6 {
+                margin-top: 1em;
+                margin-bottom: 0.5em;
+                line-height: 1.2;
+            }
+
+            h1 {
+                font-size: 1.75em;
+            }
+
+            h2 {
+                font-size: 1.5em;
+            }
+
+            h3 {
+                font-size: 1.25em;
+            }
+
+            p {
+                margin-bottom: 0.7em;
+                line-height: 1.5;
+            }
+
+            ul,
+            ol {
+                padding-left: 1.5em;
+                margin-bottom: 0.7em;
+            }
+
+            li {
+                margin-bottom: 0.3em;
+            }
+
+            /* Links */
+            .editor-link {
+                color: #60a5fa;
+                text-decoration: underline;
+            }
+
+            /* Images */
+            .editor-image {
+                display: block;
+                max-width: 100%;
+                height: auto;
+                border-radius: 4px;
+            }
+
+            /* Image containers */
+            .image-container {
+                position: relative;
+                display: inline-block;
+                margin: 0;
+                max-width: 100%;
+
+                &.ProseMirror-selectednode {
+                    outline: 2px solid $active-color;
+                }
+            }
+
+            /* Buttons */
+            .button {
+                display: inline-block;
+                padding: 8px 16px;
+                margin: 8px 0;
+                border-radius: 4px;
+                text-decoration: none;
+                font-weight: 500;
+                text-align: center;
+                transition: all 0.2s ease;
+
+                &.button-primary {
+                    background-color: $active-color;
+                    color: white;
+
+                    &:hover {
+                        background-color: darken($active-color, 10%);
+                    }
+                }
+            }
+
+            /* Text alignment */
+            .text-left {
+                text-align: left;
+            }
+
+            .text-center {
+                text-align: center;
+            }
+
+            .text-right {
+                text-align: right;
+            }
+        }
+    }
+}
+
+// Resize handles for images
+.resizeHandleWrapper {
+    :global {
+        .resize-handle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: $active-color;
+            border-radius: 50%;
+            border: 1px solid white;
+            z-index: 10;
+
+            &.top-left {
+                top: -5px;
+                left: -5px;
+                cursor: nwse-resize;
+            }
+
+            &.top-right {
+                top: -5px;
+                right: -5px;
+                cursor: nesw-resize;
+            }
+
+            &.bottom-left {
+                bottom: -5px;
+                left: -5px;
+                cursor: nesw-resize;
+            }
+
+            &.bottom-right {
+                bottom: -5px;
+                right: -5px;
+                cursor: nwse-resize;
+            }
+
+            &.top {
+                top: -5px;
+                left: 50%;
+                transform: translateX(-50%);
+                cursor: ns-resize;
+            }
+
+            &.right {
+                right: -5px;
+                top: 50%;
+                transform: translateY(-50%);
+                cursor: ew-resize;
+            }
+
+            &.bottom {
+                bottom: -5px;
+                left: 50%;
+                transform: translateX(-50%);
+                cursor: ns-resize;
+            }
+
+            &.left {
+                left: -5px;
+                top: 50%;
+                transform: translateY(-50%);
+                cursor: ew-resize;
+            }
+        }
+    }
+}

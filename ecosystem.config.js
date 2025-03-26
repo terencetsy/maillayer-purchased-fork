@@ -8,7 +8,7 @@ module.exports = {
                 NODE_ENV: 'development',
                 REDIS_HOST: 'localhost',
                 REDIS_PORT: '6379',
-                MONGODB_URI: 'mongodb://localhost:27017/maillayer-software',
+                MONGODB_URI: 'mongodb://localhost:27017/maillayer-client',
             },
         },
         {
@@ -18,7 +18,7 @@ module.exports = {
                 NODE_ENV: 'development',
                 REDIS_HOST: 'localhost',
                 REDIS_PORT: '6379',
-                MONGODB_URI: 'mongodb://localhost:27017/maillayer-software',
+                MONGODB_URI: 'mongodb://localhost:27017/maillayer-client',
             },
         },
     ],

@@ -3,8 +3,6 @@ require('dotenv').config();
 const Bull = require('bull');
 const mongoose = require('mongoose');
 const cron = require('node-cron');
-const path = require('path');
-const fs = require('fs');
 
 // Setup Redis connection for Bull
 const redisOptions = {
@@ -21,6 +19,67 @@ const schedulerQueue = new Bull('campaign-scheduler', {
     },
 });
 
+// We need to define schemas here because the models in src/models use ES Module syntax
+// which isn't compatible with CommonJS require() without special configuration
+const CampaignSchema = new mongoose.Schema(
+    {
+        name: String,
+        subject: String,
+        content: String,
+        brandId: mongoose.Schema.Types.ObjectId,
+        userId: mongoose.Schema.Types.ObjectId,
+        fromName: String,
+        fromEmail: String,
+        replyTo: String,
+        status: {
+            type: String,
+            enum: ['draft', 'queued', 'scheduled', 'sending', 'sent', 'failed', 'paused'],
+            default: 'draft',
+        },
+        contactListIds: [mongoose.Schema.Types.ObjectId],
+        scheduleType: String,
+        scheduledAt: Date,
+        sentAt: Date,
+        stats: {
+            recipients: { type: Number, default: 0 },
+            opens: { type: Number, default: 0 },
+            clicks: { type: Number, default: 0 },
+            bounces: { type: Number, default: 0 },
+            complaints: { type: Number, default: 0 },
+        },
+    },
+    {
+        collection: 'campaigns', // Explicitly specify collection name
+    }
+);
+
+const BrandSchema = new mongoose.Schema(
+    {
+        name: String,
+        website: String,
+        userId: mongoose.Schema.Types.ObjectId,
+        awsRegion: String,
+        awsAccessKey: String,
+        awsSecretKey: String,
+        sendingDomain: String,
+        fromName: String,
+        fromEmail: String,
+        replyToEmail: String,
+        status: {
+            type: String,
+            enum: ['active', 'inactive', 'pending_setup', 'pending_verification'],
+            default: 'pending_setup',
+        },
+    },
+    {
+        collection: 'brands', // Explicitly specify collection name
+    }
+);
+
+// Initialize models
+let Campaign;
+let Brand;
+
 // Connect to MongoDB
 async function connectDB() {
     try {
@@ -30,36 +89,16 @@ async function connectDB() {
         });
         console.log('MongoDB connected');
 
-        // Define campaign schema
-        const CampaignSchema = new mongoose.Schema({
-            name: String,
-            subject: String,
-            content: String,
-            brandId: mongoose.Schema.Types.ObjectId,
-            userId: mongoose.Schema.Types.ObjectId,
-            fromName: String,
-            fromEmail: String,
-            replyTo: String,
-            status: {
-                type: String,
-                enum: ['draft', 'queued', 'scheduled', 'sending', 'sent', 'failed'],
-                default: 'draft',
-            },
-            contactListIds: [mongoose.Schema.Types.ObjectId],
-            scheduleType: String,
-            scheduledAt: Date,
-            sentAt: Date,
-        });
-
-        // Register model
+        // Initialize models
         Campaign = mongoose.models.Campaign || mongoose.model('Campaign', CampaignSchema);
+        Brand = mongoose.models.Brand || mongoose.model('Brand', BrandSchema);
     } catch (error) {
         console.error('MongoDB connection error:', error);
         process.exit(1);
     }
 }
 
-// Complete checkScheduledCampaigns function for cron-checker.js
+// Check for campaigns that should have been processed but weren't
 async function checkScheduledCampaigns() {
     try {
         console.log('Checking for missed scheduled campaigns...');
@@ -80,7 +119,7 @@ async function checkScheduledCampaigns() {
             console.log(`Scheduling missed campaign ${campaign._id}`);
 
             // Get the brand for this campaign to access SES credentials
-            const brand = await mongoose.models.Brand.findById(campaign.brandId);
+            const brand = await Brand.findById(campaign.brandId);
             if (!brand) {
                 console.error(`Brand not found for campaign ${campaign._id}`);
                 continue;
@@ -100,9 +139,9 @@ async function checkScheduledCampaigns() {
                     brandId: campaign.brandId.toString(),
                     userId: campaign.userId.toString(),
                     contactListIds: campaign.contactListIds.map((id) => id.toString()),
-                    fromName: campaign.fromName,
-                    fromEmail: campaign.fromEmail,
-                    replyTo: campaign.replyTo || campaign.fromEmail,
+                    fromName: campaign.fromName || brand.fromName,
+                    fromEmail: campaign.fromEmail || brand.fromEmail,
+                    replyTo: campaign.replyTo || brand.replyToEmail,
                     subject: campaign.subject,
                     // Pass AWS credentials from the brand
                     brandAwsRegion: brand.awsRegion,

@@ -59,7 +59,10 @@ export default function CampaignForm({ brand, onCancel, onSuccess }) {
     };
 
     return (
-        <div className="modern-form-container">
+        <div
+            className="modern-form-container"
+            style={{ padding: 20 }}
+        >
             <div className="form-header">
                 <h2>Create a New Campaign</h2>
                 <button

@@ -14,6 +14,9 @@ module.exports = {
             script: 'workers/email-processor.js',
             env: {
                 NODE_ENV: 'production',
+                REDIS_HOST: 'localhost',
+                REDIS_PORT: '6379',
+                MONGODB_URI: 'mongodb://localhost:27017/maillayer-client',
             },
         },
         {
@@ -21,13 +24,9 @@ module.exports = {
             script: 'workers/cron-checker.js',
             env: {
                 NODE_ENV: 'production',
-            },
-        },
-        {
-            name: 'campaign-manager',
-            script: 'workers/campaign-manager.js',
-            env: {
-                NODE_ENV: 'production',
+                REDIS_HOST: 'localhost',
+                REDIS_PORT: '6379',
+                MONGODB_URI: 'mongodb://localhost:27017/maillayer-client',
             },
         },
     ],

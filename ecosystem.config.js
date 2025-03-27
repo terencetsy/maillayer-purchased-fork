@@ -5,14 +5,30 @@ module.exports = {
             name: 'maillayer-nextjs',
             script: 'npm',
             args: 'start',
+            env: {
+                NODE_ENV: 'production',
+            },
         },
         {
-            name: 'ecm-email-worker-dev',
+            name: 'email-worker',
             script: 'workers/email-processor.js',
+            env: {
+                NODE_ENV: 'production',
+            },
         },
         {
-            name: 'ecm-cron-checker-dev',
+            name: 'cron-checker',
             script: 'workers/cron-checker.js',
+            env: {
+                NODE_ENV: 'production',
+            },
+        },
+        {
+            name: 'campaign-manager',
+            script: 'workers/campaign-manager.js',
+            env: {
+                NODE_ENV: 'production',
+            },
         },
     ],
 };

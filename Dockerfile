@@ -2,23 +2,17 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install PM2 globally
+# Install PM2
 RUN npm install -g pm2
 
-# Copy package files
-COPY package.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy application code
+# Copy everything
 COPY . .
 
-# Build the application
-RUN npm run build
+# Install all dependencies
+RUN npm install
 
-# Expose the port Next.js runs on
-EXPOSE 3000
+# Build Next.js app
+RUN NODE_ENV=production npm run build
 
-# Start the application using PM2
+# Start Next.js and workers with PM2
 CMD ["npm", "run", "pm2:start"]

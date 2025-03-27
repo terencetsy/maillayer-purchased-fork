@@ -9,6 +9,7 @@ const isESM = typeof require === 'undefined' || !require.resolve;
 // Helper to get Redis connection string or options from environment
 function getRedisConfig() {
     // First check for a connection string
+    console.log('REDIS_URL:', process.env.REDIS_URL);
     if (process.env.REDIS_URL) {
         return process.env.REDIS_URL;
     }
@@ -44,11 +45,11 @@ if (isESM) {
                 const redisClient = new Redis.default(getRedisConfig());
 
                 redisClient.on('error', (err) => {
-                    console.error('Redis client error:', err);
+                    console.error('Redis client error (ES):', err);
                 });
 
                 redisClient.on('connect', () => {
-                    console.log('Redis client connected');
+                    console.log('Redis client connected (ES)');
                 });
 
                 return redisClient;
@@ -94,11 +95,11 @@ if (isESM) {
             const redisClient = new Redis(getRedisConfig());
 
             redisClient.on('error', (err) => {
-                console.error('Worker Redis client error:', err);
+                console.error('Worker Redis client error (CommonJS):', err);
             });
 
             redisClient.on('connect', () => {
-                console.log('Worker Redis client connected');
+                console.log('Worker Redis client connected (CommonJS)');
             });
 
             return redisClient;

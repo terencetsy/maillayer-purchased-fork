@@ -21,10 +21,12 @@ if (isESM) {
             enableReadyCheck: false,
         };
 
+        console.log(redisOptions);
+
         // Create Redis clients for Bull
         const createRedisClient = () => {
             const Redis = require('ioredis');
-            return new Redis(redisOptions);
+            return new Redis('redis://maillayer-client:roqaAmXvNGen6GedcmXC9OZxHupvseCZNtlMQGOkJDJaiDIQvsbVdCNpS7jQLulY@eogg0csc0ggskc88s0s8o8oc:6379/0');
         };
 
         // Create queues

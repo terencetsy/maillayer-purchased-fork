@@ -6,43 +6,107 @@
 // Detect if we're in ES Modules (Next.js) or CommonJS (worker scripts)
 const isESM = typeof require === 'undefined' || !require.resolve;
 
+// Helper to get Redis connection string or options from environment
+function getRedisConfig() {
+    // First check for a connection string
+    if (process.env.REDIS_URL) {
+        return process.env.REDIS_URL;
+    }
+
+    // Otherwise use individual components
+    return {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD || undefined,
+        maxRetriesPerRequest: 30, // Increased from default for stability
+        enableReadyCheck: false, // Can help with some stability issues
+        connectTimeout: 10000, // 10 second timeout
+        disconnectTimeout: 10000,
+        retryStrategy: (times) => {
+            // Exponential backoff
+            return Math.min(times * 50, 2000); // Max 2 seconds delay
+        },
+    };
+}
+
 if (isESM) {
     // ES Module environment (Next.js)
     module.exports = async () => {
-        // Dynamic import for ES Module environment
-        const Bull = await import('bull');
+        try {
+            // Dynamic import for ES Module environment
+            const Bull = await import('bull');
+            const Redis = await import('ioredis');
 
-        // Redis connection options
-        const redisOptions = {
-            host: process.env.REDIS_HOST || 'localhost',
-            port: parseInt(process.env.REDIS_PORT || '6379'),
-            password: process.env.REDIS_PASSWORD || undefined,
-            maxRetriesPerRequest: null,
-            enableReadyCheck: false,
-        };
+            console.log('Redis config:', getRedisConfig());
 
-        console.log(redisOptions);
+            // Create Redis clients for Bull with proper error handling
+            const createRedisClient = () => {
+                const redisClient = new Redis.default(getRedisConfig());
 
-        // Create Redis clients for Bull
+                redisClient.on('error', (err) => {
+                    console.error('Redis client error:', err);
+                });
+
+                redisClient.on('connect', () => {
+                    console.log('Redis client connected');
+                });
+
+                return redisClient;
+            };
+
+            // Create queues
+            const emailCampaignQueue = new Bull.default('email-campaigns', {
+                createClient: (type) => createRedisClient(),
+                defaultJobOptions: {
+                    attempts: 3,
+                    backoff: {
+                        type: 'exponential',
+                        delay: 5000,
+                    },
+                    removeOnComplete: 100,
+                    removeOnFail: 100,
+                },
+            });
+
+            const schedulerQueue = new Bull.default('campaign-scheduler', {
+                createClient: (type) => createRedisClient(),
+                defaultJobOptions: {
+                    removeOnComplete: true,
+                },
+            });
+
+            return { emailCampaignQueue, schedulerQueue };
+        } catch (error) {
+            console.error('Error initializing queues:', error);
+            throw error;
+        }
+    };
+} else {
+    // CommonJS environment (worker scripts)
+    try {
+        const Bull = require('bull');
+        const Redis = require('ioredis');
+
+        console.log('Worker Redis config:', getRedisConfig());
+
+        // Create Redis clients for Bull with proper error handling
         const createRedisClient = () => {
-            const Redis = require('ioredis');
-            return new Redis('redis://maillayer-client:roqaAmXvNGen6GedcmXC9OZxHupvseCZNtlMQGOkJDJaiDIQvsbVdCNpS7jQLulY@eogg0csc0ggskc88s0s8o8oc:6379/0');
+            const redisClient = new Redis(getRedisConfig());
+
+            redisClient.on('error', (err) => {
+                console.error('Worker Redis client error:', err);
+            });
+
+            redisClient.on('connect', () => {
+                console.log('Worker Redis client connected');
+            });
+
+            return redisClient;
         };
 
         // Create queues
-        const emailCampaignQueue = new Bull.default('email-campaigns', {
-            createClient: (type) => {
-                switch (type) {
-                    case 'client':
-                        return createRedisClient();
-                    case 'subscriber':
-                        return createRedisClient();
-                    case 'bclient':
-                        return createRedisClient();
-                    default:
-                        throw new Error(`Unexpected connection type: ${type}`);
-                }
-            },
+        const emailCampaignQueue = new Bull('email-campaigns', {
+            createClient: (type) => createRedisClient(),
             defaultJobOptions: {
                 attempts: 3,
                 backoff: {
@@ -54,46 +118,16 @@ if (isESM) {
             },
         });
 
-        const schedulerQueue = new Bull.default('campaign-scheduler', {
+        const schedulerQueue = new Bull('campaign-scheduler', {
             createClient: (type) => createRedisClient(),
             defaultJobOptions: {
                 removeOnComplete: true,
             },
         });
 
-        return { emailCampaignQueue, schedulerQueue };
-    };
-} else {
-    // CommonJS environment (worker scripts)
-    const Bull = require('bull');
-
-    // Redis connection options
-    const redisOptions = {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD || undefined,
-    };
-
-    // Create queues
-    const emailCampaignQueue = new Bull('email-campaigns', {
-        redis: redisOptions,
-        defaultJobOptions: {
-            attempts: 3,
-            backoff: {
-                type: 'exponential',
-                delay: 5000,
-            },
-            removeOnComplete: 100,
-            removeOnFail: 100,
-        },
-    });
-
-    const schedulerQueue = new Bull('campaign-scheduler', {
-        redis: redisOptions,
-        defaultJobOptions: {
-            removeOnComplete: true,
-        },
-    });
-
-    module.exports = { emailCampaignQueue, schedulerQueue };
+        module.exports = { emailCampaignQueue, schedulerQueue };
+    } catch (error) {
+        console.error('Error initializing worker queues:', error);
+        throw error;
+    }
 }

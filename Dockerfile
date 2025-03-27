@@ -6,10 +6,10 @@ WORKDIR /app
 RUN npm install -g pm2
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Copy application code
 COPY . .

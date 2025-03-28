@@ -3,7 +3,6 @@ require('dotenv').config();
 const Bull = require('bull');
 const mongoose = require('mongoose');
 const AWS = require('aws-sdk');
-const path = require('path');
 const crypto = require('crypto');
 const { RateLimiter } = require('limiter');
 const cheerio = require('cheerio');
@@ -12,62 +11,315 @@ const Redis = require('ioredis');
 // Load our CommonJS compatible config
 const config = require('../src/lib/configCommonJS');
 
-// We need to register the models first
-// This makes them available through mongoose.models
-// We'll create a simple adapter to access them in CommonJS format
-const modelAdapter = {
-    async connectToDB() {
-        try {
-            await mongoose.connect(process.env.MONGODB_URI, {
-                useNewUrlParser: true,
-                useUnifiedTopology: true,
-            });
-            console.log('MongoDB connected for email processor');
-            return true;
-        } catch (error) {
-            console.error('MongoDB connection error:', error);
-            throw error;
+// Define all the models we need directly in this file for worker use
+// This ensures they are available when we process jobs
+function defineModels() {
+    // Brand schema
+    const BrandSchema = new mongoose.Schema(
+        {
+            name: {
+                type: String,
+                required: [true, 'Brand name is required'],
+                trim: true,
+            },
+            userId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User',
+                required: [true, 'User ID is required'],
+            },
+            website: {
+                type: String,
+                required: [true, 'Brand website is required'],
+                trim: true,
+            },
+            awsRegion: {
+                type: String,
+                trim: true,
+            },
+            awsAccessKey: {
+                type: String,
+                trim: true,
+            },
+            awsSecretKey: {
+                type: String,
+                trim: true,
+                select: false,
+            },
+            sendingDomain: {
+                type: String,
+                trim: true,
+            },
+            fromName: {
+                type: String,
+                trim: true,
+                default: '',
+            },
+            fromEmail: {
+                type: String,
+                trim: true,
+            },
+            replyToEmail: {
+                type: String,
+                trim: true,
+            },
+            status: {
+                type: String,
+                enum: ['active', 'inactive', 'pending_setup', 'pending_verification'],
+                default: 'pending_setup',
+            },
+        },
+        {
+            timestamps: true,
+            collection: 'brands',
         }
-    },
-    getModels() {
-        return {
-            Campaign: mongoose.models.Campaign,
-            Contact: mongoose.models.Contact,
-            Brand: mongoose.models.Brand,
-            ContactList: mongoose.models.ContactList,
-            User: mongoose.models.User,
-            TrackingEvent: mongoose.models.TrackingEvent,
-        };
-    },
-};
+    );
 
-// Define schema for campaign-specific stats collections
-const TrackingEventSchema = new mongoose.Schema(
-    {
-        contactId: mongoose.Schema.Types.ObjectId,
-        campaignId: mongoose.Schema.Types.ObjectId,
-        email: String,
-        userAgent: String,
-        ipAddress: String,
-        timestamp: {
-            type: Date,
-            default: Date.now,
+    // Campaign schema
+    const CampaignSchema = new mongoose.Schema(
+        {
+            name: {
+                type: String,
+                required: [true, 'Please provide a campaign name'],
+                trim: true,
+                maxlength: [100, 'Campaign name cannot be more than 100 characters'],
+            },
+            subject: {
+                type: String,
+                required: [true, 'Please provide an email subject'],
+                trim: true,
+                maxlength: [200, 'Subject cannot be more than 200 characters'],
+            },
+            content: {
+                type: String,
+                default: '',
+            },
+            brandId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Brand',
+                required: [true, 'Campaign must belong to a brand'],
+            },
+            userId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User',
+                required: [true, 'Campaign must belong to a user'],
+            },
+            fromName: {
+                type: String,
+                trim: true,
+            },
+            fromEmail: {
+                type: String,
+                trim: true,
+            },
+            replyTo: {
+                type: String,
+                trim: true,
+            },
+            status: {
+                type: String,
+                enum: ['draft', 'queued', 'scheduled', 'sending', 'sent', 'failed', 'paused'],
+                default: 'draft',
+            },
+            contactListIds: [
+                {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'ContactList',
+                },
+            ],
+            scheduleType: {
+                type: String,
+                enum: ['send_now', 'schedule'],
+                default: 'send_now',
+            },
+            scheduledAt: {
+                type: Date,
+            },
+            sentAt: {
+                type: Date,
+            },
+            stats: {
+                recipients: {
+                    type: Number,
+                    default: 0,
+                },
+                opens: {
+                    type: Number,
+                    default: 0,
+                },
+                clicks: {
+                    type: Number,
+                    default: 0,
+                },
+                bounces: {
+                    type: Number,
+                    default: 0,
+                },
+                complaints: {
+                    type: Number,
+                    default: 0,
+                },
+                processed: {
+                    type: Number,
+                    default: 0,
+                },
+            },
+            processingMetadata: {
+                lastProcessedContactIndex: { type: Number, default: 0 },
+                lastProcessedListIndex: { type: Number, default: 0 },
+                hasMoreToProcess: { type: Boolean, default: true },
+                processingStartedAt: Date,
+                processedBatches: { type: Number, default: 0 },
+            },
         },
-        eventType: {
-            type: String,
-            enum: ['open', 'click', 'bounce', 'complaint', 'delivery'],
+        {
+            timestamps: true,
+            collection: 'campaigns',
+        }
+    );
+
+    // Contact schema
+    const ContactSchema = new mongoose.Schema(
+        {
+            email: {
+                type: String,
+                required: true,
+                lowercase: true,
+                trim: true,
+            },
+            firstName: {
+                type: String,
+                trim: true,
+            },
+            lastName: {
+                type: String,
+                trim: true,
+            },
+            phone: {
+                type: String,
+                trim: true,
+            },
+            listId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'ContactList',
+                required: true,
+            },
+            brandId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Brand',
+                required: true,
+            },
+            userId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User',
+                required: true,
+            },
+            status: {
+                type: String,
+                default: 'active',
+            },
         },
-        metadata: mongoose.Schema.Types.Mixed,
-    },
-    {
-        timestamps: true,
-    }
-);
+        {
+            timestamps: true,
+            collection: 'contacts',
+        }
+    );
+
+    // Tracking event schema
+    const TrackingEventSchema = new mongoose.Schema(
+        {
+            contactId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Contact',
+                required: true,
+            },
+            campaignId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Campaign',
+                required: true,
+            },
+            email: {
+                type: String,
+                required: true,
+            },
+            userAgent: String,
+            ipAddress: String,
+            timestamp: {
+                type: Date,
+                default: Date.now,
+            },
+            eventType: {
+                type: String,
+                required: true,
+                enum: ['open', 'click', 'bounce', 'complaint', 'delivery'],
+            },
+            metadata: {
+                type: mongoose.Schema.Types.Mixed,
+                default: {},
+            },
+        },
+        {
+            timestamps: true,
+        }
+    );
+
+    // Create models only if they don't already exist
+    const Brand = mongoose.models.Brand || mongoose.model('Brand', BrandSchema);
+    const Campaign = mongoose.models.Campaign || mongoose.model('Campaign', CampaignSchema);
+    const Contact = mongoose.models.Contact || mongoose.model('Contact', ContactSchema);
+    const TrackingEvent = mongoose.models.TrackingEvent || mongoose.model('TrackingEvent', TrackingEventSchema);
+
+    return {
+        Brand,
+        Campaign,
+        Contact,
+        TrackingEvent,
+    };
+}
 
 // Function to create or get model for campaign-specific stats
 function createTrackingModel(campaignId) {
+    // Make sure we have the base schemas defined
+    const { TrackingEvent } = getModels();
+
+    // Now create a campaign-specific tracking model
     const collectionName = `stats_${campaignId}`;
-    return mongoose.models[collectionName] || mongoose.model(collectionName, TrackingEventSchema, collectionName);
+    return mongoose.models[collectionName] || mongoose.model(collectionName, mongoose.model('TrackingEvent').schema, collectionName);
+}
+
+// Connect to MongoDB and define models
+let models = null;
+
+async function connectToDB() {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        console.log('MongoDB connected for email processor');
+
+        // Define models after successful connection
+        models = defineModels();
+        console.log('Models defined:', {
+            Brand: !!models.Brand,
+            Campaign: !!models.Campaign,
+            Contact: !!models.Contact,
+            TrackingEvent: !!models.TrackingEvent,
+        });
+
+        return true;
+    } catch (error) {
+        console.error('MongoDB connection error:', error);
+        throw error;
+    }
+}
+
+// Get models after they've been defined
+function getModels() {
+    if (!models) {
+        // If models aren't defined yet, define them now
+        models = defineModels();
+    }
+    return models;
 }
 
 // Create Redis clients with proper error handling
@@ -189,7 +441,7 @@ async function handleSESNotification(notification) {
     }
 
     console.log('Received SES notification:', notification.notificationType);
-    const { Campaign, Contact } = modelAdapter.getModels();
+    const { Campaign, Contact } = getModels();
 
     try {
         switch (notification.notificationType) {
@@ -281,7 +533,13 @@ async function handleSESNotification(notification) {
 // Only create queues after successful DB connection and model initialization
 async function initializeQueues() {
     // Connect to database first
-    await modelAdapter.connectToDB();
+    await connectToDB();
+
+    // Check that models are properly defined
+    const models = getModels();
+    if (!models.Campaign || !models.Brand || !models.Contact) {
+        throw new Error('Models failed to initialize properly');
+    }
 
     console.log('Creating Bull queues...');
 
@@ -314,11 +572,10 @@ async function initializeQueues() {
             console.log(`Processing scheduled campaign ${campaignId}`);
 
             // Get models
-            const { Campaign, Brand } = modelAdapter.getModels();
+            const { Campaign, Brand } = getModels();
 
             // Find the campaign
             const campaign = await Campaign.findById(campaignId);
-
             if (!campaign) {
                 throw new Error(`Campaign not found: ${campaignId}`);
             }
@@ -378,13 +635,15 @@ async function initializeQueues() {
         try {
             console.log(`Starting to process campaign: ${campaignId}`);
 
-            // Get models - ensure they're available
-            const { Campaign, Contact, Brand } = modelAdapter.getModels();
+            // Make sure we have models before proceeding
+            const { Campaign, Contact, Brand } = getModels();
 
+            // Double check that Campaign model exists
             if (!Campaign) {
                 throw new Error('Campaign model is not initialized');
             }
 
+            // Get campaign details
             const campaign = await Campaign.findById(campaignId);
             if (!campaign) {
                 throw new Error(`Campaign not found: ${campaignId}`);
@@ -641,7 +900,7 @@ async function initializeQueues() {
             // Update campaign status to failed
             if (campaignId) {
                 try {
-                    const { Campaign } = modelAdapter.getModels();
+                    const { Campaign } = getModels();
                     if (Campaign) {
                         const campaign = await Campaign.findById(campaignId);
                         if (campaign) {

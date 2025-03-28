@@ -6,28 +6,9 @@
 // Detect if we're in ES Modules (Next.js) or CommonJS (worker scripts)
 const isESM = typeof require === 'undefined' || !require.resolve;
 
-// Helper to get Redis connection string or options from environment
-function getRedisConfig() {
-    // First check for a connection string
-    console.log('REDIS_URL:', process.env.REDIS_URL);
-    if (process.env.REDIS_URL) {
-        return process.env.REDIS_URL;
-    }
-
-    // Otherwise use individual components
-    return {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD || undefined,
-        maxRetriesPerRequest: 30, // Increased from default for stability
-        enableReadyCheck: false, // Can help with some stability issues
-        connectTimeout: 10000, // 10 second timeout
-        disconnectTimeout: 10000,
-        retryStrategy: (times) => {
-            // Exponential backoff
-            return Math.min(times * 50, 2000); // Max 2 seconds delay
-        },
-    };
+// Get Redis URL - ONLY use the Redis URL, no fallback to individual components
+function getRedisUrl() {
+    return process.env.REDIS_URL;
 }
 
 if (isESM) {
@@ -38,11 +19,12 @@ if (isESM) {
             const Bull = await import('bull');
             const Redis = await import('ioredis');
 
-            console.log('Redis config:', getRedisConfig());
+            // Only use Redis URL
+            const redisUrl = getRedisUrl();
 
             // Create Redis clients for Bull with proper error handling
             const createRedisClient = () => {
-                const redisClient = new Redis.default(getRedisConfig());
+                const redisClient = new Redis.default(redisUrl);
 
                 redisClient.on('error', (err) => {
                     console.error('Redis client error (ES):', err);
@@ -88,18 +70,20 @@ if (isESM) {
         const Bull = require('bull');
         const Redis = require('ioredis');
 
-        console.log('Worker Redis config:', getRedisConfig());
+        // Only use Redis URL
+        const redisUrl = getRedisUrl();
+        console.log('Worker using Redis URL:', redisUrl);
 
         // Create Redis clients for Bull with proper error handling
         const createRedisClient = () => {
-            const redisClient = new Redis(getRedisConfig());
+            const redisClient = new Redis(redisUrl);
 
             redisClient.on('error', (err) => {
-                console.error('Worker Redis client error (CommonJS):', err);
+                console.error('Worker Redis client error:', err);
             });
 
             redisClient.on('connect', () => {
-                console.log('Worker Redis client connected (CommonJS)');
+                console.log('Worker Redis client connected');
             });
 
             return redisClient;

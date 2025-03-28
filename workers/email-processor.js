@@ -10,33 +10,9 @@ const cheerio = require('cheerio');
 const config = require('../src/lib/configCommonJS');
 const Redis = require('ioredis');
 
-// Helper to get Redis connection string or options from environment
-function getRedisConfig() {
-    // First check for a connection string
-    console.log('REDIS_URL in worker:', config.redisURI);
-    if (config.redisURI) {
-        return config.redisURI;
-    }
-
-    // Otherwise use individual components
-    return {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD || undefined,
-        maxRetriesPerRequest: 30,
-        enableReadyCheck: false,
-        connectTimeout: 10000,
-        disconnectTimeout: 10000,
-        retryStrategy: (times) => {
-            return Math.min(times * 50, 2000);
-        },
-    };
-}
-
 // Create Redis clients with proper error handling
 const createRedisClient = () => {
-    console.log('-------------', getRedisConfig());
-    const redisClient = new Redis(getRedisConfig());
+    const redisClient = new Redis(config.redisURL);
 
     redisClient.on('error', (err) => {
         console.error('Email processor Redis error:', err);

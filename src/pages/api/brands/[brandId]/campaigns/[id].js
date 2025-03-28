@@ -83,6 +83,7 @@ export default async function handler(req, res) {
                 // Sending or scheduling functionality
                 if (status === 'sending' || status === 'scheduled') {
                     // Check if SES details exist in the brand
+                    console.log('-----', brand);
                     if (brand.status !== 'active') {
                         return res.status(400).json({ message: 'AWS SES credentials not configured for this brand' });
                     }
@@ -142,10 +143,6 @@ export default async function handler(req, res) {
                                 fromEmail: fromEmail || campaign.fromEmail || brand.fromEmail,
                                 replyTo: replyTo || campaign.replyTo || campaign.fromEmail,
                                 subject: subject || campaign.subject,
-                                // Use brand SES credentials directly since there&apos; no EmailServiceAccount
-                                brandAwsRegion: brand.awsRegion,
-                                brandAwsAccessKey: brand.awsAccessKey,
-                                brandAwsSecretKey: brand.awsSecretKey,
                             },
                             {
                                 jobId: `campaign-${campaign._id}-${Date.now()}`,

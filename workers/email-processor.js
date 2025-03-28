@@ -43,7 +43,6 @@ function defineModels() {
             awsSecretKey: {
                 type: String,
                 trim: true,
-                select: false,
             },
             sendingDomain: {
                 type: String,
@@ -630,7 +629,7 @@ async function initializeQueues() {
 
     // Complete send-campaign handler with email tracking
     emailCampaignQueue.process('send-campaign', async (job) => {
-        const { campaignId, brandId, userId, contactListIds, fromName, fromEmail, replyTo, subject, brandAwsRegion, brandAwsAccessKey, brandAwsSecretKey } = job.data;
+        const { campaignId, brandId, userId, contactListIds, fromName, fromEmail, replyTo, subject } = job.data;
         console.log(job.data);
         try {
             console.log(`Starting to process campaign: ${campaignId}`);
@@ -670,7 +669,7 @@ async function initializeQueues() {
             if (!brand) {
                 throw new Error(`Brand not found: ${brandId}`);
             }
-
+            console.log('brand.awsRegion', brand);
             // Check if brand has SES credentials
             if (!brand.awsRegion || !brand.awsAccessKey || !brand.awsSecretKey) {
                 throw new Error('AWS SES credentials not configured for this brand');
@@ -678,9 +677,9 @@ async function initializeQueues() {
 
             // Create SES client using brand credentials directly
             const ses = new AWS.SES({
-                accessKeyId: brandAwsAccessKey || brand.awsAccessKey,
-                secretAccessKey: decryptData(brandAwsSecretKey || brand.awsSecretKey, process.env.ENCRYPTION_KEY),
-                region: brandAwsRegion || brand.awsRegion || 'us-east-1',
+                accessKeyId: brand.awsAccessKey,
+                secretAccessKey: decryptData(brand.awsSecretKey, process.env.ENCRYPTION_KEY),
+                region: brand.awsRegion || 'us-east-1',
             });
 
             job.progress(15);

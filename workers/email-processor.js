@@ -13,9 +13,9 @@ const Redis = require('ioredis');
 // Helper to get Redis connection string or options from environment
 function getRedisConfig() {
     // First check for a connection string
-    console.log('REDIS_URL in worker:', process.env.REDIS_URL);
-    if (process.env.REDIS_URL) {
-        return process.env.REDIS_URL;
+    console.log('REDIS_URL in worker:', config.redisURI);
+    if (config.redisURI) {
+        return config.redisURI;
     }
 
     // Otherwise use individual components

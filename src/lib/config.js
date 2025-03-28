@@ -12,7 +12,7 @@ const config = {
 
     // MongoDB connection
     mongodbUri: process.env.MONGODB_URI,
-
+    redisURI: process.env.REDIS_URL,
     // Redis settings
     redis: {
         host: process.env.REDIS_HOST || 'localhost',

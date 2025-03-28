@@ -631,7 +631,7 @@ async function initializeQueues() {
     // Complete send-campaign handler with email tracking
     emailCampaignQueue.process('send-campaign', async (job) => {
         const { campaignId, brandId, userId, contactListIds, fromName, fromEmail, replyTo, subject, brandAwsRegion, brandAwsAccessKey, brandAwsSecretKey } = job.data;
-
+        console.log(job.data);
         try {
             console.log(`Starting to process campaign: ${campaignId}`);
 
@@ -666,6 +666,7 @@ async function initializeQueues() {
 
             // Get brand
             const brand = await Brand.findById(brandId);
+            console.log('brand', brand);
             if (!brand) {
                 throw new Error(`Brand not found: ${brandId}`);
             }

@@ -77,7 +77,6 @@ if (isESM) {
 
         // Only use Redis URL
         const redisUrl = getRedisUrl();
-        console.log('Worker using Redis URL:', redisUrl);
 
         // Create Redis clients for Bull with proper error handling
         const createRedisClient = () => {

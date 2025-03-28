@@ -1,4 +1,4 @@
-// workers/email-processor-with-tracking.js
+// workers/email-processor.js
 require('dotenv').config();
 const Bull = require('bull');
 const mongoose = require('mongoose');
@@ -8,17 +8,49 @@ const crypto = require('crypto');
 const { RateLimiter } = require('limiter');
 const cheerio = require('cheerio');
 const config = require('../src/lib/configCommonJS');
+const Redis = require('ioredis');
 
-// Setup Redis connection for Bull
-const redisOptions = {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD || undefined,
+// Helper to get Redis connection string or options from environment
+function getRedisConfig() {
+    // First check for a connection string
+    console.log('REDIS_URL in worker:', process.env.REDIS_URL);
+    if (process.env.REDIS_URL) {
+        return process.env.REDIS_URL;
+    }
+
+    // Otherwise use individual components
+    return {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD || undefined,
+        maxRetriesPerRequest: 30,
+        enableReadyCheck: false,
+        connectTimeout: 10000,
+        disconnectTimeout: 10000,
+        retryStrategy: (times) => {
+            return Math.min(times * 50, 2000);
+        },
+    };
+}
+
+// Create Redis clients with proper error handling
+const createRedisClient = () => {
+    const redisClient = new Redis(getRedisConfig());
+
+    redisClient.on('error', (err) => {
+        console.error('Email processor Redis error:', err);
+    });
+
+    redisClient.on('connect', () => {
+        console.log('Email processor Redis connected');
+    });
+
+    return redisClient;
 };
 
-// Create queues
+// Create queues with the new approach
 const emailCampaignQueue = new Bull('email-campaigns', {
-    redis: redisOptions,
+    createClient: (type) => createRedisClient(),
     defaultJobOptions: {
         attempts: 3,
         backoff: {
@@ -32,7 +64,7 @@ const emailCampaignQueue = new Bull('email-campaigns', {
 });
 
 const schedulerQueue = new Bull('campaign-scheduler', {
-    redis: redisOptions,
+    createClient: (type) => createRedisClient(),
     defaultJobOptions: {
         removeOnComplete: true,
     },
@@ -43,6 +75,7 @@ let Campaign;
 let Contact;
 let Brand;
 
+// [Rest of your code remains the same]
 function generateTrackingToken(campaignId, contactId, email) {
     // Create a string to hash
     const dataToHash = `${campaignId}:${contactId}:${email}:${process.env.TRACKING_SECRET || 'tracking-secret-key'}`;
@@ -242,7 +275,7 @@ function decryptData(encryptedText, secretKey) {
     try {
         if (!encryptedText) return null;
 
-        // If it&apos; not encrypted or contains ":", just return it as is
+        // If it's not encrypted or contains ":", just return it as is
         if (!encryptedText.includes(':')) {
             return encryptedText;
         }

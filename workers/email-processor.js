@@ -16,7 +16,10 @@ const createRedisClient = () => {
     const redisUrl = config.redisURL;
     console.log('Email processor using Redis URL:', redisUrl);
 
-    const redisClient = new Redis(redisUrl);
+    const redisClient = new Redis(redisUrl, {
+        enableReadyCheck: false,
+        maxRetriesPerRequest: null,
+    });
 
     redisClient.on('error', (err) => {
         console.error('Email processor Redis error:', err);

@@ -15,7 +15,10 @@ console.log('Campaign manager using Redis URL:', redisUrl);
 
 // Create Redis clients for Bull with proper error handling
 const createRedisClient = () => {
-    const redisClient = new Redis(redisUrl);
+    const redisClient = new Redis(redisUrl, {
+        enableReadyCheck: false,
+        maxRetriesPerRequest: null,
+    });
 
     redisClient.on('error', (err) => {
         console.error('Campaign manager Redis client error:', err);

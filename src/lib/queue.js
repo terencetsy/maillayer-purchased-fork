@@ -26,7 +26,10 @@ if (isESM) {
 
             // Create Redis clients for Bull with proper error handling
             const createRedisClient = () => {
-                const redisClient = new Redis.default(redisUrl);
+                const redisClient = new Redis.default(redisUrl, {
+                    enableReadyCheck: false,
+                    maxRetriesPerRequest: null,
+                });
 
                 redisClient.on('error', (err) => {
                     console.error('Redis client error (ES):', err);

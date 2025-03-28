@@ -35,6 +35,7 @@ function getRedisConfig() {
 
 // Create Redis clients with proper error handling
 const createRedisClient = () => {
+    console.log('-------------', getRedisConfig());
     const redisClient = new Redis(getRedisConfig());
 
     redisClient.on('error', (err) => {

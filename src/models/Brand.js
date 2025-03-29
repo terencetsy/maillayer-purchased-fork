@@ -58,6 +58,14 @@ const BrandSchema = new mongoose.Schema(
             },
             default: 'pending_setup',
         },
+        snsBounceTopicArn: {
+            type: String,
+            trim: true,
+        },
+        sesConfigurationSet: {
+            type: String,
+            trim: true,
+        },
         createdAt: {
             type: Date,
             default: Date.now,

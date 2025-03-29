@@ -7348,3 +7348,232 @@ h4 {
 .unsubscribe-success {
     color: #10b981;
 }
+
+/* Domain Verification specific styles */
+.verification-step {
+    background-color: #111111;
+    border-radius: 8px;
+    border: 1px solid #2e2e2e;
+    overflow: hidden;
+}
+
+.step-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid #2e2e2e;
+}
+
+.step-header .step-icon {
+    width: 36px;
+    height: 36px;
+    background-color: rgba(93, 135, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #5d87ff;
+}
+
+.step-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.step-content {
+    padding: 20px;
+}
+
+.record-title {
+    padding: 0.75rem 1rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid #2e2e2e;
+}
+
+.record-title h4 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.record-item {
+    display: grid;
+    grid-template-columns: 70px minmax(100px, 1fr) minmax(100px, 2fr) auto;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.record-item:last-child {
+    border-bottom: none;
+}
+
+.record-item .record-type {
+    font-weight: 600;
+    color: #5e6ad2;
+    font-size: 0.85rem;
+}
+
+.record-item .record-host,
+.record-item .record-value {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    word-break: break-all;
+    padding: 0.5rem 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.record-item .record-host {
+    color: #5d87ff;
+}
+
+.verification-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+    .record-item {
+        grid-template-columns: 60px 1fr auto;
+        gap: 0;
+    }
+
+    .record-item .record-value {
+        grid-column: 1 / span 2;
+        grid-row: 2;
+        padding-top: 0;
+    }
+
+    .record-item .btn-copy {
+        grid-row: 1;
+        grid-column: 3;
+    }
+}
+
+@media (max-width: 480px) {
+    .record-item {
+        grid-template-columns: 1fr auto;
+        padding: 12px 10px;
+    }
+
+    .record-item .record-type {
+        grid-row: 1;
+        grid-column: 1;
+    }
+
+    .record-item .record-host {
+        grid-row: 2;
+        grid-column: 1;
+        padding-top: 0;
+    }
+
+    .record-item .record-value {
+        grid-row: 3;
+        grid-column: 1;
+        padding-top: 0;
+    }
+
+    .record-item .btn-copy {
+        grid-row: 1;
+        grid-column: 2;
+    }
+}
+
+// DNS Verification Status Styles
+.verification-status-info {
+    margin-bottom: 24px;
+
+    h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: #ffffff;
+    }
+
+    .status-indicators {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+
+        &.pending {
+            background-color: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+
+            .indicator-icon {
+                color: #f59e0b;
+            }
+
+            .status {
+                color: #f59e0b;
+                font-weight: 500;
+            }
+        }
+
+        &.verified {
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+
+            .indicator-icon {
+                color: #10b981;
+            }
+
+            .status {
+                color: #10b981;
+                font-weight: 500;
+            }
+        }
+
+        .indicator-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .indicator-label {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+
+            .label {
+                font-weight: 500;
+                color: rgba(255, 255, 255, 0.9);
+            }
+        }
+    }
+}
+
+// Responsive adjustments
+@media (max-width: 576px) {
+    .verification-status-info {
+        .status-indicator {
+            padding: 12px;
+            gap: 8px;
+
+            .indicator-label {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 2px;
+            }
+        }
+    }
+}

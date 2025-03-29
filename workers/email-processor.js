@@ -815,7 +815,17 @@ async function initializeQueues() {
                                             },
                                             ReplyToAddresses: [replyTo || fromEmail],
                                             // Configure feedback notifications
-                                            ConfigurationSetName: process.env.SES_CONFIGURATION_SET || undefined,
+                                            ConfigurationSetName: brand.sesConfigurationSet,
+                                            Tags: [
+                                                {
+                                                    Name: 'campaignId',
+                                                    Value: campaignId.toString(),
+                                                },
+                                                {
+                                                    Name: 'contactId',
+                                                    Value: contact._id.toString(),
+                                                },
+                                            ],
                                         })
                                         .promise();
 

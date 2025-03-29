@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
-import { Shield, ArrowLeft, Check, Key, Mail, User, Info, ArrowRight, AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import { Shield, ArrowLeft, Check, Key, Globe, User, Info, ArrowRight, AlertCircle, CheckCircle, Loader, Copy, RefreshCw } from 'lucide-react';
 
 export default function BrandVerification() {
     const { data: session, status } = useSession();
@@ -25,14 +25,18 @@ export default function BrandVerification() {
     const [awsSecretKey, setAwsSecretKey] = useState('');
     const [step1Complete, setStep1Complete] = useState(false);
 
-    // Step 2: Email Verification
-    const [fromEmail, setFromEmail] = useState('');
+    // Step 2: Domain Verification
+    const [domain, setDomain] = useState('');
     const [verificationSent, setVerificationSent] = useState(false);
-    const [emailVerified, setEmailVerified] = useState(false);
+    const [domainVerified, setDomainVerified] = useState(false);
+    const [dkimVerified, setDkimVerified] = useState(false);
+    const [verificationToken, setVerificationToken] = useState('');
+    const [dkimTokens, setDkimTokens] = useState([]);
     const [step2Complete, setStep2Complete] = useState(false);
 
     // Step 3: Sender Details
     const [fromName, setFromName] = useState('');
+    const [fromEmail, setFromEmail] = useState('');
     const [replyToEmail, setReplyToEmail] = useState('');
     const [step3Complete, setStep3Complete] = useState(false);
 
@@ -55,23 +59,28 @@ export default function BrandVerification() {
             if (brand.awsAccessKey) setAwsAccessKey(brand.awsAccessKey);
             if (brand.awsSecretKey) setAwsSecretKey('••••••••••••••••');
 
-            // Pre-fill sender details
-            if (brand.fromEmail) setFromEmail(brand.fromEmail);
+            // Pre-fill domain and sender details
+            if (brand.sendingDomain) {
+                setDomain(brand.sendingDomain);
+                // Check domain verification status
+                checkDomainVerificationStatus(brand.sendingDomain);
+            }
+
             if (brand.fromName) setFromName(brand.fromName);
+            if (brand.fromEmail) setFromEmail(brand.fromEmail);
             if (brand.replyToEmail) setReplyToEmail(brand.replyToEmail);
 
             // Determine completion status of each step
             if (brand.awsRegion && brand.awsAccessKey) {
                 setStep1Complete(true);
 
-                if (brand.fromEmail) {
-                    // Check if email is verified
-                    checkEmailVerificationStatus(brand.fromEmail);
+                if (brand.sendingDomain) {
+                    setVerificationSent(true);
 
                     if (brand.status === 'active' || (brand.fromName && brand.replyToEmail)) {
                         setStep2Complete(true);
 
-                        if (brand.fromName && brand.replyToEmail) {
+                        if (brand.fromName && brand.fromEmail && brand.replyToEmail) {
                             setStep3Complete(true);
                         }
                     }
@@ -84,7 +93,7 @@ export default function BrandVerification() {
                 else if (!step2Complete) setCurrentStep(2);
                 else if (!step3Complete) setCurrentStep(3);
             } else if (brand.status === 'pending_verification') {
-                setCurrentStep(2); // Usually waiting for email verification
+                setCurrentStep(2); // Usually waiting for domain verification
             } else if (brand.status === 'active') {
                 // All steps are complete, show summary
                 setStep1Complete(true);
@@ -120,25 +129,33 @@ export default function BrandVerification() {
         }
     };
 
-    const checkEmailVerificationStatus = async (email) => {
+    const checkDomainVerificationStatus = async (domainToCheck) => {
         try {
-            const res = await fetch(`/api/brands/${id}/verification/check-email?email=${encodeURIComponent(email)}`, {
+            const res = await fetch(`/api/brands/${id}/verification/check-domain?domain=${encodeURIComponent(domainToCheck)}`, {
                 credentials: 'same-origin',
             });
 
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.message || 'Failed to check email verification status');
+                throw new Error(data.message || 'Failed to check domain verification status');
             }
 
             const data = await res.json();
-            setEmailVerified(data.verified);
-            if (data.verified) {
+
+            setDomainVerified(data.domainVerified);
+            setDkimVerified(data.dkimVerified);
+            setVerificationToken(data.verificationToken);
+            setDkimTokens(data.dkimTokens || []);
+
+            if (data.domainVerified && data.dkimVerified) {
                 setStep2Complete(true);
             }
+
+            return data;
         } catch (error) {
-            console.error('Error checking email verification:', error);
+            console.error('Error checking domain verification:', error);
             // We don't show this error to avoid cluttering the UI
+            return null;
         }
     };
 
@@ -155,7 +172,7 @@ export default function BrandVerification() {
         setSuccess('');
 
         try {
-            // Only send the secret key if it&apos; not masked
+            // Only send the secret key if it's not masked
             const payload = {
                 awsRegion,
                 awsAccessKey,
@@ -195,18 +212,18 @@ export default function BrandVerification() {
         }
     };
 
-    const handleVerifyEmail = async (e) => {
+    const handleVerifyDomain = async (e) => {
         e.preventDefault();
 
-        if (!fromEmail) {
-            setError('Please enter the email address you want to use as your sender email');
+        if (!domain) {
+            setError('Please enter the domain you want to verify');
             return;
         }
 
-        // Basic email validation
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailPattern.test(fromEmail)) {
-            setError('Please enter a valid email address');
+        // Basic domain validation
+        const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
+        if (!domainRegex.test(domain)) {
+            setError('Please enter a valid domain (e.g., yourdomain.com)');
             return;
         }
 
@@ -215,37 +232,40 @@ export default function BrandVerification() {
         setSuccess('');
 
         try {
-            const res = await fetch(`/api/brands/${id}/verification/verify-email`, {
+            const res = await fetch(`/api/brands/${id}/verification/verify-domain`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email: fromEmail }),
+                body: JSON.stringify({ domain }),
                 credentials: 'same-origin',
             });
 
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.message || 'Failed to initiate email verification');
+                throw new Error(data.message || 'Failed to initiate domain verification');
             }
 
-            setSuccess('Verification email sent. Please check your inbox and click the verification link.');
+            const data = await res.json();
+            setVerificationToken(data.verificationToken);
+            setDkimTokens(data.dkimTokens || []);
+            setSuccess('Domain verification initiated. Please add the DNS records to your domain.');
             setVerificationSent(true);
 
-            // Update the from email in the brand
+            // Update the brand
             await fetch(`/api/brands/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ fromEmail }),
+                body: JSON.stringify({ sendingDomain: domain }),
                 credentials: 'same-origin',
             });
 
             // Update local brand data
             fetchBrandDetails();
         } catch (error) {
-            console.error('Error sending verification email:', error);
+            console.error('Error initiating domain verification:', error);
             setError(error.message || 'An unexpected error occurred');
         } finally {
             setIsVerifying(false);
@@ -254,11 +274,28 @@ export default function BrandVerification() {
 
     const handleCheckVerification = async () => {
         setIsVerifying(true);
-        try {
-            await checkEmailVerificationStatus(fromEmail);
+        setError('');
+        setSuccess('');
 
-            if (emailVerified) {
-                setSuccess('Email verified successfully!');
+        try {
+            const data = await checkDomainVerificationStatus(domain);
+
+            if (!data) {
+                throw new Error('Failed to fetch verification status');
+            }
+
+            if (data.domainVerified && data.dkimVerified) {
+                setSuccess('Domain verified successfully!');
+
+                // Update brand status to active
+                await fetch(`/api/brands/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ status: 'active' }),
+                    credentials: 'same-origin',
+                });
 
                 // Move to next step after a short delay
                 setTimeout(() => {
@@ -266,7 +303,18 @@ export default function BrandVerification() {
                     setSuccess('');
                 }, 1500);
             } else {
-                setError('Email not yet verified. Please check your inbox and click the verification link.');
+                let message = '';
+
+                if (!data.domainVerified) {
+                    message += 'Domain verification is pending. ';
+                }
+
+                if (!data.dkimVerified) {
+                    message += 'DKIM verification is pending. ';
+                }
+
+                message += 'Please make sure DNS records are added correctly.';
+                setError(message);
             }
         } catch (error) {
             console.error('Error checking verification:', error);
@@ -279,15 +327,28 @@ export default function BrandVerification() {
     const handleSaveSenderDetails = async (e) => {
         e.preventDefault();
 
-        if (!fromName || !replyToEmail) {
+        if (!fromName || !fromEmail || !replyToEmail) {
             setError('Please fill in all sender details fields');
             return;
         }
 
-        // Basic email validation for reply-to
+        // Basic email validation for both email fields
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(fromEmail)) {
+            setError('Please enter a valid sender email address');
+            return;
+        }
+
         if (!emailPattern.test(replyToEmail)) {
             setError('Please enter a valid reply-to email address');
+            return;
+        }
+
+        // Validate that email domains match the verified domain
+        const fromEmailDomain = fromEmail.split('@')[1];
+
+        if (fromEmailDomain !== domain) {
+            setError(`Sender email must use your verified domain: ${domain}`);
             return;
         }
 
@@ -303,6 +364,7 @@ export default function BrandVerification() {
                 },
                 body: JSON.stringify({
                     fromName,
+                    fromEmail,
                     replyToEmail,
                     status: 'active', // Update status to active since all verification is complete
                 }),
@@ -325,6 +387,16 @@ export default function BrandVerification() {
         } finally {
             setIsVerifying(false);
         }
+    };
+
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
+        setSuccess('Copied to clipboard!');
+
+        // Clear success message after 2 seconds
+        setTimeout(() => {
+            setSuccess('');
+        }, 2000);
     };
 
     const renderStep = () => {
@@ -456,38 +528,151 @@ export default function BrandVerification() {
                     <div className="verification-step">
                         <div className="step-header">
                             <div className="step-icon">
-                                <Mail size={20} />
+                                <Globe size={20} />
                             </div>
-                            <h2>Step 2: Verify Sender Email</h2>
+                            <h2>Step 2: Verify Domain</h2>
                         </div>
 
                         <div className="step-content">
-                            <p className="step-description">To comply with email sending best practices, you need to verify the email address you'll use as your sender email. Amazon SES will send a verification link to this address.</p>
+                            <p className="step-description">To comply with email sending best practices and achieve better deliverability, you need to verify a domain with Amazon SES. This will allow you to send emails from any address at this domain.</p>
 
-                            <form
-                                onSubmit={handleVerifyEmail}
-                                className="verification-form"
-                            >
-                                <div className="form-group">
-                                    <label htmlFor="fromEmail">Sender Email Address</label>
-                                    <input
-                                        type="email"
-                                        id="fromEmail"
-                                        value={fromEmail}
-                                        onChange={(e) => setFromEmail(e.target.value)}
-                                        placeholder="no-reply@yourdomain.com"
-                                        disabled={isVerifying || emailVerified}
-                                    />
-                                    <p className="hint-text">This is the email address that will appear in the "From" field of your campaigns.</p>
-                                </div>
+                            {!verificationSent ? (
+                                <form
+                                    onSubmit={handleVerifyDomain}
+                                    className="verification-form"
+                                >
+                                    <div className="form-group">
+                                        <label htmlFor="domain">Domain Name</label>
+                                        <input
+                                            type="text"
+                                            id="domain"
+                                            value={domain}
+                                            onChange={(e) => setDomain(e.target.value)}
+                                            placeholder="yourdomain.com"
+                                            disabled={isVerifying}
+                                        />
+                                        <p className="hint-text">Enter a domain that you control, without the 'www' prefix (e.g., yourdomain.com).</p>
+                                    </div>
 
-                                <div className="form-actions">
-                                    {!emailVerified ? (
-                                        <>
+                                    <div className="form-actions">
+                                        <button
+                                            type="submit"
+                                            className="btn-primary"
+                                            disabled={isVerifying}
+                                        >
+                                            {isVerifying ? (
+                                                <>
+                                                    <Loader
+                                                        size={16}
+                                                        className="spinner"
+                                                    />
+                                                    Verifying...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Globe size={16} />
+                                                    Verify Domain
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            ) : (
+                                <>
+                                    <div className="dns-verification-container">
+                                        <div className="verification-status-info">
+                                            <h3>DNS Verification Status</h3>
+                                            <div className="status-indicators">
+                                                <div className={`status-indicator ${domainVerified ? 'verified' : 'pending'}`}>
+                                                    <div className="indicator-icon">{domainVerified ? <CheckCircle size={18} /> : <AlertCircle size={18} />}</div>
+                                                    <div className="indicator-label">
+                                                        <span className="label">Domain Verification:</span>
+                                                        <span className="status">{domainVerified ? 'Verified' : 'Pending'}</span>
+                                                    </div>
+                                                </div>
+                                                <div className={`status-indicator ${dkimVerified ? 'verified' : 'pending'}`}>
+                                                    <div className="indicator-icon">{dkimVerified ? <CheckCircle size={18} /> : <AlertCircle size={18} />}</div>
+                                                    <div className="indicator-label">
+                                                        <span className="label">DKIM Verification:</span>
+                                                        <span className="status">{dkimVerified ? 'Verified' : 'Pending'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="dns-records">
+                                            <div className="record-title">
+                                                <h4>Domain Verification Record (TXT)</h4>
+                                            </div>
+                                            <div className="record-item">
+                                                <div className="record-type">TXT</div>
+                                                <div className="record-host">_amazonses.{domain}</div>
+                                                <div className="record-value">{verificationToken}</div>
+                                                <button
+                                                    className="btn-copy"
+                                                    onClick={() => copyToClipboard(verificationToken)}
+                                                    title="Copy to clipboard"
+                                                >
+                                                    <Copy size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="dns-records">
+                                            <div className="record-title">
+                                                <h4>DKIM Verification Records (CNAME)</h4>
+                                            </div>
+                                            {dkimTokens && dkimTokens.length > 0 ? (
+                                                dkimTokens.map((token, index) => (
+                                                    <div
+                                                        className="record-item"
+                                                        key={index}
+                                                    >
+                                                        <div className="record-type">CNAME</div>
+                                                        <div className="record-host">
+                                                            {token}._domainkey.{domain}
+                                                        </div>
+                                                        <div className="record-value">{token}.dkim.amazonses.com</div>
+                                                        <button
+                                                            className="btn-copy"
+                                                            onClick={() => copyToClipboard(`${token}.dkim.amazonses.com`)}
+                                                            title="Copy to clipboard"
+                                                        >
+                                                            <Copy size={14} />
+                                                        </button>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="record-empty">
+                                                    <p>No DKIM tokens available. This may be due to a region where DKIM is not automatically enabled.</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="info-box">
+                                            <Info size={18} />
+                                            <div>
+                                                <p>
+                                                    <strong>How to add these DNS records:</strong>
+                                                </p>
+                                                <ol>
+                                                    <li>Log in to your domain registrar or DNS provider (e.g., GoDaddy, Cloudflare, Route 53)</li>
+                                                    <li>Navigate to the DNS management section for your domain</li>
+                                                    <li>Add all the records listed above with their exact values</li>
+                                                    <li>DNS changes can take up to 72 hours to propagate, though they often take effect within a few hours</li>
+                                                </ol>
+                                                <p>
+                                                    <strong>Note:</strong> DNS providers may have different interfaces for adding records. Consult your provider's documentation if needed.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="verification-actions">
                                             <button
-                                                type="submit"
+                                                type="button"
                                                 className="btn-primary"
-                                                disabled={isVerifying || verificationSent}
+                                                onClick={handleCheckVerification}
+                                                disabled={isVerifying}
                                             >
                                                 {isVerifying ? (
                                                     <>
@@ -495,52 +680,24 @@ export default function BrandVerification() {
                                                             size={16}
                                                             className="spinner"
                                                         />
-                                                        Sending...
-                                                    </>
-                                                ) : verificationSent ? (
-                                                    <>
-                                                        <Mail size={16} />
-                                                        Verification Email Sent
+                                                        Checking...
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <Mail size={16} />
-                                                        Send Verification Email
+                                                        <RefreshCw size={16} />
+                                                        Check Verification Status
                                                     </>
                                                 )}
                                             </button>
+                                        </div>
+                                    </div>
 
-                                            {verificationSent && (
-                                                <button
-                                                    type="button"
-                                                    className="btn-secondary"
-                                                    onClick={handleCheckVerification}
-                                                    disabled={isVerifying}
-                                                >
-                                                    {isVerifying ? (
-                                                        <>
-                                                            <Loader
-                                                                size={16}
-                                                                className="spinner"
-                                                            />
-                                                            Checking...
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Check size={16} />
-                                                            Check Verification Status
-                                                        </>
-                                                    )}
-                                                </button>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <>
+                                    {domainVerified && dkimVerified && (
+                                        <div className="verification-success-container">
                                             <div className="verification-success">
-                                                <CheckCircle size={18} />
-                                                <span>Email verified successfully!</span>
+                                                <CheckCircle size={20} />
+                                                <span>Domain verification complete!</span>
                                             </div>
-
                                             <button
                                                 type="button"
                                                 className="btn-primary"
@@ -549,29 +706,15 @@ export default function BrandVerification() {
                                                 Continue to Next Step
                                                 <ArrowRight size={16} />
                                             </button>
-                                        </>
+                                        </div>
                                     )}
-                                </div>
-                            </form>
-
-                            <div className="info-box">
-                                <Info size={18} />
-                                <div>
-                                    <p>
-                                        <strong>Important notes about email verification:</strong>
-                                    </p>
-                                    <ul>
-                                        <li>You must click the verification link in the email within 24 hours</li>
-                                        <li>Check your spam folder if you don't see the verification email</li>
-                                        <li>In production, you should use an email address from your own domain</li>
-                                        <li>If using a domain email, you may need to configure DKIM/SPF records</li>
-                                    </ul>
-                                </div>
-                            </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 );
 
+            // Case 3 section
             case 3:
                 return (
                     <div className="verification-step">
@@ -603,16 +746,47 @@ export default function BrandVerification() {
                                 </div>
 
                                 <div className="form-group">
+                                    <label htmlFor="fromEmail">Sender Email Address</label>
+                                    <div className="domain-input-wrapper">
+                                        <input
+                                            type="text"
+                                            id="fromEmail"
+                                            value={fromEmail.split('@')[0] || ''}
+                                            onChange={(e) => setFromEmail(`${e.target.value}@${domain}`)}
+                                            placeholder="noreply"
+                                            disabled={isVerifying}
+                                        />
+                                        <span className="domain-suffix">@{domain}</span>
+                                    </div>
+                                    <p className="hint-text">This is the email address that will appear in the "From" field of your campaigns.</p>
+                                </div>
+
+                                <div className="form-group">
                                     <label htmlFor="replyToEmail">Reply-To Email Address</label>
                                     <input
                                         type="email"
                                         id="replyToEmail"
                                         value={replyToEmail}
                                         onChange={(e) => setReplyToEmail(e.target.value)}
-                                        placeholder="support@yourdomain.com"
+                                        placeholder={`support@${domain}`}
                                         disabled={isVerifying}
                                     />
                                     <p className="hint-text">If recipients reply to your campaigns, their emails will go to this address.</p>
+                                </div>
+
+                                <div className="info-box">
+                                    <Info size={18} />
+                                    <div>
+                                        <p>
+                                            <strong>Important notes about sender details:</strong>
+                                        </p>
+                                        <ul>
+                                            <li>Your sender email must use your verified domain ({domain})</li>
+                                            <li>Choose a clear and recognizable sender name to improve open rates</li>
+                                            <li>The reply-to email can be any valid email address you have access to</li>
+                                            <li>Using a functional reply-to address (e.g., support@yourdomain.com) allows customers to respond to your campaigns</li>
+                                        </ul>
+                                    </div>
                                 </div>
 
                                 <div className="form-actions">
@@ -659,7 +833,7 @@ export default function BrandVerification() {
 
                 <div className={`step-item ${currentStep >= 2 ? 'active' : ''} ${step2Complete ? 'completed' : ''}`}>
                     <div className="step-number">{step2Complete ? <Check size={16} /> : '2'}</div>
-                    <div className="step-label">Verify Email</div>
+                    <div className="step-label">Verify Domain</div>
                 </div>
 
                 <div className="step-connector"></div>

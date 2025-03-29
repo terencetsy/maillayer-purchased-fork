@@ -298,12 +298,6 @@ async function connectToDB() {
 
         // Define models after successful connection
         models = defineModels();
-        console.log('Models defined:', {
-            Brand: !!models.Brand,
-            Campaign: !!models.Campaign,
-            Contact: !!models.Contact,
-            TrackingEvent: !!models.TrackingEvent,
-        });
 
         return true;
     } catch (error) {
@@ -439,7 +433,6 @@ async function handleSESNotification(notification) {
         return;
     }
 
-    console.log('Received SES notification:', notification.notificationType);
     const { Campaign, Contact } = getModels();
 
     try {
@@ -630,7 +623,6 @@ async function initializeQueues() {
     // Complete send-campaign handler with email tracking
     emailCampaignQueue.process('send-campaign', async (job) => {
         const { campaignId, brandId, userId, contactListIds, fromName, fromEmail, replyTo, subject } = job.data;
-        console.log(job.data);
         try {
             console.log(`Starting to process campaign: ${campaignId}`);
 
@@ -665,11 +657,9 @@ async function initializeQueues() {
 
             // Get brand
             const brand = await Brand.findById(brandId);
-            console.log('brand', brand);
             if (!brand) {
                 throw new Error(`Brand not found: ${brandId}`);
             }
-            console.log('brand.awsRegion', brand);
             // Check if brand has SES credentials
             if (!brand.awsRegion || !brand.awsAccessKey || !brand.awsSecretKey) {
                 throw new Error('AWS SES credentials not configured for this brand');

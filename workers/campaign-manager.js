@@ -11,7 +11,6 @@ function getRedisUrl() {
 
 // Use the Redis URL directly
 const redisUrl = getRedisUrl();
-console.log('Campaign manager using Redis URL:', redisUrl);
 
 // Create Redis clients for Bull with proper error handling
 const createRedisClient = () => {

@@ -24,7 +24,6 @@ export default async function handler(req, res) {
         if (!brandId || !id) {
             return res.status(400).json({ message: 'Missing required parameters' });
         }
-        console.log(brandId);
         // Check if the brand belongs to the user
         const brand = await getBrandById(brandId);
         if (!brand) {
@@ -79,11 +78,9 @@ export default async function handler(req, res) {
                 if (fromEmail) updateData.fromEmail = fromEmail;
                 if (replyTo) updateData.replyTo = replyTo;
                 if (contactListIds) updateData.contactListIds = contactListIds;
-                console.log(brand);
                 // Sending or scheduling functionality
                 if (status === 'sending' || status === 'scheduled') {
                     // Check if SES details exist in the brand
-                    console.log('-----', brand);
                     if (brand.status !== 'active') {
                         return res.status(400).json({ message: 'AWS SES credentials not configured for this brand' });
                     }

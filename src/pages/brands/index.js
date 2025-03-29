@@ -25,8 +25,6 @@ export default function Dashboard() {
         }
 
         if (status === 'authenticated' && session?.user) {
-            console.log('Session:', session);
-
             // Use session data as a basic fallback
             setUserProfile({
                 name: session.user.name || '',
@@ -51,7 +49,6 @@ export default function Dashboard() {
             }
 
             const data = await res.json();
-            console.log('Profile data:', data);
             setUserProfile(data);
         } catch (error) {
             console.error('Error fetching profile:', error);
@@ -70,7 +67,6 @@ export default function Dashboard() {
             }
 
             const data = await res.json();
-            console.log('Brands data:', data);
             setBrands(data);
 
             // Automatically show create form if no brands exist

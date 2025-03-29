@@ -13,7 +13,6 @@ import { uploadImageToSpaces } from '@/lib/imageUploadService';
 import EditorToolbar from './EditorToolbar';
 import { ImageUpload } from './ImageUploadExtension';
 import { ImageResize } from './ImageResizeExtension';
-import styles from '@/styles/TipTapEditor.module.scss';
 
 export default function RichTextEditor({ value = '', onChange, placeholder = 'Start writing or drag an image...', editable = true }) {
     const [isMounted, setIsMounted] = useState(false);
@@ -23,11 +22,9 @@ export default function RichTextEditor({ value = '', onChange, placeholder = 'St
         try {
             // Upload the image to DigitalOcean Spaces
             const imageUrl = await uploadImageToSpaces(file);
-            console.log('Image uploaded successfully', 'success');
             return imageUrl;
         } catch (error) {
             console.log('Failed to upload image. Please try again.', 'error');
-            console.error('Image upload error:', error);
             throw error;
         }
     };
@@ -185,30 +182,30 @@ export default function RichTextEditor({ value = '', onChange, placeholder = 'St
 
     // Handle drag and drop behaviors for better user experience
     const handleDrop = (e) => {
-        // Editor&apos; extensions will handle the drop event
+        // Editor's extensions will handle the drop event
     };
 
     // Handle paste events
     const handlePaste = (e) => {
-        // Editor&apos; extensions will handle the paste event
+        // Editor's extensions will handle the paste event
     };
 
     if (!isMounted) {
-        return <div className={styles.editorLoading}>Loading editor...</div>;
+        return <div className="editorLoading">Loading editor...</div>;
     }
 
     return (
-        <div className={styles.editorContainer}>
+        <div className="editorContainer">
             {editor && <EditorToolbar editor={editor} />}
 
             <div
-                className={`${styles.editorWrapper} ${styles.resizeHandleWrapper}`}
+                className="editorWrapper resizeHandleWrapper"
                 onDrop={handleDrop}
                 onPaste={handlePaste}
             >
                 <EditorContent
                     editor={editor}
-                    className={styles.tipTapEditor}
+                    className="tipTapEditor"
                 />
             </div>
         </div>

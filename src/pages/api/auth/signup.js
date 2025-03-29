@@ -40,7 +40,6 @@ export default async function handler(req, res) {
             });
 
             await user.save();
-            console.log('User created successfully:', user._id);
 
             return res.status(201).json({
                 message: 'User created successfully',

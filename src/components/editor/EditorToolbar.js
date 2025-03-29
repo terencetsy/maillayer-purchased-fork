@@ -1,7 +1,6 @@
 // src/components/editor/EditorToolbar.js
 import React, { useEffect, useState } from 'react';
 import { Bold, Italic, Heading2, Heading3, List, ListOrdered, Link as LinkIcon, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, MousePointer, Square, Maximize, Minimize, Type } from 'lucide-react';
-import styles from '@/styles/TipTapEditor.module.scss';
 
 const FONT_OPTIONS = [
     { label: 'Arial', value: 'Arial, sans-serif' },
@@ -143,11 +142,11 @@ export default function EditorToolbar({ editor }) {
     };
 
     return (
-        <div className={styles.editorToolbar}>
+        <div className="editorToolbar">
             {/* Font Family Dropdown */}
-            <div className={styles.fontFamilyContainer}>
+            <div className="fontFamilyContainer">
                 <select
-                    className={styles.fontFamilySelect}
+                    className="fontFamilySelect"
                     value={currentFont}
                     onChange={(e) => setFont(e.target.value)}
                 >
@@ -163,11 +162,11 @@ export default function EditorToolbar({ editor }) {
                 </select>
             </div>
 
-            <div className={styles.toolbarDivider}></div>
+            <div className="toolbarDivider"></div>
 
             <button
                 onClick={() => editor.chain().focus().toggleBold().run()}
-                className={`${styles.toolbarButton} ${editor.isActive('bold') ? styles.isActive : ''}`}
+                className={`toolbarButton ${editor.isActive('bold') ? 'isActive' : ''}`}
                 title="Bold"
             >
                 <Bold size={16} />
@@ -175,17 +174,17 @@ export default function EditorToolbar({ editor }) {
 
             <button
                 onClick={() => editor.chain().focus().toggleItalic().run()}
-                className={`${styles.toolbarButton} ${editor.isActive('italic') ? styles.isActive : ''}`}
+                className={`toolbarButton ${editor.isActive('italic') ? 'isActive' : ''}`}
                 title="Italic"
             >
                 <Italic size={16} />
             </button>
 
-            <div className={styles.toolbarDivider}></div>
+            <div className="toolbarDivider"></div>
 
             <button
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                className={`${styles.toolbarButton} ${editor.isActive('heading', { level: 2 }) ? styles.isActive : ''}`}
+                className={`toolbarButton ${editor.isActive('heading', { level: 2 }) ? 'isActive' : ''}`}
                 title="Heading 2"
             >
                 <Heading2 size={16} />
@@ -193,17 +192,17 @@ export default function EditorToolbar({ editor }) {
 
             <button
                 onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                className={`${styles.toolbarButton} ${editor.isActive('heading', { level: 3 }) ? styles.isActive : ''}`}
+                className={`toolbarButton ${editor.isActive('heading', { level: 3 }) ? 'isActive' : ''}`}
                 title="Heading 3"
             >
                 <Heading3 size={16} />
             </button>
 
-            <div className={styles.toolbarDivider}></div>
+            <div className="toolbarDivider"></div>
 
             <button
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
-                className={`${styles.toolbarButton} ${editor.isActive('bulletList') ? styles.isActive : ''}`}
+                className={`toolbarButton ${editor.isActive('bulletList') ? 'isActive' : ''}`}
                 title="Bullet List"
             >
                 <List size={16} />
@@ -211,17 +210,17 @@ export default function EditorToolbar({ editor }) {
 
             <button
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                className={`${styles.toolbarButton} ${editor.isActive('orderedList') ? styles.isActive : ''}`}
+                className={`toolbarButton ${editor.isActive('orderedList') ? 'isActive' : ''}`}
                 title="Ordered List"
             >
                 <ListOrdered size={16} />
             </button>
 
-            <div className={styles.toolbarDivider}></div>
+            <div className="toolbarDivider"></div>
 
             <button
                 onClick={setLink}
-                className={`${styles.toolbarButton} ${editor.isActive('link') ? styles.isActive : ''}`}
+                className={`toolbarButton ${editor.isActive('link') ? 'isActive' : ''}`}
                 title="Link"
             >
                 <LinkIcon size={16} />
@@ -229,17 +228,17 @@ export default function EditorToolbar({ editor }) {
 
             <button
                 onClick={addImage}
-                className={styles.toolbarButton}
+                className="toolbarButton"
                 title="Image"
             >
                 <ImageIcon size={16} />
             </button>
 
-            <div className={styles.toolbarDivider}></div>
+            <div className="toolbarDivider"></div>
 
             <button
                 onClick={() => editor.chain().focus().setTextAlign('left').run()}
-                className={`${styles.toolbarButton} ${editor.isActive({ textAlign: 'left' }) ? styles.isActive : ''}`}
+                className={`toolbarButton ${editor.isActive({ textAlign: 'left' }) ? 'isActive' : ''}`}
                 title="Align Left"
             >
                 <AlignLeft size={16} />
@@ -247,7 +246,7 @@ export default function EditorToolbar({ editor }) {
 
             <button
                 onClick={() => editor.chain().focus().setTextAlign('center').run()}
-                className={`${styles.toolbarButton} ${editor.isActive({ textAlign: 'center' }) ? styles.isActive : ''}`}
+                className={`toolbarButton ${editor.isActive({ textAlign: 'center' }) ? 'isActive' : ''}`}
                 title="Align Center"
             >
                 <AlignCenter size={16} />
@@ -255,17 +254,17 @@ export default function EditorToolbar({ editor }) {
 
             <button
                 onClick={() => editor.chain().focus().setTextAlign('right').run()}
-                className={`${styles.toolbarButton} ${editor.isActive({ textAlign: 'right' }) ? styles.isActive : ''}`}
+                className={`toolbarButton ${editor.isActive({ textAlign: 'right' }) ? 'isActive' : ''}`}
                 title="Align Right"
             >
                 <AlignRight size={16} />
             </button>
 
-            <div className={styles.toolbarDivider}></div>
+            <div className="toolbarDivider"></div>
 
             <button
                 onClick={addButton}
-                className={styles.toolbarButton}
+                className="toolbarButton"
                 title="Insert Button"
             >
                 <Square size={16} />
@@ -274,11 +273,11 @@ export default function EditorToolbar({ editor }) {
             {/* Image resize controls - only shown when an image is selected */}
             {showImageControls && (
                 <>
-                    <div className={styles.toolbarDivider}></div>
+                    <div className="toolbarDivider"></div>
 
                     <button
                         onClick={() => resizeImage('small')}
-                        className={styles.toolbarButton}
+                        className="toolbarButton"
                         title="Small Image (300px)"
                     >
                         <Minimize size={16} />
@@ -286,7 +285,7 @@ export default function EditorToolbar({ editor }) {
 
                     <button
                         onClick={() => resizeImage('medium')}
-                        className={styles.toolbarButton}
+                        className="toolbarButton"
                         title="Medium Image (500px)"
                     >
                         <ImageIcon size={16} />
@@ -294,7 +293,7 @@ export default function EditorToolbar({ editor }) {
 
                     <button
                         onClick={() => resizeImage('large')}
-                        className={styles.toolbarButton}
+                        className="toolbarButton"
                         title="Large Image (800px)"
                     >
                         <Maximize size={16} />
@@ -302,7 +301,7 @@ export default function EditorToolbar({ editor }) {
 
                     <button
                         onClick={() => resizeImage('custom')}
-                        className={styles.toolbarButton}
+                        className="toolbarButton"
                         title="Custom Size"
                     >
                         <MousePointer size={16} />
@@ -310,7 +309,7 @@ export default function EditorToolbar({ editor }) {
 
                     <button
                         onClick={() => resizeImage('reset')}
-                        className={styles.toolbarButton}
+                        className="toolbarButton"
                         title="Reset to Original Size"
                     >
                         <svg

@@ -11,7 +11,6 @@ export default async function handler(req, res) {
 
         // Get session directly from server
         const session = await getServerSession(req, res, authOptions);
-        console.log('Server session:', session);
 
         if (!session || !session.user) {
             return res.status(401).json({ message: 'Unauthorized - No session' });

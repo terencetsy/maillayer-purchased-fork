@@ -42,7 +42,6 @@ export const authOptions = {
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
-                console.log('JWT callback - adding user data to token:', { id: user.id, role: user.role });
             }
             return token;
         },
@@ -50,7 +49,6 @@ export const authOptions = {
             if (token) {
                 session.user.id = token.id;
                 session.user.role = token.role;
-                console.log('Session callback - adding token data to session:', { id: token.id, role: token.role });
             }
             return session;
         },

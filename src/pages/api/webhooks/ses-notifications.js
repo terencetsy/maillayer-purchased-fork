@@ -51,7 +51,8 @@ export default async function handler(req, res) {
                     contactId = mailData.tags.contactId[0];
                 }
             }
-
+            console.log('campaignId:', campaignId);
+            console.log('contactId:', contactId);
             if (!campaignId || !contactId) {
                 console.warn('Missing campaignId or contactId in notification:', messageContent);
                 return res.status(200).json({ message: 'Notification processed (missing IDs)' });

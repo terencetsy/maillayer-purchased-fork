@@ -5,6 +5,24 @@ import Contact from '@/models/Contact';
 import Campaign from '@/models/Campaign';
 import mongoose from 'mongoose';
 
+// Function to extract IDs from message ID
+function extractIdsFromMessageId(messageId) {
+    if (!messageId) return { campaignId: null, contactId: null };
+
+    // Extract using regex pattern matching
+    const pattern = /campaign-([a-f0-9]+)-contact-([a-f0-9]+)@/i;
+    const matches = messageId.match(pattern);
+
+    if (matches && matches.length >= 3) {
+        return {
+            campaignId: matches[1],
+            contactId: matches[2],
+        };
+    }
+
+    return { campaignId: null, contactId: null };
+}
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method not allowed' });
@@ -15,7 +33,13 @@ export default async function handler(req, res) {
         await connectToDatabase();
 
         // Parse the SNS message
-        const snsMessage = JSON.parse(req.body);
+        let snsMessage;
+        try {
+            snsMessage = JSON.parse(req.body);
+        } catch (error) {
+            console.log('Raw request body:', req.body);
+            return res.status(400).json({ message: 'Invalid SNS message format' });
+        }
 
         // Handle subscription confirmation
         if (snsMessage.Type === 'SubscriptionConfirmation') {
@@ -33,18 +57,37 @@ export default async function handler(req, res) {
 
         // Handle notification messages
         if (snsMessage.Type === 'Notification') {
-            const messageContent = JSON.parse(snsMessage.Message);
+            console.log('Raw SNS Message:', snsMessage.Message);
+
+            let messageContent;
+            try {
+                messageContent = JSON.parse(snsMessage.Message);
+            } catch (error) {
+                console.log('Message is not valid JSON, treating as string:', snsMessage.Message);
+                return res.status(200).json({ message: 'Non-JSON notification processed' });
+            }
+
             const mailData = messageContent.mail;
 
             if (!mailData) {
                 return res.status(200).json({ message: 'Notification processed (no mail data)' });
             }
 
-            // Extract campaign ID and contact ID from message tags
+            // Extract campaign ID and contact ID from message ID
             let campaignId, contactId;
-            console.log(JSON.stringify(mailData));
-            console.log(mailData.tags);
-            if (mailData.tags) {
+
+            // Log the messageId for debugging
+            console.log('Message ID:', mailData.messageId);
+
+            // Primary method: Extract from messageId
+            if (mailData.messageId) {
+                const extracted = extractIdsFromMessageId(mailData.messageId);
+                campaignId = extracted.campaignId;
+                contactId = extracted.contactId;
+            }
+
+            // Fallback: Check tags (if available)
+            if ((!campaignId || !contactId) && mailData.tags) {
                 if (mailData.tags.campaignId) {
                     campaignId = mailData.tags.campaignId[0];
                 }
@@ -52,10 +95,12 @@ export default async function handler(req, res) {
                     contactId = mailData.tags.contactId[0];
                 }
             }
-            console.log('campaignId:', campaignId);
-            console.log('contactId:', contactId);
+
+            console.log('Extracted campaignId:', campaignId);
+            console.log('Extracted contactId:', contactId);
+
             if (!campaignId || !contactId) {
-                console.warn('Missing campaignId or contactId in notification:', messageContent);
+                console.warn('Missing campaignId or contactId in notification:', JSON.stringify(mailData, null, 2));
                 return res.status(200).json({ message: 'Notification processed (missing IDs)' });
             }
 
@@ -79,7 +124,7 @@ export default async function handler(req, res) {
                 const isPermanent = bounceType === 'Permanent';
 
                 if (isPermanent) {
-                    // Update contact status directly using the contactId from tags
+                    // Update contact status directly using the contactId from message ID
                     await Contact.findByIdAndUpdate(contactId, {
                         isUnsubscribed: true,
                         unsubscribedAt: new Date(),
@@ -119,7 +164,7 @@ export default async function handler(req, res) {
                     contactId,
                 });
 
-                // Update contact directly using the contactId from tags
+                // Update contact directly using the contactId from message ID
                 await Contact.findByIdAndUpdate(contactId, {
                     isUnsubscribed: true,
                     unsubscribedAt: new Date(),

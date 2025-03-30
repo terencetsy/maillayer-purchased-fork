@@ -136,7 +136,7 @@ export default async function handler(req, res) {
                 });
                 return res.status(200).json({ message: 'Notification processed (missing IDs)' });
             }
-
+            console.log(messageContent);
             const notificationType = messageContent.notificationType;
             console.log(`Processing ${notificationType} notification for campaign ${campaignId}, contact ${contactId}`);
 

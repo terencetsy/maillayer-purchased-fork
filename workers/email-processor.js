@@ -814,17 +814,6 @@ async function initializeQueues() {
                                                         Data: textContent || 'Empty campaign content',
                                                     },
                                                 },
-                                                // Add custom headers that will be included in bounce notifications
-                                                Headers: [
-                                                    {
-                                                        Name: 'X-Campaign-ID',
-                                                        Value: campaignId.toString(),
-                                                    },
-                                                    {
-                                                        Name: 'X-Contact-ID',
-                                                        Value: contact._id.toString(),
-                                                    },
-                                                ],
                                             },
                                             ReplyToAddresses: [replyTo || fromEmail],
                                             // Configure feedback notifications

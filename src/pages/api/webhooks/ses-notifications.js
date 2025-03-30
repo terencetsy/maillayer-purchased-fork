@@ -53,123 +53,87 @@ export default async function handler(req, res) {
                 return res.status(200).json({ message: 'Notification processed (no mail data)' });
             }
 
-            // Log mail data structure for debugging
-            console.log(
-                'Mail data structure:',
-                JSON.stringify({
-                    messageId: mailData.messageId,
-                    hasHeaders: !!mailData.headers,
-                    hasCommonHeaders: !!mailData.commonHeaders,
-                    hasTags: !!mailData.tags,
-                    tagKeys: mailData.tags ? Object.keys(mailData.tags) : [],
-                    destination: mailData.destination ? mailData.destination.slice(0, 1) : [],
-                })
-            );
+            // Log the mail structure for debugging
+            console.log('Mail data structure:', {
+                messageId: mailData.messageId,
+                hasTags: !!mailData.tags,
+                tagCount: mailData.tags ? Object.keys(mailData.tags).length : 0,
+            });
 
-            // Extract campaign ID and contact ID from message tags
+            // Extract campaign ID and contact ID from message tags - AWS SDK v3 format
             let campaignId, contactId;
 
-            // Check for tags directly in the mail object (primary location)
+            // Primary method: Extract from tags (SDK v3 format)
             if (mailData.tags) {
-                // Format: {tags: {campaignId: ['abc123'], contactId: ['def456']}}
+                // Format expected with SDK v3: {tags: {campaignId: ['abc123'], contactId: ['def456']}}
                 if (mailData.tags.campaignId && mailData.tags.campaignId.length > 0) {
                     campaignId = mailData.tags.campaignId[0];
+                    console.log('Found campaignId in tags:', campaignId);
                 }
                 if (mailData.tags.contactId && mailData.tags.contactId.length > 0) {
                     contactId = mailData.tags.contactId[0];
+                    console.log('Found contactId in tags:', contactId);
                 }
-
-                console.log('Found tags in mailData.tags:', { campaignId, contactId });
             }
 
-            // If not found in tags, try looking in headers
+            // If we couldn't find the IDs in tags, look for them in other parts of the message
             if (!campaignId || !contactId) {
-                if (mailData.headers && Array.isArray(mailData.headers)) {
-                    // Look through headers for X-SES-* headers that might contain our tags
-                    for (const header of mailData.headers) {
-                        if (header.name === 'X-Campaign-ID' && header.value) {
-                            campaignId = header.value;
-                        } else if (header.name === 'X-Contact-ID' && header.value) {
-                            contactId = header.value;
-                        } else if (header.name === 'X-SES-Tag-campaignId' && header.value) {
-                            campaignId = header.value;
-                        } else if (header.name === 'X-SES-Tag-contactId' && header.value) {
-                            contactId = header.value;
-                        }
-                    }
-
-                    if (campaignId || contactId) {
-                        console.log('Found IDs in headers:', { campaignId, contactId });
-                    }
-                }
-            }
-
-            // Try to extract from message ID if still not found
-            if (!campaignId) {
-                const messageIdPattern = /campaign[-_]([a-f0-9]+)/i;
-
-                // Check in the messageId
+                // Search in message ID
                 if (mailData.messageId) {
-                    const msgIdMatch = mailData.messageId.match(messageIdPattern);
-                    if (msgIdMatch && msgIdMatch[1]) {
-                        campaignId = msgIdMatch[1];
+                    const campaignMatch = mailData.messageId.match(/campaign[-_]([a-f0-9]+)/i);
+                    if (campaignMatch && campaignMatch[1]) {
+                        campaignId = campaignMatch[1];
                         console.log('Extracted campaignId from messageId:', campaignId);
                     }
                 }
 
-                // Check if it's in the subject
-                if (!campaignId && mailData.commonHeaders && mailData.commonHeaders.subject) {
-                    const subjectMatch = mailData.commonHeaders.subject.match(messageIdPattern);
-                    if (subjectMatch && subjectMatch[1]) {
-                        campaignId = subjectMatch[1];
-                        console.log('Extracted campaignId from subject:', campaignId);
+                // Look in destination email for encoded information
+                if (mailData.destination && mailData.destination.length > 0) {
+                    for (const email of mailData.destination) {
+                        // Sometimes IDs are encoded in email addresses (e.g., campaign+123+456@domain.com)
+                        const emailMatch = email.match(/campaign\+([a-f0-9]+)\+([a-f0-9]+)@/i);
+                        if (emailMatch && emailMatch.length >= 3) {
+                            campaignId = emailMatch[1];
+                            contactId = emailMatch[2];
+                            console.log('Extracted IDs from email pattern:', { campaignId, contactId });
+                            break;
+                        }
                     }
                 }
             }
 
-            // If we found campaignId but not contactId, search for contact by email
-            if (campaignId && !contactId && messageContent.notificationType === 'Bounce') {
-                const recipient = messageContent.bounce.bouncedRecipients[0];
-                if (recipient && recipient.emailAddress) {
-                    try {
-                        // Find contact by email
-                        const contact = await Contact.findOne({ email: recipient.emailAddress });
+            // As a last resort, if we have campaignId but not contactId,
+            // try to look up the contact by email in bounce/complaint recipients
+            if (campaignId && !contactId) {
+                try {
+                    let email = null;
+
+                    if (messageContent.notificationType === 'Bounce' && messageContent.bounce && messageContent.bounce.bouncedRecipients && messageContent.bounce.bouncedRecipients.length > 0) {
+                        email = messageContent.bounce.bouncedRecipients[0].emailAddress;
+                    } else if (messageContent.notificationType === 'Complaint' && messageContent.complaint && messageContent.complaint.complainedRecipients && messageContent.complaint.complainedRecipients.length > 0) {
+                        email = messageContent.complaint.complainedRecipients[0].emailAddress;
+                    }
+
+                    if (email) {
+                        const contact = await Contact.findOne({ email: email });
                         if (contact) {
                             contactId = contact._id.toString();
                             console.log('Found contactId by email lookup:', contactId);
                         }
-                    } catch (err) {
-                        console.error('Error finding contact by email:', err);
                     }
-                }
-            } else if (campaignId && !contactId && messageContent.notificationType === 'Complaint') {
-                const recipient = messageContent.complaint.complainedRecipients[0];
-                if (recipient && recipient.emailAddress) {
-                    try {
-                        const contact = await Contact.findOne({ email: recipient.emailAddress });
-                        if (contact) {
-                            contactId = contact._id.toString();
-                            console.log('Found contactId by email lookup:', contactId);
-                        }
-                    } catch (err) {
-                        console.error('Error finding contact by email:', err);
-                    }
+                } catch (err) {
+                    console.error('Error finding contact by email:', err);
                 }
             }
 
             // Final check if we have both IDs
             if (!campaignId || !contactId) {
-                console.warn(
-                    'Missing campaignId or contactId in notification:',
-                    JSON.stringify({
-                        messageId: mailData.messageId,
-                        source: mailData.source,
-                        destination: mailData.destination,
-                        foundCampaignId: campaignId,
-                        foundContactId: contactId,
-                        notificationType: messageContent.notificationType,
-                    })
-                );
+                console.warn('Missing campaignId or contactId in notification:', {
+                    messageId: mailData.messageId,
+                    foundCampaignId: campaignId || 'missing',
+                    foundContactId: contactId || 'missing',
+                    notificationType: messageContent.notificationType,
+                });
                 return res.status(200).json({ message: 'Notification processed (missing IDs)' });
             }
 

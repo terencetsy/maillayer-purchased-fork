@@ -3,6 +3,7 @@ require('dotenv').config();
 const Bull = require('bull');
 const mongoose = require('mongoose');
 const AWS = require('aws-sdk');
+const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
 const crypto = require('crypto');
 const { RateLimiter } = require('limiter');
 const cheerio = require('cheerio');
@@ -680,10 +681,12 @@ async function initializeQueues() {
             }
 
             // Create SES client using brand credentials directly
-            const ses = new AWS.SES({
-                accessKeyId: brand.awsAccessKey,
-                secretAccessKey: decryptData(brand.awsSecretKey, process.env.ENCRYPTION_KEY),
+            const sesClient = new SESClient({
                 region: brand.awsRegion || 'us-east-1',
+                credentials: {
+                    accessKeyId: brand.awsAccessKey,
+                    secretAccessKey: decryptData(brand.awsSecretKey, process.env.ENCRYPTION_KEY),
+                },
             });
 
             job.progress(15);
@@ -793,11 +796,8 @@ async function initializeQueues() {
                                     // Extract plain text for text-only clients
                                     const textContent = extractTextFromHtml(processedHtml);
 
-                                    const messageId = `campaign-${campaignId}-contact-${contact._id}@${brand.sendingDomain}`;
-
-                                    // Then send the email with headers that include our IDs
-                                    const result = await ses
-                                        .sendEmail({
+                                    const result = await sesClient.send(
+                                        new SendEmailCommand({
                                             Source: `${fromName} <${fromEmail}>`,
                                             Destination: {
                                                 ToAddresses: [contact.firstName ? `${contact.firstName} ${contact.lastName || ''} <${contact.email}>`.trim() : contact.email],
@@ -818,7 +818,7 @@ async function initializeQueues() {
                                             ReplyToAddresses: [replyTo || fromEmail],
                                             // Configure feedback notifications
                                             ConfigurationSetName: brand.sesConfigurationSet,
-                                            // Standard tags in AWS SDK v2
+                                            // Tags for tracking
                                             Tags: [
                                                 {
                                                     Name: 'campaignId',
@@ -830,7 +830,7 @@ async function initializeQueues() {
                                                 },
                                             ],
                                         })
-                                        .promise();
+                                    );
 
                                     // Add delivery event to be tracked
                                     deliveryEvents.push({

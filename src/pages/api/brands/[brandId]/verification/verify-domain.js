@@ -3,7 +3,20 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getBrandById, updateBrand } from '@/services/brandService';
-import AWS from 'aws-sdk';
+import {
+    SESClient,
+    GetIdentityVerificationAttributesCommand,
+    VerifyDomainIdentityCommand,
+    VerifyDomainDkimCommand,
+    GetIdentityDkimAttributesCommand,
+    DescribeConfigurationSetCommand,
+    CreateConfigurationSetCommand,
+    CreateConfigurationSetEventDestinationCommand,
+    SetIdentityFeedbackForwardingEnabledCommand,
+    SetIdentityHeadersInNotificationsEnabledCommand,
+    SetIdentityNotificationAttributesCommand,
+} from '@aws-sdk/client-ses';
+import { SNSClient, ListTopicsCommand, CreateTopicCommand, SubscribeCommand } from '@aws-sdk/client-sns';
 import config from '@/lib/config';
 
 export default async function handler(req, res) {
@@ -55,25 +68,29 @@ export default async function handler(req, res) {
         }
 
         // Initialize AWS SES and SNS clients
-        const ses = new AWS.SES({
+        const sesClient = new SESClient({
             region: brand.awsRegion,
-            accessKeyId: brand.awsAccessKey,
-            secretAccessKey: brand.awsSecretKey,
+            credentials: {
+                accessKeyId: brand.awsAccessKey,
+                secretAccessKey: brand.awsSecretKey,
+            },
         });
 
-        const sns = new AWS.SNS({
+        const snsClient = new SNSClient({
             region: brand.awsRegion,
-            accessKeyId: brand.awsAccessKey,
-            secretAccessKey: brand.awsSecretKey,
+            credentials: {
+                accessKeyId: brand.awsAccessKey,
+                secretAccessKey: brand.awsSecretKey,
+            },
         });
 
         try {
             // First check if the domain is already verified
-            const identityResponse = await ses
-                .getIdentityVerificationAttributes({
+            const identityResponse = await sesClient.send(
+                new GetIdentityVerificationAttributesCommand({
                     Identities: [domain],
                 })
-                .promise();
+            );
 
             const verificationAttributes = identityResponse.VerificationAttributes;
             const verificationStatus = verificationAttributes && verificationAttributes[domain] ? verificationAttributes[domain].VerificationStatus : 'NotVerified';
@@ -81,35 +98,35 @@ export default async function handler(req, res) {
             // If not verified, initiate domain verification
             if (verificationStatus !== 'Success') {
                 // Step 1: Verify domain identity (get the TXT record)
-                await ses
-                    .verifyDomainIdentity({
+                await sesClient.send(
+                    new VerifyDomainIdentityCommand({
                         Domain: domain,
                     })
-                    .promise();
+                );
             }
 
             // Step 2: Enable DKIM for the domain (always try this even if domain is verified)
-            await ses
-                .verifyDomainDkim({
+            await sesClient.send(
+                new VerifyDomainDkimCommand({
                     Domain: domain,
                 })
-                .promise();
+            );
 
             // Get the DKIM configuration
-            const dkimResponse = await ses
-                .getIdentityDkimAttributes({
+            const dkimResponse = await sesClient.send(
+                new GetIdentityDkimAttributesCommand({
                     Identities: [domain],
                 })
-                .promise();
+            );
 
             // Step 3: Set up SNS for bounce tracking
             // Create or find SNS topic
             const topicName = `${domain.replace(/\./g, '-')}-bounces`;
-            const listTopicsResponse = await sns.listTopics().promise();
+            const listTopicsResponse = await snsClient.send(new ListTopicsCommand({}));
             let topicArn = listTopicsResponse.Topics.find((topic) => topic.TopicArn.includes(topicName))?.TopicArn;
 
             if (!topicArn) {
-                const createTopicResponse = await sns.createTopic({ Name: topicName }).promise();
+                const createTopicResponse = await snsClient.send(new CreateTopicCommand({ Name: topicName }));
                 topicArn = createTopicResponse.TopicArn;
             }
 
@@ -118,13 +135,13 @@ export default async function handler(req, res) {
             const webhookEndpoint = `${config.baseUrl}/api/webhooks/ses-notifications`;
 
             try {
-                await sns
-                    .subscribe({
+                await snsClient.send(
+                    new SubscribeCommand({
                         Protocol: 'https',
                         TopicArn: topicArn,
                         Endpoint: webhookEndpoint,
                     })
-                    .promise();
+                );
             } catch (snsError) {
                 console.warn('SNS subscription error (non-fatal):', snsError.message);
                 // Continue even if subscription fails, as it might be due to endpoint not being available yet
@@ -135,14 +152,14 @@ export default async function handler(req, res) {
             let configSetExists = false;
 
             try {
-                await ses
-                    .describeConfigurationSet({
+                await sesClient.send(
+                    new DescribeConfigurationSetCommand({
                         ConfigurationSetName: configurationSetName,
                     })
-                    .promise();
+                );
                 configSetExists = true;
             } catch (err) {
-                if (err.code !== 'ConfigurationSetDoesNotExist') {
+                if (err.name !== 'ConfigurationSetDoesNotExist') {
                     // If it's any other error, just log it and continue
                     console.warn('Configuration set check error (non-fatal):', err.message);
                 }
@@ -151,17 +168,17 @@ export default async function handler(req, res) {
             if (!configSetExists) {
                 try {
                     // Step 1: Create configuration set
-                    await ses
-                        .createConfigurationSet({
+                    await sesClient.send(
+                        new CreateConfigurationSetCommand({
                             ConfigurationSet: {
                                 Name: configurationSetName,
                             },
                         })
-                        .promise();
+                    );
 
                     // Step 2: Create event destination for the configuration set
-                    await ses
-                        .createConfigurationSetEventDestination({
+                    await sesClient.send(
+                        new CreateConfigurationSetEventDestinationCommand({
                             ConfigurationSetName: configurationSetName,
                             EventDestination: {
                                 Name: `${configurationSetName}-sns-destination`,
@@ -172,21 +189,7 @@ export default async function handler(req, res) {
                                 },
                             },
                         })
-                        .promise();
-
-                    // Step 3: Set up tracking options for the configuration set
-                    try {
-                        await ses
-                            .setConfigurationSetTrackingOptions({
-                                ConfigurationSetName: configurationSetName,
-                                TrackingOptions: {
-                                    CustomRedirectDomain: domain,
-                                },
-                            })
-                            .promise();
-                    } catch (trackingError) {
-                        console.warn('Configuration set tracking options error (non-fatal):', trackingError.message);
-                    }
+                    );
                 } catch (configError) {
                     console.warn('Configuration set setup error (non-fatal):', configError.message);
                     // Continue even if config set creation fails
@@ -196,39 +199,39 @@ export default async function handler(req, res) {
             // Additional configurations to ensure tags are included in notifications
             try {
                 // Configure feedback forwarding
-                await ses
-                    .setIdentityFeedbackForwardingEnabled({
+                await sesClient.send(
+                    new SetIdentityFeedbackForwardingEnabledCommand({
                         Identity: domain,
                         ForwardingEnabled: true,
                     })
-                    .promise();
+                );
 
                 // Enable header notifications for this identity
-                await ses
-                    .setIdentityHeadersInNotificationsEnabled({
+                await sesClient.send(
+                    new SetIdentityHeadersInNotificationsEnabledCommand({
                         Identity: domain,
                         Enabled: true,
                         NotificationType: 'Bounce',
                     })
-                    .promise();
+                );
 
-                await ses
-                    .setIdentityHeadersInNotificationsEnabled({
+                await sesClient.send(
+                    new SetIdentityHeadersInNotificationsEnabledCommand({
                         Identity: domain,
                         Enabled: true,
                         NotificationType: 'Complaint',
                     })
-                    .promise();
+                );
 
                 // Enable notification attributes and set SNS topics
-                await ses
-                    .setIdentityNotificationAttributes({
+                await sesClient.send(
+                    new SetIdentityNotificationAttributesCommand({
                         Identity: domain,
                         BounceTopic: topicArn,
                         ComplaintTopic: topicArn,
                         ForwardingEnabled: true,
                     })
-                    .promise();
+                );
             } catch (identityError) {
                 console.warn('Identity configuration error (non-fatal):', identityError.message);
             }
@@ -243,11 +246,11 @@ export default async function handler(req, res) {
             });
 
             // Get the latest verification token
-            const verificationTokenResult = await ses
-                .getIdentityVerificationAttributes({
+            const verificationTokenResult = await sesClient.send(
+                new GetIdentityVerificationAttributesCommand({
                     Identities: [domain],
                 })
-                .promise();
+            );
 
             // Send back all the verification info
             return res.status(200).json({

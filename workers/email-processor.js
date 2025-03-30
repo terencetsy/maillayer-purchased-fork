@@ -816,7 +816,16 @@ async function initializeQueues() {
                                             ReplyToAddresses: [replyTo || fromEmail],
                                             // Configure feedback notifications
                                             ConfigurationSetName: brand.sesConfigurationSet,
-                                            MessageId: `campaign-${campaignId}-contact-${contact._id}@${brand.sendingDomain}`,
+                                            Tags: [
+                                                {
+                                                    Name: 'campaignId',
+                                                    Value: campaignId.toString(),
+                                                },
+                                                {
+                                                    Name: 'contactId',
+                                                    Value: contact._id.toString(),
+                                                },
+                                            ],
                                         })
                                         .promise();
 

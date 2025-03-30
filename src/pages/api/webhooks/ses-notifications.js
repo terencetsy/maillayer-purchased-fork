@@ -42,47 +42,13 @@ export default async function handler(req, res) {
 
             // Extract campaign ID and contact ID from message tags
             let campaignId, contactId;
-            console.log(mailData.tags);
-            if (mailData.tags) {
-                console.log('Found tags in notification:', mailData.tags);
 
-                // Tags might be in different formats depending on SES configuration
-                // Format 1: { campaignId: ['123456'] }
+            if (mailData.tags) {
                 if (mailData.tags.campaignId) {
                     campaignId = mailData.tags.campaignId[0];
                 }
                 if (mailData.tags.contactId) {
                     contactId = mailData.tags.contactId[0];
-                }
-
-                // Format 2: [{ name: 'campaignId', value: '123456' }]
-                if (!campaignId && Array.isArray(mailData.tags)) {
-                    const campaignTag = mailData.tags.find((tag) => tag.name === 'campaignId');
-                    const contactTag = mailData.tags.find((tag) => tag.name === 'contactId');
-
-                    if (campaignTag) campaignId = campaignTag.value;
-                    if (contactTag) contactId = contactTag.value;
-                }
-
-                // Format 3: Try the trackingId tag as fallback
-                if (!campaignId || !contactId) {
-                    let trackingId;
-
-                    if (mailData.tags.trackingId) {
-                        trackingId = mailData.tags.trackingId[0];
-                    } else if (Array.isArray(mailData.tags)) {
-                        const trackingTag = mailData.tags.find((tag) => tag.name === 'trackingId');
-                        if (trackingTag) trackingId = trackingTag.value;
-                    }
-
-                    if (trackingId && trackingId.includes('-')) {
-                        // Parse tracking ID format: c123456-u789012
-                        const parts = trackingId.split('-');
-                        if (parts.length === 2) {
-                            campaignId = parts[0].replace('c', '');
-                            contactId = parts[1].replace('u', '');
-                        }
-                    }
                 }
             }
 

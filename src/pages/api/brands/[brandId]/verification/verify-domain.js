@@ -150,7 +150,7 @@ export default async function handler(req, res) {
 
             if (!configSetExists) {
                 try {
-                    // Create configuration set
+                    // Step 1: Create configuration set
                     await ses
                         .createConfigurationSet({
                             ConfigurationSet: {
@@ -159,7 +159,7 @@ export default async function handler(req, res) {
                         })
                         .promise();
 
-                    // Create event destination for the configuration set with enhanced configuration
+                    // Step 2: Create event destination for the configuration set
                     await ses
                         .createConfigurationSetEventDestination({
                             ConfigurationSetName: configurationSetName,
@@ -174,29 +174,18 @@ export default async function handler(req, res) {
                         })
                         .promise();
 
-                    // Set the configuration set to include all headers and original content
-                    // This is critical to ensure that message tags are passed through
+                    // Step 3: Set up tracking options for the configuration set
                     try {
                         await ses
-                            .updateConfigurationSet({
-                                ConfigurationSet: {
-                                    Name: configurationSetName,
-                                },
-                                EventDestinationDefinition: {
-                                    Enabled: true,
-                                    MatchingEventTypes: ['send', 'delivery', 'bounce', 'complaint', 'reject'],
-                                    SNSDestination: {
-                                        TopicARN: topicArn,
-                                    },
-                                    // Important: Include headers and message tags
-                                    IncludeHeaders: true,
-                                    IncludeOriginalMessage: true,
+                            .setConfigurationSetTrackingOptions({
+                                ConfigurationSetName: configurationSetName,
+                                TrackingOptions: {
+                                    CustomRedirectDomain: domain,
                                 },
                             })
                             .promise();
-                    } catch (configSetUpdateError) {
-                        console.warn('Configuration set update error (non-fatal):', configSetUpdateError.message);
-                        // Continue even if this specific update fails
+                    } catch (trackingError) {
+                        console.warn('Configuration set tracking options error (non-fatal):', trackingError.message);
                     }
                 } catch (configError) {
                     console.warn('Configuration set setup error (non-fatal):', configError.message);
@@ -204,8 +193,17 @@ export default async function handler(req, res) {
                 }
             }
 
-            // Add the identity to notification settings to ensure all attributes are included
+            // Additional configurations to ensure tags are included in notifications
             try {
+                // Configure feedback forwarding
+                await ses
+                    .setIdentityFeedbackForwardingEnabled({
+                        Identity: domain,
+                        ForwardingEnabled: true,
+                    })
+                    .promise();
+
+                // Enable header notifications for this identity
                 await ses
                     .setIdentityHeadersInNotificationsEnabled({
                         Identity: domain,
@@ -222,15 +220,17 @@ export default async function handler(req, res) {
                     })
                     .promise();
 
-                // Also set up feedback forwarding
+                // Enable notification attributes and set SNS topics
                 await ses
-                    .setIdentityFeedbackForwardingEnabled({
+                    .setIdentityNotificationAttributes({
                         Identity: domain,
+                        BounceTopic: topicArn,
+                        ComplaintTopic: topicArn,
                         ForwardingEnabled: true,
                     })
                     .promise();
-            } catch (identitySettingsError) {
-                console.warn('Identity notification settings error (non-fatal):', identitySettingsError.message);
+            } catch (identityError) {
+                console.warn('Identity configuration error (non-fatal):', identityError.message);
             }
 
             // Update sendingDomain and tracking information in brand

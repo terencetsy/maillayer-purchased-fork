@@ -793,7 +793,9 @@ async function initializeQueues() {
                                     // Extract plain text for text-only clients
                                     const textContent = extractTextFromHtml(processedHtml);
 
-                                    // Send the email to this contact
+                                    const messageId = `campaign-${campaignId}-contact-${contact._id}@${brand.sendingDomain}`;
+
+                                    // Then send the email with headers that include our IDs
                                     const result = await ses
                                         .sendEmail({
                                             Source: `${fromName} <${fromEmail}>`,
@@ -812,11 +814,23 @@ async function initializeQueues() {
                                                         Data: textContent || 'Empty campaign content',
                                                     },
                                                 },
+                                                // Add custom headers that will be included in bounce notifications
+                                                Headers: [
+                                                    {
+                                                        Name: 'X-Campaign-ID',
+                                                        Value: campaignId.toString(),
+                                                    },
+                                                    {
+                                                        Name: 'X-Contact-ID',
+                                                        Value: contact._id.toString(),
+                                                    },
+                                                ],
                                             },
                                             ReplyToAddresses: [replyTo || fromEmail],
                                             // Configure feedback notifications
                                             ConfigurationSetName: brand.sesConfigurationSet,
-                                            MessageTags: [
+                                            // Standard tags in AWS SDK v2
+                                            Tags: [
                                                 {
                                                     Name: 'campaignId',
                                                     Value: campaignId.toString(),

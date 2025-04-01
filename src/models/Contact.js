@@ -35,6 +35,13 @@ const ContactSchema = new mongoose.Schema(
             ref: 'User',
             required: true,
         },
+        // New status field to replace isUnsubscribed
+        status: {
+            type: String,
+            enum: ['active', 'unsubscribed', 'bounced', 'complained'],
+            default: 'active',
+        },
+        // Keep these fields for historical reference
         isUnsubscribed: {
             type: Boolean,
             default: false,
@@ -49,6 +56,28 @@ const ContactSchema = new mongoose.Schema(
             default: null,
         },
         unsubscribeReason: {
+            type: String,
+            default: null,
+        },
+        // Add these fields for bounce tracking
+        bouncedAt: {
+            type: Date,
+            default: null,
+        },
+        bounceType: {
+            type: String,
+            default: null,
+        },
+        bounceReason: {
+            type: String,
+            default: null,
+        },
+        // For complaints
+        complainedAt: {
+            type: Date,
+            default: null,
+        },
+        complaintReason: {
             type: String,
             default: null,
         },
@@ -72,6 +101,17 @@ ContactSchema.index({ email: 1, listId: 1 }, { unique: true });
 // Update the 'updatedAt' field on save
 ContactSchema.pre('save', function (next) {
     this.updatedAt = Date.now();
+    next();
+});
+
+// For backward compatibility - ensure isUnsubscribed stays in sync with status
+ContactSchema.pre('save', function (next) {
+    if (this.status === 'unsubscribed' && !this.isUnsubscribed) {
+        this.isUnsubscribed = true;
+        this.unsubscribedAt = this.unsubscribedAt || new Date();
+    } else if (this.status !== 'unsubscribed' && this.isUnsubscribed) {
+        this.status = 'unsubscribed';
+    }
     next();
 });
 

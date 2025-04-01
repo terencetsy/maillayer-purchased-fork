@@ -49,6 +49,7 @@ export default async function handler(req, res) {
             const updatedContact = await Contact.findOneAndUpdate(
                 { _id: contactId, brandId: brandId },
                 {
+                    status: 'unsubscribed',
                     isUnsubscribed: true,
                     unsubscribedAt: new Date(),
                     unsubscribedFromCampaign: campaignId || null,

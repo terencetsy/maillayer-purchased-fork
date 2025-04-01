@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
-import { ArrowLeft, Search, PlusCircle, Upload, Globe, Trash, DownloadCloud, Filter, ChevronDown, X, Users } from 'lucide-react';
+import { ArrowLeft, Search, PlusCircle, Upload, Globe, Trash, DownloadCloud, Filter, ChevronDown, X, Users, RefreshCw, Check, UserCheck, UserX, AlertOctagon } from 'lucide-react';
 import ImportContactsModal from '@/components/contact/ImportContactsModal';
 
 export default function ContactListDetails() {
@@ -16,7 +16,9 @@ export default function ContactListDetails() {
     const [contacts, setContacts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingList, setIsLoadingList] = useState(true);
+    const [isUpdatingContact, setIsUpdatingContact] = useState(false);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -24,10 +26,20 @@ export default function ContactListDetails() {
     const [sortField, setSortField] = useState('email');
     const [sortOrder, setSortOrder] = useState('asc');
     const [showDropdown, setShowDropdown] = useState(false);
+    const [contactStatusCounts, setContactStatusCounts] = useState({
+        active: 0,
+        unsubscribed: 0,
+        bounced: 0,
+        complained: 0,
+    });
+    const [statusFilter, setStatusFilter] = useState('all');
 
     // Modal states
     const [showImportModal, setShowImportModal] = useState(false);
     const [importMethod, setImportMethod] = useState(null);
+    const [showStatusUpdateModal, setShowStatusUpdateModal] = useState(false);
+    const [selectedStatus, setSelectedStatus] = useState('');
+    const [statusUpdateReason, setStatusUpdateReason] = useState('');
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -45,7 +57,7 @@ export default function ContactListDetails() {
         if (contactList) {
             fetchContacts();
         }
-    }, [contactList, currentPage, sortField, sortOrder, searchQuery]);
+    }, [contactList, currentPage, sortField, sortOrder, searchQuery, statusFilter]);
 
     const fetchBrandDetails = async () => {
         try {
@@ -105,6 +117,7 @@ export default function ContactListDetails() {
                 sort: sortField,
                 order: sortOrder,
                 search: searchQuery,
+                status: statusFilter !== 'all' ? statusFilter : '',
             });
 
             const res = await fetch(`/api/brands/${id}/contact-lists/${listId}/contacts?${queryParams}`, {
@@ -118,6 +131,14 @@ export default function ContactListDetails() {
             const data = await res.json();
             setContacts(data.contacts);
             setTotalPages(data.totalPages);
+            setContactStatusCounts(
+                data.statusCounts || {
+                    active: 0,
+                    unsubscribed: 0,
+                    bounced: 0,
+                    complained: 0,
+                }
+            );
         } catch (error) {
             console.error('Error fetching contacts:', error);
             setError(error.message);
@@ -136,6 +157,12 @@ export default function ContactListDetails() {
         fetchContactList();
         fetchContacts();
         setShowImportModal(false);
+        setSuccess('Contacts imported successfully!');
+
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+            setSuccess('');
+        }, 3000);
     };
 
     const handleSort = (field) => {
@@ -163,6 +190,11 @@ export default function ContactListDetails() {
         }
     };
 
+    const handleStatusFilterChange = (newStatus) => {
+        setStatusFilter(newStatus);
+        setCurrentPage(1); // Reset to first page when changing filter
+    };
+
     const handleDeleteSelected = async () => {
         if (selectedContacts.length === 0) return;
 
@@ -188,8 +220,14 @@ export default function ContactListDetails() {
 
             // Clear selected contacts and refresh list
             setSelectedContacts([]);
+            setSuccess(`Successfully deleted ${selectedContacts.length} contacts`);
             fetchContactList();
             fetchContacts();
+
+            // Clear success message after 3 seconds
+            setTimeout(() => {
+                setSuccess('');
+            }, 3000);
         } catch (error) {
             console.error('Error deleting contacts:', error);
             setError(error.message);
@@ -198,7 +236,7 @@ export default function ContactListDetails() {
 
     const handleExportContacts = async () => {
         try {
-            const res = await fetch(`/api/brands/${id}/contact-lists/${listId}/export`, {
+            const res = await fetch(`/api/brands/${id}/contact-lists/${listId}/export?status=${statusFilter !== 'all' ? statusFilter : ''}`, {
                 credentials: 'same-origin',
             });
 
@@ -220,6 +258,104 @@ export default function ContactListDetails() {
         }
     };
 
+    const handleUpdateContactStatus = async (contactId, newStatus, reason = '') => {
+        try {
+            setIsUpdatingContact(true);
+
+            const res = await fetch(`/api/brands/${id}/contact-lists/${listId}/contacts/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contactId,
+                    status: newStatus,
+                    reason,
+                }),
+                credentials: 'same-origin',
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.message || 'Failed to update contact status');
+            }
+
+            setSuccess(`Contact status updated to ${newStatus}`);
+            fetchContacts(); // Refresh contact list
+
+            // Clear status update modal if open
+            if (showStatusUpdateModal) {
+                setShowStatusUpdateModal(false);
+                setSelectedStatus('');
+                setStatusUpdateReason('');
+            }
+
+            // Clear success message after 3 seconds
+            setTimeout(() => {
+                setSuccess('');
+            }, 3000);
+        } catch (error) {
+            console.error('Error updating contact status:', error);
+            setError(error.message);
+        } finally {
+            setIsUpdatingContact(false);
+        }
+    };
+
+    const handleBulkStatusUpdate = async () => {
+        if (selectedContacts.length === 0) {
+            setError('No contacts selected');
+            return;
+        }
+
+        if (!selectedStatus) {
+            setError('Please select a status');
+            return;
+        }
+
+        try {
+            setIsUpdatingContact(true);
+
+            const res = await fetch(`/api/brands/${id}/contact-lists/${listId}/contacts/bulk-status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contactIds: selectedContacts,
+                    status: selectedStatus,
+                    reason: statusUpdateReason,
+                }),
+                credentials: 'same-origin',
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.message || 'Failed to update contacts');
+            }
+
+            const data = await res.json();
+            setSuccess(`Updated ${data.updated} contacts to ${selectedStatus}`);
+            setSelectedContacts([]);
+            fetchContacts(); // Refresh contact list
+
+            // Close the modal
+            setShowStatusUpdateModal(false);
+            setSelectedStatus('');
+            setStatusUpdateReason('');
+
+            // Clear success message after 3 seconds
+            setTimeout(() => {
+                setSuccess('');
+            }, 3000);
+        } catch (error) {
+            console.error('Error updating contacts:', error);
+            setError(error.message);
+        } finally {
+            setIsUpdatingContact(false);
+        }
+    };
+
     const toggleDropdown = () => {
         setShowDropdown(!showDropdown);
     };
@@ -227,6 +363,36 @@ export default function ContactListDetails() {
     const clearSearch = () => {
         setSearchQuery('');
         setCurrentPage(1);
+    };
+
+    const getStatusBadgeClass = (status) => {
+        switch (status) {
+            case 'active':
+                return 'badge-success';
+            case 'unsubscribed':
+                return 'badge-warning';
+            case 'bounced':
+                return 'badge-danger';
+            case 'complained':
+                return 'badge-danger';
+            default:
+                return 'badge-default';
+        }
+    };
+
+    const getStatusIcon = (status) => {
+        switch (status) {
+            case 'active':
+                return <UserCheck size={14} />;
+            case 'unsubscribed':
+                return <UserX size={14} />;
+            case 'bounced':
+                return <AlertOctagon size={14} />;
+            case 'complained':
+                return <AlertOctagon size={14} />;
+            default:
+                return null;
+        }
     };
 
     if (!brand || isLoadingList) {
@@ -256,12 +422,74 @@ export default function ContactListDetails() {
                             <h1>{contactList.name}</h1>
                             {contactList.description && <p className="list-description">{contactList.description}</p>}
                             <div className="list-stats">
-                                <span>{contactList.contactCount || 0} contacts</span>
+                                <span>{contactList.contactCount || 0} contacts total</span>
                                 <span>•</span>
                                 <span>Created {new Date(contactList.createdAt).toLocaleDateString()}</span>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {error && (
+                    <div className="alert alert-error">
+                        <span>{error}</span>
+                        <button
+                            onClick={() => setError('')}
+                            className="close-btn"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                )}
+
+                {success && (
+                    <div className="alert alert-success">
+                        <span>{success}</span>
+                        <button
+                            onClick={() => setSuccess('')}
+                            className="close-btn"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                )}
+
+                <div className="status-summary">
+                    <button
+                        className={`status-item ${statusFilter === 'all' ? 'active' : ''}`}
+                        onClick={() => handleStatusFilterChange('all')}
+                    >
+                        <span className="status-count">{contactList.contactCount || 0}</span>
+                        <span className="status-label">All</span>
+                    </button>
+                    <button
+                        className={`status-item ${statusFilter === 'active' ? 'active' : ''}`}
+                        onClick={() => handleStatusFilterChange('active')}
+                    >
+                        <span className="status-count">{contactStatusCounts.active || 0}</span>
+                        <span className="status-label">Active</span>
+                    </button>
+                    <button
+                        className={`status-item ${statusFilter === 'unsubscribed' ? 'active' : ''}`}
+                        onClick={() => handleStatusFilterChange('unsubscribed')}
+                    >
+                        <span className="status-count">{contactStatusCounts.unsubscribed || 0}</span>
+                        <span className="status-label">Unsubscribed</span>
+                    </button>
+                    <button
+                        className={`status-item ${statusFilter === 'bounced' ? 'active' : ''}`}
+                        onClick={() => handleStatusFilterChange('bounced')}
+                    >
+                        <span className="status-count">{contactStatusCounts.bounced || 0}</span>
+                        <span className="status-label">Bounced</span>
+                    </button>
+                    <button
+                        className={`status-item ${statusFilter === 'complained' ? 'active' : ''}`}
+                        onClick={() => handleStatusFilterChange('complained')}
+                    >
+                        <span className="status-count">{contactStatusCounts.complained || 0}</span>
+                        <span className="status-label">Complained</span>
+                    </button>
                 </div>
 
                 <div className="contacts-actions">
@@ -290,9 +518,12 @@ export default function ContactListDetails() {
                                 </button>
                             )}
                         </div>
-                        <button className="filter-button">
-                            <Filter size={16} />
-                            <span>Filter</span>
+                        <button
+                            className="filter-button"
+                            onClick={() => fetchContacts()}
+                            title="Refresh contacts"
+                        >
+                            <RefreshCw size={16} />
                         </button>
                     </div>
 
@@ -336,13 +567,22 @@ export default function ContactListDetails() {
                         </button>
 
                         {selectedContacts.length > 0 && (
-                            <button
-                                className="delete-button"
-                                onClick={handleDeleteSelected}
-                            >
-                                <Trash size={16} />
-                                <span>Delete ({selectedContacts.length})</span>
-                            </button>
+                            <>
+                                <button
+                                    className="status-button"
+                                    onClick={() => setShowStatusUpdateModal(true)}
+                                >
+                                    <UserCheck size={16} />
+                                    <span>Update Status</span>
+                                </button>
+                                <button
+                                    className="delete-button"
+                                    onClick={handleDeleteSelected}
+                                >
+                                    <Trash size={16} />
+                                    <span>Delete ({selectedContacts.length})</span>
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
@@ -362,14 +602,17 @@ export default function ContactListDetails() {
                                         <Users size={32} />
                                     </div>
                                     <h3>No contacts found</h3>
-                                    {searchQuery ? <p>No contacts match your search query. Try a different search term or clear your search.</p> : <p>This list doesn't have any contacts yet. Import contacts to get started.</p>}
+                                    {searchQuery || statusFilter !== 'all' ? <p>No contacts match your search criteria. Try a different search term or clear your filters.</p> : <p>This list doesn't have any contacts yet. Import contacts to get started.</p>}
                                     <div className="empty-actions">
-                                        {searchQuery ? (
+                                        {searchQuery || statusFilter !== 'all' ? (
                                             <button
                                                 className="btn btn-secondary"
-                                                onClick={clearSearch}
+                                                onClick={() => {
+                                                    clearSearch();
+                                                    setStatusFilter('all');
+                                                }}
                                             >
-                                                Clear Search
+                                                Clear Filters
                                             </button>
                                         ) : (
                                             <button
@@ -415,6 +658,13 @@ export default function ContactListDetails() {
                                                     Last Name
                                                     {sortField === 'lastName' && <span className={`sort-icon ${sortOrder === 'desc' ? 'desc' : ''}`}>↓</span>}
                                                 </th>
+                                                <th
+                                                    className={`sortable ${sortField === 'status' ? 'active' : ''}`}
+                                                    onClick={() => handleSort('status')}
+                                                >
+                                                    Status
+                                                    {sortField === 'status' && <span className={`sort-icon ${sortOrder === 'desc' ? 'desc' : ''}`}>↓</span>}
+                                                </th>
                                                 <th>Phone</th>
                                                 <th
                                                     className={`sortable ${sortField === 'createdAt' ? 'active' : ''}`}
@@ -428,7 +678,10 @@ export default function ContactListDetails() {
                                         </thead>
                                         <tbody>
                                             {contacts.map((contact) => (
-                                                <tr key={contact._id}>
+                                                <tr
+                                                    key={contact._id}
+                                                    className={`contact-row-${contact.status || 'active'}`}
+                                                >
                                                     <td className="checkbox-cell">
                                                         <input
                                                             type="checkbox"
@@ -439,11 +692,36 @@ export default function ContactListDetails() {
                                                     <td>{contact.email}</td>
                                                     <td>{contact.firstName || '-'}</td>
                                                     <td>{contact.lastName || '-'}</td>
+                                                    <td>
+                                                        <span className={`status-badge ${getStatusBadgeClass(contact.status || 'active')}`}>
+                                                            {getStatusIcon(contact.status || 'active')}
+                                                            <span>{contact.status || 'active'}</span>
+                                                        </span>
+                                                    </td>
                                                     <td>{contact.phone || '-'}</td>
                                                     <td>{new Date(contact.createdAt).toLocaleDateString()}</td>
                                                     <td className="actions-cell">
+                                                        {contact.status !== 'active' && (
+                                                            <button
+                                                                className="dropdown-item text-success"
+                                                                onClick={() => handleUpdateContactStatus(contact._id, 'active')}
+                                                            >
+                                                                <UserCheck size={14} />
+                                                                <span>Set as Active</span>
+                                                            </button>
+                                                        )}
+
+                                                        {contact.status !== 'unsubscribed' && (
+                                                            <button
+                                                                className="dropdown-item text-warning"
+                                                                onClick={() => handleUpdateContactStatus(contact._id, 'unsubscribed')}
+                                                            >
+                                                                <UserX size={14} />
+                                                                <span>Unsubscribe</span>
+                                                            </button>
+                                                        )}
                                                         <button
-                                                            className="delete-contact-btn"
+                                                            className="dropdown-item text-danger"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 if (window.confirm('Are you sure you want to delete this contact?')) {
@@ -453,6 +731,7 @@ export default function ContactListDetails() {
                                                             }}
                                                         >
                                                             <Trash size={14} />
+                                                            <span>Delete</span>
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -500,6 +779,78 @@ export default function ContactListDetails() {
                     onClose={() => setShowImportModal(false)}
                     onSuccess={handleImportSuccess}
                 />
+            )}
+
+            {/* Status Update Modal */}
+            {showStatusUpdateModal && (
+                <div className="modal-overlay">
+                    <div className="modal-container status-update-modal">
+                        <div className="modal-header">
+                            <h3>Update Contact Status</h3>
+                            <button
+                                className="close-btn"
+                                onClick={() => setShowStatusUpdateModal(false)}
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <div className="modal-content">
+                            <p>Update the status for {selectedContacts.length} selected contacts.</p>
+
+                            <div className="form-group">
+                                <label>New Status</label>
+                                <select
+                                    value={selectedStatus}
+                                    onChange={(e) => setSelectedStatus(e.target.value)}
+                                    required
+                                >
+                                    <option value="">Select a status</option>
+                                    <option value="active">Active</option>
+                                    <option value="unsubscribed">Unsubscribed</option>
+                                    <option value="bounced">Bounced</option>
+                                    <option value="complained">Complained</option>
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Reason (optional)</label>
+                                <textarea
+                                    value={statusUpdateReason}
+                                    onChange={(e) => setStatusUpdateReason(e.target.value)}
+                                    placeholder="Enter a reason for this status change..."
+                                    rows={3}
+                                ></textarea>
+                            </div>
+
+                            <div className="modal-actions">
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => setShowStatusUpdateModal(false)}
+                                    disabled={isUpdatingContact}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={handleBulkStatusUpdate}
+                                    disabled={!selectedStatus || isUpdatingContact}
+                                >
+                                    {isUpdatingContact ? (
+                                        <>
+                                            <span className="spinner-sm"></span>
+                                            Updating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Check size={16} />
+                                            Update Contacts
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </BrandLayout>
     );

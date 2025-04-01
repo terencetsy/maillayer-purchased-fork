@@ -159,8 +159,12 @@ export default async function handler(req, res) {
                 if (isPermanent) {
                     // Update contact status directly using the contactId from tags
                     await Contact.findByIdAndUpdate(contactId, {
-                        isUnsubscribed: true,
+                        status: 'bounced',
+                        isUnsubscribed: true, // For backward compatibility
                         unsubscribedAt: new Date(),
+                        bouncedAt: new Date(),
+                        bounceType: bounceType,
+                        bounceReason: `${bounceType} - ${subType}`,
                         unsubscribeReason: `Bounce: ${bounceType} - ${subType}`,
                         unsubscribedFromCampaign: campaignId,
                     });
@@ -199,8 +203,11 @@ export default async function handler(req, res) {
 
                 // Update contact directly using the contactId from tags
                 await Contact.findByIdAndUpdate(contactId, {
-                    isUnsubscribed: true,
+                    status: 'complained',
+                    isUnsubscribed: true, // For backward compatibility
                     unsubscribedAt: new Date(),
+                    complainedAt: new Date(),
+                    complaintReason: complaintInfo.complaintFeedbackType || 'Complaint',
                     unsubscribeReason: 'Complaint',
                     unsubscribedFromCampaign: campaignId,
                 });

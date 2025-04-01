@@ -3,6 +3,20 @@ import Contact from '@/models/Contact';
 import ContactList from '@/models/ContactList';
 import mongoose from 'mongoose';
 
+// Get count of active contacts (not unsubscribed) in a list
+export async function getActiveContactsCount(listId, brandId, userId) {
+    await connectToDatabase();
+
+    const count = await Contact.countDocuments({
+        listId: new mongoose.Types.ObjectId(listId),
+        brandId: new mongoose.Types.ObjectId(brandId),
+        userId: new mongoose.Types.ObjectId(userId),
+        isUnsubscribed: { $ne: true }, // Exclude unsubscribed contacts
+    });
+
+    return count;
+}
+
 // Get all contact lists for a brand
 export async function getContactListsByBrandId(brandId, userId) {
     await connectToDatabase();

@@ -32,6 +32,7 @@ export default function SendCampaign() {
     const [scheduledDate, setScheduledDate] = useState(new Date());
     const [scheduledTime, setScheduledTime] = useState(new Date());
     const [totalContacts, setTotalContacts] = useState(0);
+    const [activeContactCounts, setActiveContactCounts] = useState({});
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -46,17 +47,44 @@ export default function SendCampaign() {
         }
     }, [status, id, campaignId, router]);
 
-    // Calculate total contacts when selected lists change
+    // Calculate total active contacts when selected lists change
     useEffect(() => {
-        let total = 0;
-        selectedLists.forEach((listId) => {
-            const list = contactLists.find((list) => list._id === listId);
-            if (list) {
-                total += list.contactCount || 0;
+        const fetchActiveContactCounts = async () => {
+            if (selectedLists.length === 0) {
+                setTotalContacts(0);
+                return;
             }
-        });
-        setTotalContacts(total);
-    }, [selectedLists, contactLists]);
+
+            try {
+                const res = await fetch(`/api/brands/${id}/contact-lists/active-counts?listIds=${selectedLists.join(',')}`, {
+                    credentials: 'same-origin',
+                });
+
+                if (!res.ok) {
+                    throw new Error('Failed to fetch active contact counts');
+                }
+
+                const counts = await res.json();
+                let total = 0;
+
+                for (const listId of selectedLists) {
+                    total += counts[listId] || 0;
+                }
+
+                setTotalContacts(total);
+            } catch (error) {
+                console.error('Error fetching active contact counts:', error);
+                // Fallback to using the cached active counts
+                let total = 0;
+                selectedLists.forEach((listId) => {
+                    total += activeContactCounts[listId] || 0;
+                });
+                setTotalContacts(total);
+            }
+        };
+
+        fetchActiveContactCounts();
+    }, [selectedLists, id, activeContactCounts]);
 
     const fetchBrandDetails = async () => {
         try {
@@ -127,11 +155,36 @@ export default function SendCampaign() {
             // Only show lists with contacts
             const listsWithContacts = data.filter((list) => list.contactCount > 0);
             setContactLists(listsWithContacts);
+
+            // Fetch active contact counts for all lists
+            if (listsWithContacts.length > 0) {
+                await fetchActiveContactCounts(listsWithContacts);
+            }
         } catch (error) {
             console.error('Error fetching contact lists:', error);
             setError(error.message);
         } finally {
             setIsLoadingLists(false);
+        }
+    };
+
+    // Fetch active contact counts for all lists
+    const fetchActiveContactCounts = async (lists) => {
+        if (!lists || lists.length === 0) return;
+
+        try {
+            const res = await fetch(`/api/brands/${id}/contact-lists/active-counts?listIds=${lists.map((l) => l._id).join(',')}`, {
+                credentials: 'same-origin',
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to fetch active contact counts');
+            }
+
+            const counts = await res.json();
+            setActiveContactCounts(counts);
+        } catch (error) {
+            console.error('Error fetching active contact counts:', error);
         }
     };
 
@@ -143,7 +196,6 @@ export default function SendCampaign() {
         }
     };
 
-    // Example code for your SendCampaign.js component
     const handleSendCampaign = async () => {
         if (selectedLists.length === 0) {
             setError('Please select at least one contact list');
@@ -152,6 +204,12 @@ export default function SendCampaign() {
 
         if (scheduleType === 'schedule' && !isValidScheduledDateTime()) {
             setError('Please select a future date and time for scheduling');
+            return;
+        }
+
+        // Check if there are active contacts
+        if (totalContacts === 0) {
+            setError('Selected lists have no active contacts to send to');
             return;
         }
 
@@ -231,6 +289,7 @@ export default function SendCampaign() {
             </BrandLayout>
         );
     }
+
     return (
         <BrandLayout brand={brand}>
             <div className="sc-container">
@@ -337,7 +396,10 @@ export default function SendCampaign() {
                                                     </div>
                                                     <div className="sc-list-info">
                                                         <h4>{list.name}</h4>
-                                                        <p>{list.contactCount} contacts</p>
+                                                        <p>
+                                                            {activeContactCounts[list._id] || 0} active contacts
+                                                            {list.contactCount > (activeContactCounts[list._id] || 0) && ` (${list.contactCount} total)`}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             ))}
@@ -347,7 +409,7 @@ export default function SendCampaign() {
                                             <div className="sc-summary">
                                                 <Users size={16} />
                                                 <span>
-                                                    Sending to <strong>{totalContacts}</strong> contacts across {selectedLists.length} list{selectedLists.length !== 1 ? 's' : ''}
+                                                    Sending to <strong>{totalContacts}</strong> active contacts across {selectedLists.length} list{selectedLists.length !== 1 ? 's' : ''}
                                                 </span>
                                             </div>
                                         )}
@@ -455,7 +517,7 @@ export default function SendCampaign() {
                     <button
                         className="sc-btn sc-btn-send"
                         onClick={handleSendCampaign}
-                        disabled={isSending || selectedLists.length === 0 || !isBrandReadyToSend()}
+                        disabled={isSending || selectedLists.length === 0 || totalContacts === 0 || !isBrandReadyToSend()}
                     >
                         {isSending ? (
                             <>

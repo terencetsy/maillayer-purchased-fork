@@ -442,101 +442,6 @@ function decryptData(encryptedText, secretKey) {
     }
 }
 
-// Handle SES bounce and complaint notifications
-async function handleSESNotification(notification) {
-    if (!notification || !notification.notificationType) {
-        return;
-    }
-
-    const { Campaign, Contact } = getModels();
-
-    try {
-        switch (notification.notificationType) {
-            case 'Bounce': {
-                const { bounce } = notification;
-                if (!bounce || !bounce.bouncedRecipients) {
-                    return;
-                }
-
-                // Process each bounced recipient
-                for (const recipient of bounce.bouncedRecipients) {
-                    if (!recipient.emailAddress) continue;
-
-                    // Find campaigns that were sent to this email
-                    const contacts = await Contact.find({ email: recipient.emailAddress });
-
-                    for (const contact of contacts) {
-                        // Use regex to find campaign ID in message ID
-                        const campaignMatches = bounce.bounceSubType && bounce.bounceSubType.match(/campaign-([a-f0-9]+)/i);
-                        if (campaignMatches && campaignMatches[1]) {
-                            const campaignId = campaignMatches[1];
-
-                            // Track the bounce event
-                            const TrackingModel = createTrackingModel(campaignId);
-                            await TrackingModel.create({
-                                contactId: contact._id,
-                                campaignId,
-                                email: recipient.emailAddress,
-                                eventType: 'bounce',
-                                metadata: {
-                                    bounceType: bounce.bounceType,
-                                    bounceSubType: bounce.bounceSubType,
-                                    diagnosticCode: recipient.diagnosticCode,
-                                },
-                            });
-
-                            // Update campaign stats
-                            await Campaign.updateOne({ _id: campaignId }, { $inc: { 'stats.bounces': 1 } });
-                        }
-                    }
-                }
-                break;
-            }
-
-            case 'Complaint': {
-                const { complaint } = notification;
-                if (!complaint || !complaint.complainedRecipients) {
-                    return;
-                }
-
-                // Similar process for complaints
-                for (const recipient of complaint.complainedRecipients) {
-                    if (!recipient.emailAddress) continue;
-
-                    const contacts = await Contact.find({ email: recipient.emailAddress });
-
-                    for (const contact of contacts) {
-                        // Use regex to find campaign ID in message ID
-                        const campaignMatches = complaint.complaintSubType && complaint.complaintSubType.match(/campaign-([a-f0-9]+)/i);
-                        if (campaignMatches && campaignMatches[1]) {
-                            const campaignId = campaignMatches[1];
-
-                            // Track the complaint event
-                            const TrackingModel = createTrackingModel(campaignId);
-                            await TrackingModel.create({
-                                contactId: contact._id,
-                                campaignId,
-                                email: recipient.emailAddress,
-                                eventType: 'complaint',
-                                metadata: {
-                                    userAgent: complaint.userAgent,
-                                    complaintFeedbackType: complaint.complaintFeedbackType,
-                                },
-                            });
-
-                            // Update campaign stats
-                            await Campaign.updateOne({ _id: campaignId }, { $inc: { 'stats.complaints': 1 } });
-                        }
-                    }
-                }
-                break;
-            }
-        }
-    } catch (error) {
-        console.error('Error processing SES notification:', error);
-    }
-}
-
 // Only create queues after successful DB connection and model initialization
 async function initializeQueues() {
     // Connect to database first
@@ -742,7 +647,7 @@ async function initializeQueues() {
                     // Get contacts from this list
                     const totalContacts = await Contact.countDocuments({
                         listId: listId,
-                        isUnsubscribed: { $ne: true },
+                        status: 'active',
                     });
 
                     console.log(`Processing list ${listId} with ${totalContacts} contacts`);

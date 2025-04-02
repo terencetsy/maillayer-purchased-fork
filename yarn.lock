@@ -987,6 +987,13 @@
     semver "^7.3.5"
     tar "^6.1.11"
 
+"@maxmind/geoip2-node@^6.0.0":
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/@maxmind/geoip2-node/-/geoip2-node-6.0.0.tgz#e806789b355b20bfc91aeb074432620ab18495e6"
+  integrity sha512-b1zcdxRm13HDgNfHnRpET7E3r1NlSK+VpQhN9dKn8aUUH71Ug6rNmgASYh7WrHDZLDqSXMHryfs5Aw0ufMtBYw==
+  dependencies:
+    maxmind "^4.2.0"
+
 "@mongodb-js/saslprep@^1.1.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@mongodb-js/saslprep/-/saslprep-1.2.0.tgz#4373d7a87660ea44a0a7a461ff6d8bc832733a4b"
@@ -4423,6 +4430,14 @@ math-intrinsics@^1.1.0:
   resolved "https://registry.yarnpkg.com/math-intrinsics/-/math-intrinsics-1.1.0.tgz#a0dd74be81e2aa5c2f27e65ce283605ee4e2b7f9"
   integrity sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==
 
+maxmind@^4.2.0:
+  version "4.3.24"
+  resolved "https://registry.yarnpkg.com/maxmind/-/maxmind-4.3.24.tgz#c67a4278777210c857434fa8e82bdd6774e5e661"
+  integrity sha512-dexrLcjfS2xDGOvdV8XcfQYmyQVpGidMwEG2ld19lXlsB+i+lXRWPzQi81HfwRXR4hxzFr5gT0oAIFyqAAb/Ww==
+  dependencies:
+    mmdb-lib "2.1.1"
+    tiny-lru "11.2.11"
+
 mdurl@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/mdurl/-/mdurl-2.0.0.tgz#80676ec0433025dd3e17ee983d0fe8de5a2237e0"
@@ -4489,6 +4504,11 @@ mkdirp@1.0.4, mkdirp@^1.0.3:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-1.0.4.tgz#3eb5ed62622756d79a5f0e2a221dfebad75c2f7e"
   integrity sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==
+
+mmdb-lib@2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/mmdb-lib/-/mmdb-lib-2.1.1.tgz#c0d0bd35dc1fca41f0ebd043e43227ab04eb1792"
+  integrity sha512-yx8H/1H5AfnufiLnzzPqPf4yr/dKU9IFT1rPVwSkrKWHsQEeVVd6+X+L0nUbXhlEFTu3y/7hu38CFmEVgzvyeg==
 
 module-details-from-path@^1.0.3:
   version "1.0.3"
@@ -5879,6 +5899,11 @@ tar@^6.1.11:
     minizlib "^2.1.1"
     mkdirp "^1.0.3"
     yallist "^4.0.0"
+
+tiny-lru@11.2.11:
+  version "11.2.11"
+  resolved "https://registry.yarnpkg.com/tiny-lru/-/tiny-lru-11.2.11.tgz#5089a6a4a157f5a97b82aa930b44d550ac5c4778"
+  integrity sha512-27BIW0dIWTYYoWNnqSmoNMKe5WIbkXsc0xaCQHd3/3xT2XMuMJrzHdrO9QBFR14emBz1Bu0dOAs2sCBBrvgPQA==
 
 tinyglobby@^0.2.12:
   version "0.2.12"

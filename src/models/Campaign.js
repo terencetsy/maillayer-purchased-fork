@@ -86,6 +86,10 @@ const CampaignSchema = new mongoose.Schema({
             type: Number,
             default: 0,
         },
+        unsubscribes: {
+            type: Number,
+            default: 0,
+        },
     },
     createdAt: {
         type: Date,

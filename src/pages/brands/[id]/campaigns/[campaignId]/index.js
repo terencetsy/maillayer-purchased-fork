@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
-import { ArrowLeft, BarChart2, Users, Eye, X, Clock, Calendar, Send, Mail, MousePointer, AlertTriangle, Filter, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, BarChart2, Users, Eye, X, Clock, Calendar, Send, Mail, MousePointer, AlertTriangle, Filter, Download, ChevronLeft, ChevronRight, MailX } from 'lucide-react';
 import { formatDistance } from 'date-fns';
 
 export default function CampaignDetail() {
@@ -257,6 +257,16 @@ export default function CampaignDetail() {
                         />
                     ),
                 };
+            case 'unsubscribe':
+                return {
+                    label: 'Unsubscribe',
+                    icon: (
+                        <MailX
+                            size={14}
+                            className="cd-event-icon cd-event-icon-unsubscribe"
+                        />
+                    ),
+                };
             default:
                 return { label: type, icon: null };
         }
@@ -396,6 +406,16 @@ export default function CampaignDetail() {
                                         <div className="cd-stat-value">{stats.click?.unique || 0}</div>
                                         <div className="cd-stat-label">Unique Clicks</div>
                                         <div className="cd-stat-percent">{stats.clickRate || 0}% click rate</div>
+                                    </div>
+                                </div>
+
+                                <div className="cd-stat-card">
+                                    <div className="cd-stat-icon cd-stat-icon-unsubscribed">
+                                        <Users size={18} />
+                                    </div>
+                                    <div className="cd-stat-content">
+                                        <div className="cd-stat-value">{stats.unsubscribed?.total || 0}</div>
+                                        <div className="cd-stat-label">Unsubscribes</div>
                                     </div>
                                 </div>
 

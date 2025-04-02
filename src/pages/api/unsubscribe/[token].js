@@ -1,7 +1,9 @@
 import connectToDatabase from '@/lib/mongodb';
 import Contact from '@/models/Contact';
+import Campaign from '@/models/Campaign';
 import { verifyUnsubscribeToken, decodeUnsubscribeToken } from '@/lib/tokenUtils';
 import { createTrackingModel } from '@/models/TrackingEvent';
+import mongoose from 'mongoose';
 
 export default async function handler(req, res) {
     try {
@@ -62,19 +64,23 @@ export default async function handler(req, res) {
                 return res.status(404).json({ success: false, message: 'Contact not found' });
             }
 
-            // If we have a campaign ID, track this as an event
+            // If we have a campaign ID, track this as an event and update campaign stats
             if (campaignId) {
+                // Create a tracking event
                 const TrackingModel = createTrackingModel(campaignId);
 
                 await TrackingModel.create({
-                    contactId: contactId,
-                    campaignId: campaignId,
+                    contactId: new mongoose.Types.ObjectId(contactId),
+                    campaignId: new mongoose.Types.ObjectId(campaignId),
                     email: updatedContact.email,
-                    eventType: 'unsubscribe', // You'll need to add this to your eventType enum
+                    eventType: 'unsubscribe',
                     metadata: {
                         reason: reason || 'No reason provided',
                     },
                 });
+
+                // Increment the campaign's unsubscribes count
+                await Campaign.findByIdAndUpdate(campaignId, { $inc: { 'stats.unsubscribes': 1 } }, { new: true });
             }
 
             return res.status(200).json({ success: true, message: 'Successfully unsubscribed' });

@@ -165,9 +165,19 @@ export const getCampaignStats = async (campaignId) => {
                   }
                 : { total: 0, unique: 0 };
 
+        // Get unsubscribe counts from both tracking events and the campaign stats
+        const trackingUnsubscribes = unsubscribeStats.length > 0 ? unsubscribeStats[0].total : 0;
+        const contactModelUnsubscribes = unsubscribedContactsCount;
+        // Also include the count from campaign stats as a third source
+        const campaignUnsubscribes = campaign.stats?.unsubscribes || 0;
+
+        // For unique counts, consider both tracking events and contact model counts
+        const uniqueUnsubscribes = (unsubscribeStats.length > 0 ? unsubscribeStats[0].unique.length : 0) + contactModelUnsubscribes;
+
         const unsubscribed = {
-            total: (unsubscribeStats.length > 0 ? unsubscribeStats[0].total : 0) + unsubscribedContactsCount,
-            unique: (unsubscribeStats.length > 0 ? unsubscribeStats[0].unique.length : 0) + unsubscribedContactsCount,
+            // Take the maximum value from our different sources to ensure we don't undercount
+            total: Math.max(trackingUnsubscribes + contactModelUnsubscribes, campaignUnsubscribes),
+            unique: uniqueUnsubscribes,
         };
 
         // Calculate rates
@@ -175,6 +185,7 @@ export const getCampaignStats = async (campaignId) => {
         const clickRate = recipients > 0 ? ((click.unique / recipients) * 100).toFixed(1) : 0;
         const bounceRate = recipients > 0 ? ((bounce.unique / recipients) * 100).toFixed(1) : 0;
         const complaintRate = recipients > 0 ? ((complaint.unique / recipients) * 100).toFixed(1) : 0;
+        const unsubscribeRate = recipients > 0 ? ((unsubscribed.unique / recipients) * 100).toFixed(1) : 0;
 
         return {
             recipients,
@@ -187,6 +198,7 @@ export const getCampaignStats = async (campaignId) => {
             clickRate,
             bounceRate,
             complaintRate,
+            unsubscribeRate,
             // Include raw campaign stats for cross-reference
             campaignStats: campaign.stats,
         };
@@ -204,6 +216,7 @@ export const getCampaignStats = async (campaignId) => {
             clickRate: '0',
             bounceRate: '0',
             complaintRate: '0',
+            unsubscribeRate: '0',
         };
     }
 };

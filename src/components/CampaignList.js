@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { formatDistance } from 'date-fns';
-import { Mail, Eye, Edit, Copy, Trash, PieChart, Users, AlertOctagon } from 'lucide-react';
+import { Mail, Eye, Edit, Copy, Trash, PieChart, Users, AlertOctagon, UserMinus } from 'lucide-react';
 
 const CampaignList = ({ campaigns, brandId }) => {
     const handleDuplicate = async (campaignId, campaignName) => {
@@ -118,11 +118,11 @@ const CampaignList = ({ campaigns, brandId }) => {
                             </td>
                             <td className="unsub-col">
                                 <div className="stats-value">
-                                    <Users
+                                    <UserMinus
                                         size={14}
                                         className="stats-icon"
                                     />
-                                    {campaign.statistics?.unsubscribedCount || 0}
+                                    {campaign.statistics?.unsubscribedCount || campaign.stats?.unsubscribes || campaign.statistics?.unsubscribed?.total || 0}
                                 </div>
                             </td>
                             <td className="bounce-col">

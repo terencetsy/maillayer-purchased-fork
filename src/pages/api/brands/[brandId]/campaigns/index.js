@@ -39,6 +39,7 @@ export default async function handler(req, res) {
             try {
                 // Fetch campaigns
                 const campaigns = await getCampaignsByBrandId(brandId, userId);
+
                 // For non-draft campaigns that have been sent, fetch additional stats
                 const campaignsWithStats = await Promise.all(
                     campaigns.map(async (campaign) => {
@@ -46,17 +47,16 @@ export default async function handler(req, res) {
                             try {
                                 // Get detailed stats for each campaign
                                 const stats = await getCampaignStats(campaign._id);
-                                console.log('stats', stats);
 
                                 // Calculate open rate
                                 const openRate = stats.recipients > 0 ? (((stats.open?.unique || 0) / stats.recipients) * 100).toFixed(1) : 0;
 
                                 // Convert campaign to plain object safely
-                                const campaignObject = typeof campaign.toObject === 'function' ? campaign.toObject() : { ...campaign };
+                                const campaignObj = campaign && typeof campaign.toObject === 'function' ? campaign.toObject() : JSON.parse(JSON.stringify(campaign)); // Deep clone as fallback
 
                                 // Add the additional stats to the campaign object
                                 return {
-                                    ...campaignObject,
+                                    ...campaignObj,
                                     statistics: {
                                         ...stats,
                                         openRate,

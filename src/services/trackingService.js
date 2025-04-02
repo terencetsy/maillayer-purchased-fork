@@ -115,7 +115,6 @@ export const getCampaignStats = async (campaignId) => {
         ]);
 
         // Get unsubscribe events - these might be stored in Contact model rather than tracking events
-        // Let's check both sources
         const unsubscribeStats = await TrackingModel.aggregate([
             { $match: { eventType: 'unsubscribe' } },
             {
@@ -129,7 +128,7 @@ export const getCampaignStats = async (campaignId) => {
 
         // Also check contacts that unsubscribed from this campaign
         const unsubscribedContactsCount = await Contact.countDocuments({
-            unsubscribedFromCampaign: mongoose.Types.ObjectId(campaignId),
+            unsubscribedFromCampaign: new mongoose.Types.ObjectId(campaignId),
             isUnsubscribed: true,
         });
 

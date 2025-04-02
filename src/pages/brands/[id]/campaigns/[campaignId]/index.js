@@ -5,6 +5,7 @@ import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
 import { ArrowLeft, BarChart2, Users, Eye, X, Clock, Calendar, Send, Mail, MousePointer, AlertTriangle, Filter, Download, ChevronLeft, ChevronRight, MailX } from 'lucide-react';
 import { formatDistance } from 'date-fns';
+import GeoStats from '@/components/GeoStats';
 
 export default function CampaignDetail() {
     const { data: session, status } = useSession();
@@ -610,6 +611,8 @@ export default function CampaignDetail() {
                                 </button>
                             </div>
                         )}
+
+                        <GeoStats events={events} />
                     </div>
                 )}
 

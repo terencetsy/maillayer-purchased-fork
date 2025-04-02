@@ -224,47 +224,124 @@ export const getCampaignStats = async (campaignId) => {
 export async function getCampaignEvents(campaignId, options = {}) {
     await connectToDatabase();
 
-    const { page = 1, limit = 50, eventType, email, sort = 'timestamp', order = 'desc' } = options;
-
     try {
+        const {
+            page = 1,
+            limit = 50,
+            eventType = '',
+            email = '',
+            sort = 'timestamp',
+            order = 'desc',
+            includeGeo = true, // New option to include geolocation data
+        } = options;
+
+        // Create the tracking model for this campaign
         const TrackingModel = createTrackingModel(campaignId);
 
-        // Build query
-        const query = { campaignId: new mongoose.Types.ObjectId(campaignId) };
+        // Build the query
+        const query = {
+            campaignId: new mongoose.Types.ObjectId(campaignId),
+        };
 
+        // Add event type filter if provided
         if (eventType) {
             query.eventType = eventType;
         }
 
+        // Add email filter if provided
         if (email) {
-            query.email = { $regex: email, $options: 'i' };
+            query.email = { $regex: email, $options: 'i' }; // Case-insensitive search
         }
 
         // Build sort options
-        const sortOptions = {};
-        sortOptions[sort] = order === 'desc' ? -1 : 1;
+        const sortOption = {};
+        sortOption[sort] = order === 'desc' ? -1 : 1;
 
-        // Get total count
+        // Calculate skip value for pagination
+        const skip = (page - 1) * limit;
+
+        // Get total count for pagination
         const total = await TrackingModel.countDocuments(query);
+        const totalPages = Math.ceil(total / limit);
 
-        // Get paginated results
-        const events = await TrackingModel.find(query)
-            .sort(sortOptions)
-            .skip((page - 1) * limit)
-            .limit(limit)
-            .lean();
+        // Get the events
+        const events = await TrackingModel.find(query).sort(sortOption).skip(skip).limit(limit);
+
+        // Group events by location if includeGeo is true
+        let geoStats = null;
+
+        if (includeGeo) {
+            // Aggregate geolocation data
+            const geoAggregation = await TrackingModel.aggregate([
+                {
+                    $match: query,
+                },
+                {
+                    $group: {
+                        _id: {
+                            country: { $ifNull: ['$metadata.geolocation.country', 'Unknown'] },
+                            countryCode: { $ifNull: ['$metadata.geolocation.countryCode', 'XX'] },
+                        },
+                        count: { $sum: 1 },
+                    },
+                },
+                {
+                    $sort: { count: -1 },
+                },
+                {
+                    $limit: 10,
+                },
+            ]);
+
+            // Also get city data
+            const cityAggregation = await TrackingModel.aggregate([
+                {
+                    $match: query,
+                },
+                {
+                    $group: {
+                        _id: {
+                            city: { $ifNull: ['$metadata.geolocation.city', 'Unknown'] },
+                            country: { $ifNull: ['$metadata.geolocation.country', 'Unknown'] },
+                        },
+                        count: { $sum: 1 },
+                    },
+                },
+                {
+                    $sort: { count: -1 },
+                },
+                {
+                    $limit: 10,
+                },
+            ]);
+
+            // Format the geolocation stats
+            geoStats = {
+                countries: geoAggregation.map((item) => ({
+                    country: item._id.country,
+                    countryCode: item._id.countryCode,
+                    count: item.count,
+                })),
+                cities: cityAggregation.map((item) => ({
+                    city: item._id.city,
+                    country: item._id.country,
+                    count: item.count,
+                })),
+            };
+        }
 
         return {
             events,
             pagination: {
                 total,
-                page: parseInt(page),
-                limit: parseInt(limit),
-                totalPages: Math.ceil(total / limit),
+                totalPages,
+                currentPage: page,
+                limit,
             },
+            geoStats, // Include geolocation stats if requested
         };
     } catch (error) {
-        console.error('Error getting campaign events:', error);
+        console.error('Error fetching campaign events:', error);
         throw error;
     }
 }

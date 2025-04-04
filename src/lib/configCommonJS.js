@@ -2,11 +2,11 @@
 // This file provides a CommonJS-compatible version of the config for worker scripts
 
 // Use BASE_URL as the single source of truth for URL-based settings
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const BASE_URL = process.env.BASE_URL;
 
 // The most important change: ONLY use the Redis URL, don't use individual components
 // This prevents configuration mismatch between different parts of the app
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const REDIS_URL = process.env.REDIS_URL;
 
 const config = {
     // Application URLs

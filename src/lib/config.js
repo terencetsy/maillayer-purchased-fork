@@ -2,10 +2,10 @@
 // Centralized configuration settings for the application
 
 // Use BASE_URL as the single source of truth for URL-based settings
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const BASE_URL = process.env.BASE_URL;
 
 // Use ONLY the Redis URL, not individual components
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const REDIS_URL = process.env.REDIS_URL;
 
 const config = {
     // Application URLs

@@ -85,13 +85,13 @@ export default function BrandLayout({ children, brand }) {
                             <span>Contacts</span>
                         </Link>
 
-                        <Link
+                        {/* <Link
                             href={`/brands/${brand._id}/analytics`}
                             className={`nav-item ${activeMenuItem === 'analytics' ? 'active' : ''}`}
                         >
                             <BarChart size={20} />
                             <span>Analytics</span>
-                        </Link>
+                        </Link> */}
 
                         <Link
                             href={`/brands/${brand._id}/settings`}

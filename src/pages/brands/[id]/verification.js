@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useSession } from 'next-auth/react';
+import { useStableSession } from '@/lib/session';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
 import { Shield, ArrowLeft, Check, Key, Globe, User, Info, ArrowRight, AlertCircle, CheckCircle, Loader, Copy, RefreshCw } from 'lucide-react';
 
 export default function BrandVerification() {
-    const { data: session, status } = useSession();
+    const { data: session, status } = useStableSession();
     const router = useRouter();
     const { id } = router.query;
 

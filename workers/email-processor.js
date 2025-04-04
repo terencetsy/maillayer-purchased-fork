@@ -320,6 +320,7 @@ function getModels() {
 // Create Redis clients with proper error handling
 const createRedisClient = () => {
     // Use the Redis URL from the config
+    console.log('############# config.redisURL', config.redisURL);
     const redisUrl = config.redisURL;
     console.log('Email processor using Redis URL:', redisUrl);
 

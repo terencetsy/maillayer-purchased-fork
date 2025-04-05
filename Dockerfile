@@ -12,11 +12,17 @@ RUN npm install
 # Copy the rest of the application
 COPY . .
 
+# Create logs directory
+RUN mkdir -p logs
+
+# Build the Next.js app
+RUN npm run build
+
 # Make worker scripts executable
 RUN chmod +x workers/*.js || true
 
 # Expose port
 EXPOSE 3000
 
-# Start PM2 using the ecosystem file from the project root
+# Start PM2 using the ecosystem file in production mode
 CMD ["pm2-runtime", "ecosystem.config.js"]

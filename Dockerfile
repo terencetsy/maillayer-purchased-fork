@@ -1,22 +1,32 @@
+# Use official Node.js base image
 FROM node:20-alpine
 
+# Set working directory
 WORKDIR /app
 
 # Install PM2 globally
 RUN npm install -g pm2
 
-# Copy package files and install dependencies
+# Copy only package files first (better layer caching)
 COPY package*.json ./
+
+# Install dependencies
 RUN npm install
 
-# Copy the rest of the application
+# Copy rest of the application
 COPY . .
 
-# Make worker scripts executable
+# Create logs directory to avoid PM2 issues
+RUN mkdir -p logs
+
+# Make worker scripts executable (optional safety)
 RUN chmod +x workers/*.js || true
 
-# Expose port
+# Build Next.js app for production
+RUN npm run build
+
+# Expose the port Next.js serves on
 EXPOSE 3000
 
-# Start PM2 using the ecosystem file from the project root
+# Start app and workers with PM2 using ecosystem config
 CMD ["pm2-runtime", "ecosystem.config.js"]

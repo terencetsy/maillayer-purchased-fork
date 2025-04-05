@@ -13,8 +13,6 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }) {
             session={session}
             refetchInterval={0}
             refetchOnWindowFocus={false}
-            refetchWhenOffline={false}
-            refetchIntervalInBackground={false}
         >
             <Head>
                 <meta

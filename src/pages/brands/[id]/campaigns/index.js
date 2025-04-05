@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useStableSession } from '@/lib/session';
+import { useSession } from 'next-auth/react';
 import BrandLayout from '@/components/BrandLayout';
 import { PlusCircle, Search, Filter, Mail } from 'lucide-react';
 import CampaignForm from '@/components/CampaignForm';
 import CampaignList from '@/components/CampaignList';
 
 export default function BrandCampaigns() {
-    const { data: session, status } = useStableSession();
+    const { data: session, status } = useSession();
     const router = useRouter();
     const { id } = router.query;
 

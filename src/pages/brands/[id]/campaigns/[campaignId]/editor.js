@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useStableSession } from '@/lib/session';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
 import RichTextEditor from '@/components/editor/RichTextEditor';
 import { ArrowLeft, Save, Send, Info } from 'lucide-react';
 
 export default function CampaignEditor() {
-    const { data: session, status } = useStableSession();
+    const { data: session, status } = useSession();
     const router = useRouter();
     const { id, campaignId } = router.query;
 

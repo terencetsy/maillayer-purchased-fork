@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { useStableSession } from '@/lib/session';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 
 export default function Home() {
-    const { data: session, status } = useStableSession();
+    const { data: session, status } = useSession();
     const router = useRouter();
 
     useEffect(() => {

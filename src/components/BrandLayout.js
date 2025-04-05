@@ -2,12 +2,12 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
-import { useStableSession } from '@/lib/session';
+import { useSession } from 'next-auth/react';
 import { Mail, Users, BarChart, Settings, Shield, Home, Search, Bell, MoreVertical } from 'lucide-react';
 
 export default function BrandLayout({ children, brand }) {
     const router = useRouter();
-    const { data: session, status } = useStableSession();
+    const { data: session, status } = useSession();
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {

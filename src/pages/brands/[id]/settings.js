@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useStableSession } from '@/lib/session';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
 import { Settings, ArrowLeft, Save, Globe, Mail, User, Shield, Trash, AlertCircle, CheckCircle, Loader, Key, Palette, Sliders } from 'lucide-react';
 
 export default function BrandSettings() {
-    const { data: session, status } = useStableSession();
+    const { data: session, status } = useSession();
     const router = useRouter();
     const { id } = router.query;
 

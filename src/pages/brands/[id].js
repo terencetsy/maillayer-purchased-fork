@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useStableSession } from '@/lib/session';
+import { useSession } from 'next-auth/react';
 
 // This component redirects to the campaigns page
 export default function BrandDetail() {
-    const { data: session, status } = useStableSession();
+    const { data: session, status } = useSession();
     const router = useRouter();
     const { id } = router.query;
 

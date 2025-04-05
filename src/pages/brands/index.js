@@ -3,13 +3,13 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useStableSession } from '@/lib/session';
+import { useSession } from 'next-auth/react';
 import { Mail, Plus, Search, MoreVertical, Bell, LogOut, Grid, List, X, Filter } from 'lucide-react';
 import BrandForm from '@/components/BrandForm';
 import { MailSend02 } from '@/lib/icons';
 
 export default function Dashboard() {
-    const { data: session, status } = useStableSession();
+    const { data: session, status } = useSession();
     const router = useRouter();
     const [userProfile, setUserProfile] = useState(null);
     const [brands, setBrands] = useState([]);

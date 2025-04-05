@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useStableSession } from '@/lib/session';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
 import { ArrowLeft, Search, PlusCircle, Upload, Globe, Trash, DownloadCloud, Filter, ChevronDown, X, Users, RefreshCw, Check, UserCheck, UserX, AlertOctagon } from 'lucide-react';
 import ImportContactsModal from '@/components/contact/ImportContactsModal';
 
 export default function ContactListDetails() {
-    const { data: session, status } = useStableSession();
+    const { data: session, status } = useSession();
     const router = useRouter();
     const { id, listId } = router.query;
 

@@ -4,7 +4,7 @@ module.exports = {
         {
             name: 'maillayer-nextjs',
             script: 'npm',
-            args: 'run dev -- -H 0.0.0.0',
+            args: 'run start',
             env: {
                 NODE_ENV: 'production',
             },

@@ -4,9 +4,9 @@ module.exports = {
         {
             name: 'maillayer-nextjs',
             script: 'npm',
-            args: 'run dev -- -H 0.0.0.0',
+            args: process.env.NODE_ENV === 'production' ? 'run start' : 'run dev -- -H 0.0.0.0',
             env: {
-                NODE_ENV: 'development',
+                NODE_ENV: process.env.NODE_ENV || 'development',
             },
             // Add log configuration
             log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
@@ -18,8 +18,8 @@ module.exports = {
             name: 'email-worker',
             script: 'workers/email-processor.js',
             env: {
-                NODE_ENV: 'development',
-                WORKER_DEBUG: 'true', // Add this for more verbose debugging
+                NODE_ENV: process.env.NODE_ENV || 'development',
+                WORKER_DEBUG: process.env.NODE_ENV !== 'production' ? 'true' : 'false',
             },
             // Add better stability and logging for this critical worker
             restart_delay: 3000,
@@ -28,16 +28,16 @@ module.exports = {
             error_file: 'logs/email-worker-error.log',
             out_file: 'logs/email-worker-out.log',
             merge_logs: true,
-            exec_mode: 'fork', // Use fork mode to simplify debugging
-            watch: ['workers/email-processor.js'], // Auto-restart on file changes
+            exec_mode: 'fork',
+            watch: process.env.NODE_ENV !== 'production' ? ['workers/email-processor.js'] : false, // Only watch in dev mode
             ignore_watch: ['node_modules', 'logs'],
         },
         {
             name: 'cron-checker',
             script: 'workers/cron-checker.js',
             env: {
-                NODE_ENV: 'development',
-                WORKER_DEBUG: 'true',
+                NODE_ENV: process.env.NODE_ENV || 'development',
+                WORKER_DEBUG: process.env.NODE_ENV !== 'production' ? 'true' : 'false',
             },
             restart_delay: 3000,
             max_restarts: 10,
@@ -46,13 +46,14 @@ module.exports = {
             out_file: 'logs/cron-checker-out.log',
             merge_logs: true,
             exec_mode: 'fork',
+            watch: process.env.NODE_ENV !== 'production' ? ['workers/cron-checker.js'] : false,
         },
         {
             name: 'campaign-manager',
             script: 'workers/campaign-manager.js',
             env: {
-                NODE_ENV: 'development',
-                WORKER_DEBUG: 'true',
+                NODE_ENV: process.env.NODE_ENV || 'development',
+                WORKER_DEBUG: process.env.NODE_ENV !== 'production' ? 'true' : 'false',
             },
             restart_delay: 3000,
             max_restarts: 10,
@@ -61,6 +62,7 @@ module.exports = {
             out_file: 'logs/campaign-manager-out.log',
             merge_logs: true,
             exec_mode: 'fork',
+            watch: process.env.NODE_ENV !== 'production' ? ['workers/campaign-manager.js'] : false,
         },
     ],
 };

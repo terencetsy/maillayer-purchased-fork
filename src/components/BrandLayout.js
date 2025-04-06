@@ -26,7 +26,7 @@ export default function BrandLayout({ children, brand }) {
         const path = router.pathname;
         if (path.includes('/campaigns')) return 'campaigns';
         if (path.includes('/contacts')) return 'contacts';
-        if (path.includes('/analytics')) return 'analytics';
+        if (path.includes('/transactional')) return 'transactional';
         if (path.includes('/settings')) return 'settings';
         if (path.includes('/verification')) return 'verification';
         return '';
@@ -85,13 +85,13 @@ export default function BrandLayout({ children, brand }) {
                             <span>Contacts</span>
                         </Link>
 
-                        {/* <Link
-                            href={`/brands/${brand._id}/analytics`}
-                            className={`nav-item ${activeMenuItem === 'analytics' ? 'active' : ''}`}
+                        <Link
+                            href={`/brands/${brand._id}/transactional`}
+                            className={`nav-item ${activeMenuItem === 'transactional' ? 'active' : ''}`}
                         >
                             <BarChart size={20} />
-                            <span>Analytics</span>
-                        </Link> */}
+                            <span>Transactional</span>
+                        </Link>
 
                         <Link
                             href={`/brands/${brand._id}/settings`}

@@ -94,7 +94,7 @@ export default async function handler(req, res) {
             to
         );
 
-        const trackingPixel = `<img src="${config.baseUrl}/api/tracking/transactional?token=${trackingToken}&email=${encodeURIComponent(to)}" width="1" height="1" alt="" style="display:none;" />`;
+        const trackingPixel = `<img src="${config.baseUrl}/api/tracking/transactional?token=${trackingToken}&templateId=${template._id}&email=${encodeURIComponent(to)}" width="1" height="1" alt="" style="display:none;" />`;
         content = content + trackingPixel;
 
         // Initialize SES client

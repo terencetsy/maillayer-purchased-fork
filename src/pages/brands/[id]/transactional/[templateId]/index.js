@@ -19,17 +19,13 @@ export default function TransactionalTemplateDetail() {
     const [stats, setStats] = useState(null);
     const [dailyStats, setDailyStats] = useState([]);
     const [logs, setLogs] = useState([]);
-    const [events, setEvents] = useState([]);
-    const [eventDistribution, setEventDistribution] = useState([]);
 
     // UI states
     const [isLoading, setIsLoading] = useState(true);
     const [statsLoading, setStatsLoading] = useState(true);
-    const [eventsLoading, setEventsLoading] = useState(true);
     const [error, setError] = useState('');
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [copied, setCopied] = useState(false);
-    const [showFilters, setShowFilters] = useState(false);
 
     // Filters
     const [filters, setFilters] = useState({
@@ -141,51 +137,6 @@ export default function TransactionalTemplateDetail() {
             console.error('Error fetching daily stats:', error);
         }
     }, [id, templateId]);
-
-    // Fetch event logs
-    const fetchEventLogs = useCallback(async () => {
-        try {
-            setEventsLoading(true);
-
-            const queryParams = new URLSearchParams({
-                page: pagination.page,
-                limit: pagination.limit,
-                ...filters,
-            });
-
-            const res = await fetch(`/api/brands/${id}/transactional/${templateId}/events?${queryParams}`, {
-                credentials: 'same-origin',
-            });
-
-            if (!res.ok) {
-                console.warn('Could not fetch event logs');
-                return;
-            }
-
-            const data = await res.json();
-            setEvents(data.events || []);
-            setPagination((prev) => ({
-                ...prev,
-                total: data.pagination?.total || 0,
-                totalPages: data.pagination?.totalPages || 1,
-            }));
-
-            // Process event distribution data
-            if (data.eventCounts) {
-                const distribution = [
-                    { name: 'Opens', value: data.eventCounts.open || 0 },
-                    { name: 'Clicks', value: data.eventCounts.click || 0 },
-                    { name: 'Bounces', value: data.eventCounts.bounce || 0 },
-                    { name: 'Complaints', value: data.eventCounts.complaint || 0 },
-                ];
-                setEventDistribution(distribution);
-            }
-        } catch (error) {
-            console.error('Error fetching event logs:', error);
-        } finally {
-            setEventsLoading(false);
-        }
-    }, [id, templateId, pagination.page, pagination.limit, filters]);
 
     // Fetch transaction logs
     const fetchTransactionLogs = useCallback(async () => {
@@ -358,10 +309,9 @@ export default function TransactionalTemplateDetail() {
         if (template) {
             fetchTemplateStats();
             fetchDailyStats();
-            fetchEventLogs();
             fetchTransactionLogs();
         }
-    }, [template, fetchTemplateStats, fetchDailyStats, fetchEventLogs, fetchTransactionLogs]);
+    }, [template, fetchTemplateStats, fetchDailyStats, fetchTransactionLogs]);
 
     // Show loading state
     if (isLoading || !brand || !template) {
@@ -721,177 +671,6 @@ export default function TransactionalTemplateDetail() {
                     ) : (
                         <div className="empty-state">
                             <p>No transaction logs available for this template.</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Email Events */}
-                <div className="detail-section events-section">
-                    <div className="section-header events-header">
-                        <h2>
-                            <Clock size={18} />
-                            <span>Email Events</span>
-                        </h2>
-
-                        <div className="events-actions">
-                            <button
-                                className="btn btn-outline"
-                                onClick={() => setShowFilters(!showFilters)}
-                            >
-                                <Filter size={14} />
-                                <span>Filter</span>
-                            </button>
-
-                            <button className="btn btn-outline">
-                                <Download size={14} />
-                                <span>Export</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Filters */}
-                    {showFilters && (
-                        <div className="events-filters">
-                            <div className="filter-group">
-                                <label>Event Type</label>
-                                <select
-                                    name="eventType"
-                                    value={filters.eventType}
-                                    onChange={handleFilterChange}
-                                >
-                                    <option value="">All Events</option>
-                                    <option value="open">Opens</option>
-                                    <option value="click">Clicks</option>
-                                    <option value="bounce">Bounces</option>
-                                    <option value="complaint">Complaints</option>
-                                </select>
-                            </div>
-
-                            <div className="filter-group">
-                                <label>Email Address</label>
-                                <input
-                                    type="text"
-                                    name="email"
-                                    value={filters.email}
-                                    onChange={handleFilterChange}
-                                    placeholder="Filter by email"
-                                />
-                            </div>
-
-                            <div className="filter-group">
-                                <label>Sort By</label>
-                                <select
-                                    name="sort"
-                                    value={filters.sort}
-                                    onChange={handleFilterChange}
-                                >
-                                    <option value="timestamp">Date/Time</option>
-                                    <option value="email">Email</option>
-                                    <option value="type">Event Type</option>
-                                </select>
-                            </div>
-
-                            <div className="filter-group">
-                                <label>Order</label>
-                                <select
-                                    name="order"
-                                    value={filters.order}
-                                    onChange={handleFilterChange}
-                                >
-                                    <option value="desc">Newest First</option>
-                                    <option value="asc">Oldest First</option>
-                                </select>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Events Table */}
-                    {eventsLoading ? (
-                        <div className="loading-inline">
-                            <div className="spinner-small"></div>
-                            <p>Loading events...</p>
-                        </div>
-                    ) : events.length > 0 ? (
-                        <div className="events-table-container">
-                            <table className="events-table">
-                                <thead>
-                                    <tr>
-                                        <th>Event</th>
-                                        <th>Email</th>
-                                        <th>Date/Time</th>
-                                        <th>Details</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {events.map((event, index) => {
-                                        const eventInfo = formatEventType(event.type);
-                                        return (
-                                            <tr key={event._id || index}>
-                                                <td className="event-type-cell">
-                                                    {eventInfo.icon}
-                                                    <span>{eventInfo.label}</span>
-                                                </td>
-                                                <td>{event.email}</td>
-                                                <td>
-                                                    <span
-                                                        className="event-time"
-                                                        title={formatDate(event.timestamp)}
-                                                    >
-                                                        {formatDistance(new Date(event.timestamp), new Date(), { addSuffix: true })}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    {event.type === 'click' && event.metadata?.url && (
-                                                        <span
-                                                            className="event-url"
-                                                            title={event.metadata.url}
-                                                        >
-                                                            {event.metadata.url}
-                                                        </span>
-                                                    )}
-                                                    {event.type === 'bounce' && (
-                                                        <span className="event-bounce-type">
-                                                            {event.metadata?.bounceType || 'Bounce'}
-                                                            {event.metadata?.diagnosticCode ? ` - ${event.metadata.diagnosticCode}` : ''}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    ) : (
-                        <div className="empty-state">
-                            <p>No events have been recorded for this template yet.</p>
-                        </div>
-                    )}
-
-                    {/* Pagination */}
-                    {events.length > 0 && pagination.totalPages > 1 && (
-                        <div className="pagination">
-                            <button
-                                className="pagination-btn"
-                                onClick={() => handlePageChange(pagination.page - 1)}
-                                disabled={pagination.page <= 1}
-                            >
-                                <ChevronLeft size={16} />
-                                <span>Previous</span>
-                            </button>
-
-                            <div className="pagination-info">
-                                Page {pagination.page} of {pagination.totalPages}
-                            </div>
-
-                            <button
-                                className="pagination-btn"
-                                onClick={() => handlePageChange(pagination.page + 1)}
-                                disabled={pagination.page >= pagination.totalPages}
-                            >
-                                <span>Next</span>
-                                <ChevronRight size={16} />
-                            </button>
                         </div>
                     )}
                 </div>

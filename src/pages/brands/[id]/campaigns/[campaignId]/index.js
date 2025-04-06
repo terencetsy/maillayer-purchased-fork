@@ -438,6 +438,10 @@ export default function CampaignDetail() {
                 {/* Events Section */}
                 {campaign.status !== 'draft' && (
                     <div className="cd-section">
+                        <GeoStats
+                            campaignId={campaignId}
+                            brandId={id}
+                        />
                         <div className="cd-events-header">
                             <h2 className="cd-section-title">
                                 <Clock size={20} />
@@ -611,11 +615,6 @@ export default function CampaignDetail() {
                                 </button>
                             </div>
                         )}
-
-                        <GeoStats
-                            campaignId={campaignId}
-                            brandId={id}
-                        />
                     </div>
                 )}
 

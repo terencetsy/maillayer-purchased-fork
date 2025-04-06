@@ -30,6 +30,8 @@ const UserSchema = new mongoose.Schema(
             },
             default: 'user',
         },
+        resetPasswordToken: String,
+        resetPasswordExpires: Date,
         createdAt: {
             type: Date,
             default: Date.now,

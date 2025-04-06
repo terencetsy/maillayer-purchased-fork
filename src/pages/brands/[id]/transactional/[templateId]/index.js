@@ -3,9 +3,9 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
-import { ArrowLeft, Copy, Code, Eye, Edit, Play, Shield, Send, Mail, AlertCircle, Calendar, MousePointer, X, Filter, Download, ChevronLeft, ChevronRight, Clock, CheckCircle, BarChart2, Users, MailX } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { formatDistance } from 'date-fns';
+import { ArrowLeft, Copy, Code, Eye, Edit, Play, Shield, Send, Mail, AlertCircle, Calendar, MousePointer, X, Filter, Download, ChevronLeft, ChevronRight, Clock, CheckCircle, BarChart2, Users, MailX, Globe, Smartphone, Laptop, Info } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, PieChart, Pie, Area, AreaChart } from 'recharts';
+import { formatDistance, format, subDays, isToday, isYesterday } from 'date-fns';
 import APIDocsSection from '@/components/APIDocsSection';
 import TemplatePreview from '@/components/TemplatePreview';
 
@@ -22,6 +22,11 @@ export default function TransactionalTemplateDetail() {
     const [logs, setLogs] = useState([]);
     const [events, setEvents] = useState([]);
     const [eventDistribution, setEventDistribution] = useState([]);
+    const [deviceStats, setDeviceStats] = useState([]);
+    const [topLocations, setTopLocations] = useState([]);
+    const [geoStats, setGeoStats] = useState({ countries: [], cities: [] });
+    const [timeStats, setTimeStats] = useState([]);
+    const [dailySendStats, setDailySendStats] = useState([]);
 
     // UI states
     const [isLoading, setIsLoading] = useState(true);
@@ -32,6 +37,8 @@ export default function TransactionalTemplateDetail() {
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [copied, setCopied] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
+    const [geoView, setGeoView] = useState('countries');
+    const [dateRange, setDateRange] = useState('7d');
 
     // Filters
     const [filters, setFilters] = useState({
@@ -51,6 +58,10 @@ export default function TransactionalTemplateDetail() {
 
     // Chart colors
     const COLORS = ['#5d87ff', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+    const BLUE_GRADIENT = [
+        { offset: 0, color: 'rgba(93, 135, 255, 0.3)' },
+        { offset: 100, color: 'rgba(93, 135, 255, 0.05)' },
+    ];
 
     // Fetch brand details
     const fetchBrandDetails = useCallback(async () => {
@@ -139,10 +150,42 @@ export default function TransactionalTemplateDetail() {
 
             const data = await res.json();
             setDailyStats(data.stats || []);
+
+            // Generate daily send stats for the chart
+            if (data.stats && data.stats.length > 0) {
+                const days = parseInt(dateRange.replace('d', ''));
+                const dailyData = [];
+                const today = new Date();
+
+                for (let i = days - 1; i >= 0; i--) {
+                    const date = subDays(today, i);
+                    const dateStr = format(date, 'yyyy-MM-dd');
+                    const statsForDay = data.stats.find((s) => s.date.startsWith(dateStr)) || {
+                        date: dateStr,
+                        sent: 0,
+                        opens: 0,
+                        clicks: 0,
+                    };
+
+                    let displayDate = format(date, 'MMM dd');
+                    if (isToday(date)) displayDate = 'Today';
+                    if (isYesterday(date)) displayDate = 'Yesterday';
+
+                    dailyData.push({
+                        date: dateStr,
+                        displayDate,
+                        sent: statsForDay.sent || 0,
+                        opens: statsForDay.opens || 0,
+                        clicks: statsForDay.clicks || 0,
+                    });
+                }
+
+                setDailySendStats(dailyData);
+            }
         } catch (error) {
             console.error('Error fetching daily stats:', error);
         }
-    }, [id, templateId]);
+    }, [id, templateId, dateRange]);
 
     // Fetch event logs
     const fetchEventLogs = useCallback(async () => {
@@ -175,12 +218,30 @@ export default function TransactionalTemplateDetail() {
             // Process event distribution data
             if (data.eventCounts) {
                 const distribution = [
-                    { name: 'Opens', value: data.eventCounts.open || 0 },
-                    { name: 'Clicks', value: data.eventCounts.click || 0 },
-                    { name: 'Bounces', value: data.eventCounts.bounce || 0 },
-                    { name: 'Complaints', value: data.eventCounts.complaint || 0 },
+                    { name: 'Opens', value: data.eventCounts.open || 0, color: '#10b981' },
+                    { name: 'Clicks', value: data.eventCounts.click || 0, color: '#f59e0b' },
+                    { name: 'Bounces', value: data.eventCounts.bounce || 0, color: '#ef4444' },
+                    { name: 'Complaints', value: data.eventCounts.complaint || 0, color: '#8b5cf6' },
                 ];
                 setEventDistribution(distribution);
+            }
+
+            // Process geo stats
+            if (data.geoStats) {
+                setGeoStats(data.geoStats);
+            }
+
+            // Process device stats (example data - ideally should come from backend)
+            const devices = processDeviceStats(data.events || []);
+            setDeviceStats(devices);
+
+            // Process time stats
+            const timeData = processTimeStats(data.events || []);
+            setTimeStats(timeData);
+
+            // Process top locations
+            if (data.geoStats && data.geoStats.countries) {
+                setTopLocations(data.geoStats.countries.slice(0, 5));
             }
         } catch (error) {
             console.error('Error fetching event logs:', error);
@@ -207,6 +268,56 @@ export default function TransactionalTemplateDetail() {
             console.error('Error fetching transaction logs:', error);
         }
     }, [id, templateId]);
+
+    // Process device stats from user agents
+    const processDeviceStats = (events) => {
+        const deviceMap = {
+            Mobile: 0,
+            Desktop: 0,
+            Tablet: 0,
+            Other: 0,
+        };
+
+        events.forEach((event) => {
+            if (event.metadata?.userAgent) {
+                const ua = event.metadata.userAgent.toLowerCase();
+                if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) {
+                    deviceMap['Mobile']++;
+                } else if (ua.includes('tablet') || ua.includes('ipad')) {
+                    deviceMap['Tablet']++;
+                } else if (ua.includes('mozilla') || ua.includes('chrome') || ua.includes('safari') || ua.includes('firefox')) {
+                    deviceMap['Desktop']++;
+                } else {
+                    deviceMap['Other']++;
+                }
+            } else {
+                deviceMap['Other']++;
+            }
+        });
+
+        // Convert to array format for chart
+        return Object.keys(deviceMap).map((key) => ({
+            name: key,
+            value: deviceMap[key],
+        }));
+    };
+
+    // Process time stats from events
+    const processTimeStats = (events) => {
+        const hours = Array(24)
+            .fill(0)
+            .map((_, i) => ({ hour: i, count: 0 }));
+
+        events.forEach((event) => {
+            if (event.timestamp) {
+                const date = new Date(event.timestamp);
+                const hour = date.getHours();
+                hours[hour].count++;
+            }
+        });
+
+        return hours;
+    };
 
     // Handle template publishing
     const handlePublish = async () => {
@@ -274,6 +385,11 @@ export default function TransactionalTemplateDetail() {
             ...prev,
             page: 1,
         }));
+    };
+
+    // Handle date range change
+    const handleDateRangeChange = (range) => {
+        setDateRange(range);
     };
 
     // Handle page change
@@ -352,6 +468,26 @@ export default function TransactionalTemplateDetail() {
         }
     };
 
+    // Custom tooltip for daily chart
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="custom-tooltip">
+                    <p className="tooltip-date">{label}</p>
+                    {payload.map((entry, index) => (
+                        <p
+                            key={index}
+                            style={{ color: entry.color }}
+                        >
+                            {`${entry.name}: ${entry.value}`}
+                        </p>
+                    ))}
+                </div>
+            );
+        }
+        return null;
+    };
+
     // Initialize data fetching
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -372,6 +508,13 @@ export default function TransactionalTemplateDetail() {
             fetchDailyStats();
         }
     }, [template, fetchTemplateStats, fetchDailyStats]);
+
+    // Refetch daily stats when date range changes
+    useEffect(() => {
+        if (template && template.status === 'active') {
+            fetchDailyStats();
+        }
+    }, [dateRange, fetchDailyStats, template]);
 
     // Fetch events when tab changes or filters updated
     useEffect(() => {
@@ -415,7 +558,24 @@ export default function TransactionalTemplateDetail() {
                     <div className="cd-campaign-header">
                         <h1>{template.name}</h1>
                         <div className="cd-campaign-meta">
-                            <span className={`cd-status-badge cd-status-${template.status}`}>{template.status === 'draft' ? 'Draft' : template.status === 'active' ? 'Published' : 'Inactive'}</span>
+                            <span className={`cd-status-badge cd-status-${template.status}`}>
+                                {template.status === 'draft' ? (
+                                    <>
+                                        <Clock size={14} />
+                                        <span>Draft</span>
+                                    </>
+                                ) : template.status === 'active' ? (
+                                    <>
+                                        <CheckCircle size={14} />
+                                        <span>Published</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <AlertCircle size={14} />
+                                        <span>Inactive</span>
+                                    </>
+                                )}
+                            </span>
                             {template.status === 'active' && (
                                 <div className="template-api-key">
                                     <span>API Key: </span>
@@ -507,6 +667,7 @@ export default function TransactionalTemplateDetail() {
                         <div className="tab-content">
                             {activeTab === 'overview' && (
                                 <div className="overview-tab">
+                                    {/* Template Overview */}
                                     <div className="cd-summary-card">
                                         <div className="cd-card-header">
                                             <Mail size={18} />
@@ -535,8 +696,8 @@ export default function TransactionalTemplateDetail() {
                                                 </div>
 
                                                 <div className="cd-summary-item">
-                                                    <span className="cd-summary-label">Description</span>
-                                                    <span className="cd-summary-value">{template.description || 'No description provided'}</span>
+                                                    <span className="cd-summary-label">Reply To</span>
+                                                    <span className="cd-summary-value">{template.replyTo || brand.replyToEmail || 'Not specified'}</span>
                                                 </div>
 
                                                 <div className="cd-summary-item">
@@ -571,64 +732,194 @@ export default function TransactionalTemplateDetail() {
                                     </div>
 
                                     {template.status === 'active' && (
-                                        <div className="cd-section">
-                                            <h2 className="cd-section-title">
-                                                <BarChart2 size={20} />
-                                                <span>Template Performance</span>
-                                            </h2>
-
-                                            {statsLoading ? (
-                                                <div className="cd-loading-inline">
-                                                    <div className="cd-spinner-small"></div>
-                                                    <p>Loading statistics...</p>
-                                                </div>
-                                            ) : (
-                                                <div className="cd-stats-cards">
-                                                    <div className="cd-stat-card">
-                                                        <div className="cd-stat-icon cd-stat-icon-delivered">
-                                                            <Send size={18} />
-                                                        </div>
-                                                        <div className="cd-stat-content">
-                                                            <div className="cd-stat-value">{stats?.sent?.toLocaleString() || 0}</div>
-                                                            <div className="cd-stat-label">Total Sent</div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="cd-stat-card">
-                                                        <div className="cd-stat-icon cd-stat-icon-opened">
-                                                            <Mail size={18} />
-                                                        </div>
-                                                        <div className="cd-stat-content">
-                                                            <div className="cd-stat-value">{stats?.opens?.toLocaleString() || 0}</div>
-                                                            <div className="cd-stat-label">Opens</div>
-                                                            <div className="cd-stat-percent">{stats?.openRate || 0}% open rate</div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="cd-stat-card">
-                                                        <div className="cd-stat-icon cd-stat-icon-clicked">
-                                                            <MousePointer size={18} />
-                                                        </div>
-                                                        <div className="cd-stat-content">
-                                                            <div className="cd-stat-value">{stats?.clicks?.toLocaleString() || 0}</div>
-                                                            <div className="cd-stat-label">Clicks</div>
-                                                            <div className="cd-stat-percent">{stats?.clickRate || 0}% click rate</div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="cd-stat-card">
-                                                        <div className="cd-stat-icon cd-stat-icon-bounced">
-                                                            <AlertCircle size={18} />
-                                                        </div>
-                                                        <div className="cd-stat-content">
-                                                            <div className="cd-stat-value">{stats?.bounces || 0}</div>
-                                                            <div className="cd-stat-label">Bounces</div>
-                                                            <div className="cd-stat-percent">{stats?.sent ? ((stats.bounces / stats.sent) * 100).toFixed(1) : 0}% bounce rate</div>
-                                                        </div>
+                                        <>
+                                            {/* Daily Sending Chart */}
+                                            <div className="cd-section">
+                                                <div className="section-header with-actions">
+                                                    <h2 className="cd-section-title">
+                                                        <BarChart2 size={20} />
+                                                        <span>Daily Email Activity</span>
+                                                    </h2>
+                                                    <div className="time-filter">
+                                                        <button
+                                                            className={`time-filter-btn ${dateRange === '7d' ? 'active' : ''}`}
+                                                            onClick={() => handleDateRangeChange('7d')}
+                                                        >
+                                                            7 Days
+                                                        </button>
+                                                        <button
+                                                            className={`time-filter-btn ${dateRange === '14d' ? 'active' : ''}`}
+                                                            onClick={() => handleDateRangeChange('14d')}
+                                                        >
+                                                            14 Days
+                                                        </button>
+                                                        <button
+                                                            className={`time-filter-btn ${dateRange === '30d' ? 'active' : ''}`}
+                                                            onClick={() => handleDateRangeChange('30d')}
+                                                        >
+                                                            30 Days
+                                                        </button>
                                                     </div>
                                                 </div>
-                                            )}
-                                        </div>
+
+                                                {statsLoading ? (
+                                                    <div className="cd-loading-inline">
+                                                        <div className="cd-spinner-small"></div>
+                                                        <p>Loading chart data...</p>
+                                                    </div>
+                                                ) : dailySendStats.length === 0 ? (
+                                                    <div className="cd-empty-events">
+                                                        <p>No data available for the chart. Try sending emails with this template first.</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="chart-container">
+                                                        <ResponsiveContainer
+                                                            width="100%"
+                                                            height={350}
+                                                        >
+                                                            <AreaChart
+                                                                data={dailySendStats}
+                                                                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                                                            >
+                                                                <defs>
+                                                                    <linearGradient
+                                                                        id="sentColorGradient"
+                                                                        x1="0"
+                                                                        y1="0"
+                                                                        x2="0"
+                                                                        y2="1"
+                                                                    >
+                                                                        {BLUE_GRADIENT.map((item) => (
+                                                                            <stop
+                                                                                key={item.offset}
+                                                                                offset={`${item.offset}%`}
+                                                                                stopColor={item.color}
+                                                                            />
+                                                                        ))}
+                                                                    </linearGradient>
+                                                                </defs>
+                                                                <CartesianGrid
+                                                                    strokeDasharray="3 3"
+                                                                    vertical={false}
+                                                                    stroke="rgba(255, 255, 255, 0.1)"
+                                                                />
+                                                                <XAxis
+                                                                    dataKey="displayDate"
+                                                                    angle={0}
+                                                                    textAnchor="middle"
+                                                                    tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 12 }}
+                                                                    axisLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+                                                                    tickLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+                                                                />
+                                                                <YAxis
+                                                                    tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 12 }}
+                                                                    axisLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+                                                                    tickLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+                                                                />
+                                                                <Tooltip content={<CustomTooltip />} />
+                                                                <Legend />
+                                                                <Area
+                                                                    type="monotone"
+                                                                    dataKey="sent"
+                                                                    name="Sent"
+                                                                    fill="url(#sentColorGradient)"
+                                                                    stroke="#5d87ff"
+                                                                    activeDot={{ r: 6 }}
+                                                                />
+                                                                <Line
+                                                                    type="monotone"
+                                                                    dataKey="opens"
+                                                                    name="Opens"
+                                                                    stroke="#10b981"
+                                                                    activeDot={{ r: 6 }}
+                                                                />
+                                                                <Line
+                                                                    type="monotone"
+                                                                    dataKey="clicks"
+                                                                    name="Clicks"
+                                                                    stroke="#f59e0b"
+                                                                    activeDot={{ r: 6 }}
+                                                                />
+                                                            </AreaChart>
+                                                        </ResponsiveContainer>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Performance Metrics */}
+                                            <div className="cd-section">
+                                                <h2 className="cd-section-title">
+                                                    <BarChart2 size={20} />
+                                                    <span>Template Performance</span>
+                                                </h2>
+
+                                                {statsLoading ? (
+                                                    <div className="cd-loading-inline">
+                                                        <div className="cd-spinner-small"></div>
+                                                        <p>Loading statistics...</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="cd-stats-cards">
+                                                        <div className="cd-stat-card">
+                                                            <div className="cd-stat-icon cd-stat-icon-delivered">
+                                                                <Send size={18} />
+                                                            </div>
+                                                            <div className="cd-stat-content">
+                                                                <div className="cd-stat-value">{stats?.sent?.toLocaleString() || 0}</div>
+                                                                <div className="cd-stat-label">Total Sent</div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="cd-stat-card">
+                                                            <div className="cd-stat-icon cd-stat-icon-opened">
+                                                                <Mail size={18} />
+                                                            </div>
+                                                            <div className="cd-stat-content">
+                                                                <div className="cd-stat-value">{stats?.opens?.toLocaleString() || 0}</div>
+                                                                <div className="cd-stat-label">Opens</div>
+                                                                <div className="cd-stat-percent">{stats?.openRate || 0}% open rate</div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="cd-stat-card">
+                                                            <div className="cd-stat-icon cd-stat-icon-clicked">
+                                                                <MousePointer size={18} />
+                                                            </div>
+                                                            <div className="cd-stat-content">
+                                                                <div className="cd-stat-value">{stats?.clicks?.toLocaleString() || 0}</div>
+                                                                <div className="cd-stat-label">Clicks</div>
+                                                                <div className="cd-stat-percent">{stats?.clickRate || 0}% click rate</div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="cd-stat-card">
+                                                            <div className="cd-stat-icon cd-stat-icon-bounced">
+                                                                <AlertCircle size={18} />
+                                                            </div>
+                                                            <div className="cd-stat-content">
+                                                                <div className="cd-stat-value">{stats?.bounces || 0}</div>
+                                                                <div className="cd-stat-label">Bounces</div>
+                                                                <div className="cd-stat-percent">{stats?.sent ? ((stats.bounces / stats.sent) * 100).toFixed(1) : 0}% bounce rate</div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="cd-stat-card">
+                                                            <div
+                                                                className="cd-stat-icon cd-stat-icon-bounced"
+                                                                style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6' }}
+                                                            >
+                                                                <Users size={18} />
+                                                            </div>
+                                                            <div className="cd-stat-content">
+                                                                <div className="cd-stat-value">{dailySendStats.reduce((total, day) => total + day.sent, 0)}</div>
+                                                                <div className="cd-stat-label">Recent Period</div>
+                                                                <div className="cd-stat-percent">Last {dateRange.replace('d', '')} days</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </>
                                     )}
                                 </div>
                             )}
@@ -652,6 +943,7 @@ export default function TransactionalTemplateDetail() {
                                             </div>
                                         ) : (
                                             <>
+                                                {/* Email Activity Chart */}
                                                 <div className="cd-section">
                                                     <div className="cd-card">
                                                         <div className="cd-card-header">
@@ -667,14 +959,24 @@ export default function TransactionalTemplateDetail() {
                                                                         }))}
                                                                         margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                                                                     >
-                                                                        <CartesianGrid strokeDasharray="3 3" />
+                                                                        <CartesianGrid
+                                                                            strokeDasharray="3 3"
+                                                                            stroke="rgba(255, 255, 255, 0.1)"
+                                                                        />
                                                                         <XAxis
                                                                             dataKey="formattedDate"
                                                                             angle={-45}
                                                                             textAnchor="end"
                                                                             height={70}
+                                                                            tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
+                                                                            axisLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+                                                                            tickLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
                                                                         />
-                                                                        <YAxis />
+                                                                        <YAxis
+                                                                            tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
+                                                                            axisLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+                                                                            tickLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+                                                                        />
                                                                         <Tooltip />
                                                                         <Legend />
                                                                         <Bar
@@ -699,25 +1001,27 @@ export default function TransactionalTemplateDetail() {
                                                     </div>
                                                 </div>
 
-                                                <div className="cd-section">
+                                                {/* Event Distribution and Device Distribution */}
+                                                <div className="analytics-grid">
+                                                    {/* Event Distribution */}
                                                     <div className="cd-card">
                                                         <div className="cd-card-header">
                                                             <h3>Event Distribution</h3>
                                                         </div>
-                                                        <div
-                                                            className="cd-card-content"
-                                                            style={{ display: 'flex', justifyContent: 'center' }}
-                                                        >
+                                                        <div className="cd-card-content">
                                                             {eventDistribution.length > 0 ? (
-                                                                <div style={{ width: '100%', height: 350, maxWidth: 500 }}>
-                                                                    <ResponsiveContainer>
+                                                                <div className="pie-chart-container">
+                                                                    <ResponsiveContainer
+                                                                        width="100%"
+                                                                        height={300}
+                                                                    >
                                                                         <PieChart>
                                                                             <Pie
                                                                                 data={eventDistribution}
                                                                                 cx="50%"
                                                                                 cy="50%"
                                                                                 labelLine={true}
-                                                                                outerRadius={120}
+                                                                                outerRadius={100}
                                                                                 fill="#8884d8"
                                                                                 dataKey="value"
                                                                                 label={({ name, percent }) => `${name} (${(percent * 100).toFixed(1)}%)`}
@@ -725,7 +1029,7 @@ export default function TransactionalTemplateDetail() {
                                                                                 {eventDistribution.map((entry, index) => (
                                                                                     <Cell
                                                                                         key={`cell-${index}`}
-                                                                                        fill={COLORS[index % COLORS.length]}
+                                                                                        fill={entry.color || COLORS[index % COLORS.length]}
                                                                                     />
                                                                                 ))}
                                                                             </Pie>
@@ -736,6 +1040,168 @@ export default function TransactionalTemplateDetail() {
                                                             ) : (
                                                                 <div className="cd-empty-events">
                                                                     <p>No event distribution data available.</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Device Distribution */}
+                                                    <div className="cd-card">
+                                                        <div className="cd-card-header">
+                                                            <h3>Device Usage</h3>
+                                                        </div>
+                                                        <div className="cd-card-content">
+                                                            {deviceStats.length > 0 ? (
+                                                                <div className="device-distribution">
+                                                                    <div className="pie-chart-container">
+                                                                        <ResponsiveContainer
+                                                                            width="100%"
+                                                                            height={220}
+                                                                        >
+                                                                            <PieChart>
+                                                                                <Pie
+                                                                                    data={deviceStats}
+                                                                                    cx="50%"
+                                                                                    cy="50%"
+                                                                                    labelLine={false}
+                                                                                    outerRadius={80}
+                                                                                    fill="#8884d8"
+                                                                                    dataKey="value"
+                                                                                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(1)}%)`}
+                                                                                >
+                                                                                    {deviceStats.map((entry, index) => (
+                                                                                        <Cell
+                                                                                            key={`cell-${index}`}
+                                                                                            fill={COLORS[index % COLORS.length]}
+                                                                                        />
+                                                                                    ))}
+                                                                                </Pie>
+                                                                                <Tooltip formatter={(value) => [value, 'Opens']} />
+                                                                            </PieChart>
+                                                                        </ResponsiveContainer>
+                                                                    </div>
+
+                                                                    <div className="device-legend">
+                                                                        {deviceStats.map((device, index) => (
+                                                                            <div
+                                                                                className="device-item"
+                                                                                key={device.name}
+                                                                            >
+                                                                                <div className="device-icon">
+                                                                                    {device.name === 'Mobile' && <Smartphone size={16} />}
+                                                                                    {device.name === 'Desktop' && <Laptop size={16} />}
+                                                                                    {device.name === 'Tablet' && <Tablet size={16} />}
+                                                                                    {device.name === 'Other' && <Globe size={16} />}
+                                                                                </div>
+                                                                                <div className="device-name">{device.name}</div>
+                                                                                <div className="device-value">{device.value}</div>
+                                                                                <div className="device-percent">{((device.value / deviceStats.reduce((sum, d) => sum + d.value, 0)) * 100).toFixed(1)}%</div>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="cd-empty-events">
+                                                                    <p>No device data available.</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Time Distribution and Geo Distribution */}
+                                                <div className="analytics-grid">
+                                                    {/* Time Distribution */}
+                                                    <div className="cd-card">
+                                                        <div className="cd-card-header">
+                                                            <h3>Activity by Hour</h3>
+                                                        </div>
+                                                        <div className="cd-card-content">
+                                                            {timeStats.length > 0 ? (
+                                                                <div style={{ width: '100%', height: 250 }}>
+                                                                    <ResponsiveContainer>
+                                                                        <BarChart
+                                                                            data={timeStats}
+                                                                            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                                                                        >
+                                                                            <CartesianGrid
+                                                                                strokeDasharray="3 3"
+                                                                                stroke="rgba(255, 255, 255, 0.1)"
+                                                                            />
+                                                                            <XAxis
+                                                                                dataKey="hour"
+                                                                                tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
+                                                                                axisLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+                                                                                tickLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+                                                                                tickFormatter={(hour) => {
+                                                                                    let h = hour % 12;
+                                                                                    if (h === 0) h = 12;
+                                                                                    return `${h}${hour >= 12 ? 'pm' : 'am'}`;
+                                                                                }}
+                                                                            />
+                                                                            <YAxis
+                                                                                tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
+                                                                                axisLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+                                                                                tickLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+                                                                            />
+                                                                            <Tooltip
+                                                                                formatter={(value) => [value, 'Events']}
+                                                                                labelFormatter={(hour) => {
+                                                                                    let h = hour % 12;
+                                                                                    if (h === 0) h = 12;
+                                                                                    return `${h}:00 ${hour >= 12 ? 'PM' : 'AM'}`;
+                                                                                }}
+                                                                            />
+                                                                            <Bar
+                                                                                dataKey="count"
+                                                                                name="Activity"
+                                                                                fill="#5d87ff"
+                                                                            />
+                                                                        </BarChart>
+                                                                    </ResponsiveContainer>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="cd-empty-events">
+                                                                    <p>No time distribution data available.</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Top Locations */}
+                                                    <div className="cd-card">
+                                                        <div className="cd-card-header">
+                                                            <h3>Top Locations</h3>
+                                                        </div>
+                                                        <div className="cd-card-content">
+                                                            {topLocations.length > 0 ? (
+                                                                <div className="location-list">
+                                                                    {topLocations.map((location, index) => (
+                                                                        <div
+                                                                            className="location-item"
+                                                                            key={index}
+                                                                        >
+                                                                            <div className="location-rank">{index + 1}</div>
+                                                                            <div className="location-name">
+                                                                                <Globe size={16} />
+                                                                                <span>{location.country || 'Unknown'}</span>
+                                                                            </div>
+                                                                            <div className="location-value">{location.count}</div>
+                                                                            <div className="location-bar">
+                                                                                <div
+                                                                                    className="location-bar-fill"
+                                                                                    style={{
+                                                                                        width: `${(location.count / topLocations[0].count) * 100}%`,
+                                                                                        backgroundColor: COLORS[index % COLORS.length],
+                                                                                    }}
+                                                                                ></div>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="cd-empty-events">
+                                                                    <p>No location data available.</p>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -842,6 +1308,7 @@ export default function TransactionalTemplateDetail() {
                                                             <th>Event</th>
                                                             <th>Email</th>
                                                             <th>Date/Time</th>
+                                                            <th>Location</th>
                                                             <th>Details</th>
                                                         </tr>
                                                     </thead>
@@ -862,6 +1329,16 @@ export default function TransactionalTemplateDetail() {
                                                                         >
                                                                             {formatDistance(new Date(event.timestamp), new Date(), { addSuffix: true })}
                                                                         </span>
+                                                                    </td>
+                                                                    <td>
+                                                                        {event.metadata?.geolocation ? (
+                                                                            <span className="geo-location">
+                                                                                {event.metadata.geolocation.city && event.metadata.geolocation.city !== 'Unknown' ? `${event.metadata.geolocation.city}, ` : ''}
+                                                                                {event.metadata.geolocation.country || 'Unknown'}
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="text-muted">Unknown</span>
+                                                                        )}
                                                                     </td>
                                                                     <td>
                                                                         {event.type === 'click' && event.metadata?.url && (
@@ -937,6 +1414,11 @@ export default function TransactionalTemplateDetail() {
                                             <Shield size={20} />
                                             <span>Transaction Logs</span>
                                         </h2>
+
+                                        <div className="cd-info-tooltip">
+                                            <Info size={16} />
+                                            <span className="tooltip-text">These logs show the actual email sending transactions</span>
+                                        </div>
                                     </div>
 
                                     {logs.length > 0 ? (
@@ -956,7 +1438,12 @@ export default function TransactionalTemplateDetail() {
                                                         {logs.map((log) => (
                                                             <tr key={log._id}>
                                                                 <td>
-                                                                    <span className={`cd-status-badge cd-status-${log.status}`}>{log.status}</span>
+                                                                    <span className={`cd-status-badge cd-status-${log.status}`}>
+                                                                        {log.status === 'delivered' && <CheckCircle size={12} />}
+                                                                        {log.status === 'sent' && <Clock size={12} />}
+                                                                        {log.status === 'failed' && <AlertCircle size={12} />}
+                                                                        {log.status.charAt(0).toUpperCase() + log.status.slice(1)}
+                                                                    </span>
                                                                 </td>
                                                                 <td>{log.to}</td>
                                                                 <td>{formatDate(log.sentAt)}</td>
@@ -968,8 +1455,8 @@ export default function TransactionalTemplateDetail() {
                                                                                 return (
                                                                                     <span
                                                                                         key={i}
+                                                                                        className="event-indicator-icon"
                                                                                         title={`${eventInfo.label} - ${formatDate(event.timestamp)}`}
-                                                                                        style={{ marginRight: '5px' }}
                                                                                     >
                                                                                         {eventInfo.icon}
                                                                                     </span>
@@ -980,7 +1467,7 @@ export default function TransactionalTemplateDetail() {
                                                                         <span className="text-muted">No events</span>
                                                                     )}
                                                                 </td>
-                                                                <td>{log.ipAddress || <span className="text-muted">N/A</span>}</td>
+                                                                <td className="ip-address">{log.metadata?.ipAddress || log.ipAddress || <span className="text-muted">N/A</span>}</td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
@@ -1022,6 +1509,284 @@ export default function TransactionalTemplateDetail() {
                     </div>
                 )}
             </div>
+
+            {/* CSS Styles specific to this page */}
+            <style jsx>{`
+                /* Custom styles for the template detail page */
+                .template-detail-container {
+                    max-width: 1200px;
+                    margin: 0 auto;
+                    padding: 0 20px;
+                }
+
+                .cd-info-tooltip {
+                    position: relative;
+                    display: inline-flex;
+                    align-items: center;
+                    color: rgba(255, 255, 255, 0.7);
+                    cursor: help;
+                }
+
+                .cd-info-tooltip .tooltip-text {
+                    visibility: hidden;
+                    width: 250px;
+                    background-color: #333;
+                    color: #fff;
+                    text-align: center;
+                    border-radius: 6px;
+                    padding: 8px;
+                    position: absolute;
+                    z-index: 1;
+                    bottom: 125%;
+                    left: 50%;
+                    margin-left: -125px;
+                    opacity: 0;
+                    transition: opacity 0.3s;
+                    font-size: 12px;
+                    pointer-events: none;
+                }
+
+                .cd-info-tooltip:hover .tooltip-text {
+                    visibility: visible;
+                    opacity: 1;
+                }
+
+                .section-header.with-actions {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                }
+
+                .time-filter {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    background-color: rgba(0, 0, 0, 0.2);
+                    border-radius: 6px;
+                    padding: 4px;
+                    border: 1px solid #2e2e2e;
+                }
+
+                .time-filter-btn {
+                    background: none;
+                    border: none;
+                    color: rgba(255, 255, 255, 0.7);
+                    padding: 6px 12px;
+                    font-size: 13px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                }
+
+                .time-filter-btn:hover {
+                    background-color: rgba(255, 255, 255, 0.05);
+                    color: #ffffff;
+                }
+
+                .time-filter-btn.active {
+                    background-color: #5d87ff;
+                    color: white;
+                }
+
+                .chart-container {
+                    background-color: rgba(0, 0, 0, 0.2);
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 20px;
+                }
+
+                .custom-tooltip {
+                    background-color: rgba(0, 0, 0, 0.8);
+                    border: 1px solid #2e2e2e;
+                    border-radius: 4px;
+                    padding: 10px;
+                }
+
+                .tooltip-date {
+                    font-weight: 600;
+                    margin-bottom: 5px;
+                    color: white;
+                }
+
+                .event-indicator-icon {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background-color: rgba(0, 0, 0, 0.2);
+                    margin-right: 5px;
+                    cursor: help;
+                }
+
+                .analytics-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 20px;
+                    margin-bottom: 20px;
+                }
+
+                .pie-chart-container {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+
+                .device-distribution {
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .device-legend {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 10px;
+                    margin-top: 15px;
+                }
+
+                .device-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 8px;
+                    border-radius: 4px;
+                    background-color: rgba(0, 0, 0, 0.1);
+                }
+
+                .device-name {
+                    flex: 1;
+                    font-size: 14px;
+                }
+
+                .device-value {
+                    font-weight: 600;
+                    font-size: 14px;
+                }
+
+                .device-percent {
+                    color: rgba(255, 255, 255, 0.7);
+                    font-size: 12px;
+                    min-width: 40px;
+                    text-align: right;
+                }
+
+                .location-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                }
+
+                .location-item {
+                    display: grid;
+                    grid-template-columns: 30px 1fr 50px;
+                    gap: 10px;
+                    align-items: center;
+                    padding: 8px;
+                    background-color: rgba(0, 0, 0, 0.1);
+                    border-radius: 4px;
+                }
+
+                .location-rank {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 24px;
+                    height: 24px;
+                    background-color: #5d87ff;
+                    color: white;
+                    border-radius: 50%;
+                    font-size: 12px;
+                    font-weight: 600;
+                }
+
+                .location-name {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 14px;
+                }
+
+                .location-name svg {
+                    color: #5d87ff;
+                }
+
+                .location-value {
+                    font-weight: 600;
+                    text-align: right;
+                }
+
+                .location-bar {
+                    grid-column: 1 / -1;
+                    height: 6px;
+                    background-color: rgba(255, 255, 255, 0.1);
+                    border-radius: 3px;
+                    overflow: hidden;
+                }
+
+                .location-bar-fill {
+                    height: 100%;
+                    border-radius: 3px;
+                }
+
+                .geo-location {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    font-size: 13px;
+                }
+
+                .text-muted {
+                    color: rgba(255, 255, 255, 0.5);
+                    font-style: italic;
+                }
+
+                .ip-address {
+                    font-family: monospace;
+                    font-size: 13px;
+                }
+
+                @media (max-width: 992px) {
+                    .analytics-grid {
+                        grid-template-columns: 1fr;
+                    }
+
+                    .device-legend {
+                        grid-template-columns: 1fr;
+                    }
+                }
+
+                @media (max-width: 768px) {
+                    .cd-summary-grid {
+                        grid-template-columns: 1fr !important;
+                    }
+
+                    .cd-stats-cards {
+                        grid-template-columns: repeat(2, 1fr) !important;
+                    }
+
+                    .section-header.with-actions {
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: 10px;
+                    }
+                }
+
+                @media (max-width: 576px) {
+                    .cd-stats-cards {
+                        grid-template-columns: 1fr !important;
+                    }
+
+                    .template-actions {
+                        flex-direction: column;
+                    }
+
+                    .template-actions > * {
+                        width: 100%;
+                    }
+                }
+            `}</style>
         </BrandLayout>
     );
 }

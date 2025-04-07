@@ -5,7 +5,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { Mail, Plus, Search, MoreVertical, Bell, LogOut, Grid, List, X, Filter } from 'lucide-react';
 import BrandForm from '@/components/BrandForm';
-import { MailSend02 } from '@/lib/icons';
+import { SendMail } from '@/lib/icons';
 
 export default function Dashboard() {
     const { data: session, status } = useSession();
@@ -144,10 +144,14 @@ export default function Dashboard() {
     return (
         <>
             <Head>
-                <title>Brands | Iconbuddy</title>
+                <title>Brands</title>
                 <meta
                     name="description"
-                    content="Iconbuddy Brand Dashboard"
+                    content="Brand Dashboard"
+                />
+                <link
+                    rel="icon"
+                    href="/favicon.png"
                 />
             </Head>
 
@@ -155,8 +159,8 @@ export default function Dashboard() {
                 <header className="dashboard-header">
                     <div className="dashboard-logo">
                         <Link href="/brands">
-                            <MailSend02 size={24} />
-                            <span>Iconbuddy</span>
+                            <SendMail size={24} />
+                            <span>Maillayer</span>
                         </Link>
                     </div>
 
@@ -267,7 +271,7 @@ export default function Dashboard() {
                                             <Mail size={32} />
                                         </div>
                                         <h2>No brands found</h2>
-                                        <p>Create your first brand to start sending emails with Iconbuddy.</p>
+                                        <p>Create your first brand to start sending emails with Maillayer Client.</p>
                                         <button
                                             className="btn btn-primary"
                                             onClick={handleCreateClick}

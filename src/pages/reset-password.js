@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import { MailSend02 } from '@/lib/icons';
+import { SendMail } from '@/lib/icons';
 
 export default function ResetPassword() {
     const router = useRouter();
@@ -104,7 +104,7 @@ export default function ResetPassword() {
                 <div className="auth-card">
                     <div className="auth-header">
                         <div className="logo">
-                            <MailSend02 />
+                            <SendMail />
                         </div>
                         <h1>Reset Password</h1>
                         <p>Verifying your reset link...</p>
@@ -128,7 +128,7 @@ export default function ResetPassword() {
                 <div className="auth-card">
                     <div className="auth-header">
                         <div className="logo">
-                            <MailSend02 />
+                            <SendMail />
                         </div>
                         <h1>Reset Password</h1>
                         <p>Create a new password for your account</p>

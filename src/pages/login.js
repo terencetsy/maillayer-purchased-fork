@@ -3,7 +3,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import { MailSend02 } from '@/lib/icons';
+import { SendMail } from '@/lib/icons';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -58,7 +58,7 @@ export default function Login() {
                 <div className="auth-card">
                     <div className="auth-header">
                         <div className="logo">
-                            <MailSend02 />
+                            <SendMail />
                         </div>
                         <h1>Welcome back</h1>
                         <p>Sign in to your Maillayer account</p>

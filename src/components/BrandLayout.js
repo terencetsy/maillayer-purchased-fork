@@ -48,10 +48,14 @@ export default function BrandLayout({ children, brand }) {
     return (
         <>
             <Head>
-                <title>{brand.name} | Iconbuddy</title>
+                <title>{brand.name}</title>
                 <meta
                     name="description"
-                    content={`${brand.name} - Iconbuddy Brand Management`}
+                    content={`${brand.name} - Brand Management`}
+                />
+                <link
+                    rel="icon"
+                    href="/favicon.png"
                 />
             </Head>
 

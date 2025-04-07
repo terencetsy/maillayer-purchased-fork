@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import { MailSend02 } from '@/lib/icons';
+import { SendMail } from '@/lib/icons';
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -62,7 +62,7 @@ export default function ForgotPassword() {
                 <div className="auth-card">
                     <div className="auth-header">
                         <div className="logo">
-                            <MailSend02 />
+                            <SendMail />
                         </div>
                         <h1>Forgot Password</h1>
                         <p>Enter your email to receive password reset instructions</p>

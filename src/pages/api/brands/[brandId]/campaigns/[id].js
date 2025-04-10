@@ -79,7 +79,7 @@ export default async function handler(req, res) {
                 if (replyTo) updateData.replyTo = replyTo;
                 if (contactListIds) updateData.contactListIds = contactListIds;
                 // Sending or scheduling functionality
-                if (status === 'sending' || status === 'scheduled') {
+                if (status === 'sending' || status === 'scheduled' || scheduleType === 'warmup') {
                     // Check if SES details exist in the brand
                     if (brand.status !== 'active') {
                         return res.status(400).json({ message: 'AWS SES credentials not configured for this brand' });

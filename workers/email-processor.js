@@ -730,7 +730,6 @@ async function initializeQueues() {
                 {
                     $inc: {
                         'stats.processed': contacts.length,
-                        'stats.recipients': contacts.length,
                         'stats.bounces': failureCount,
                         'warmupConfig.completedBatches': 1,
                     },

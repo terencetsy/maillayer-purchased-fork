@@ -11060,3 +11060,924 @@ h4 {
     font-weight: 600;
     color: #ffffff;
 }
+
+/* Integrations List Page Styles */
+.integrations-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.integrations-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.integrations-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.integrations-header p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    margin: 0;
+}
+
+.integration-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.integration-card {
+    display: flex;
+    align-items: center;
+    background-color: #111111;
+    border: 1px solid #2e2e2e;
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s ease;
+}
+
+.integration-card:not(.disabled):hover {
+    border-color: #5d87ff;
+    background-color: rgba(93, 135, 255, 0.05);
+}
+
+.integration-card.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.integration-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.integration-icon.firebase {
+    background-color: rgba(255, 171, 0, 0.2);
+    color: #ffab00;
+}
+
+.integration-icon.supabase {
+    background-color: rgba(62, 207, 142, 0.2);
+    color: #3ecf8e;
+}
+
+.integration-icon.auth0 {
+    background-color: rgba(255, 87, 34, 0.2);
+    color: #ff5722;
+}
+
+.integration-info {
+    flex: 1;
+    margin-left: 16px;
+}
+
+.integration-info h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 4px;
+}
+
+.integration-info p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    margin: 0 0 8px;
+}
+
+.integration-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badge-success {
+    background-color: rgba(81, 207, 102, 0.2);
+    color: #51cf66;
+}
+
+.badge-warning {
+    background-color: rgba(255, 171, 0, 0.2);
+    color: #ffab00;
+}
+
+.badge-danger {
+    background-color: rgba(255, 87, 34, 0.2);
+    color: #ff5722;
+}
+
+.badge-default {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.integration-date {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.integration-action {
+    margin-left: 16px;
+}
+
+.integration-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #5d87ff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.integration-button:hover {
+    background-color: #4a6ecc;
+}
+
+.integration-button.disabled {
+    background-color: #2e2e2e;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: not-allowed;
+}
+
+/* Firebase Integration Page Styles */
+.firebase-integration-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.integration-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.back-link:hover {
+    color: #ffffff;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background-color: rgba(255, 171, 0, 0.2);
+    color: #ffab00;
+    flex-shrink: 0;
+}
+
+.header-text h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 8px;
+}
+
+.header-text p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    margin: 0;
+}
+
+.alert {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.alert-error {
+    background-color: rgba(255, 87, 34, 0.1);
+    border-left: 3px solid #ff5722;
+    color: #ff5722;
+}
+
+.alert-success {
+    background-color: rgba(81, 207, 102, 0.1);
+    border-left: 3px solid #51cf66;
+    color: #51cf66;
+}
+
+.close-alert {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.integration-status-panel {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.status-indicator.active {
+    color: #51cf66;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #51cf66;
+}
+
+.status-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.integration-setup-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+@media (min-width: 992px) {
+    .integration-setup-container {
+        flex-direction: row;
+    }
+
+    .setup-card {
+        flex: 1;
+    }
+
+    .usage-card {
+        flex: 0 0 300px;
+    }
+}
+
+.setup-card {
+    background-color: #111111;
+    border: 1px solid #2e2e2e;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.setup-header {
+    padding: 16px;
+    border-bottom: 1px solid #2e2e2e;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.setup-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.delete-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: rgba(255, 87, 34, 0.1);
+    color: #ff5722;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.delete-button:hover:not(:disabled) {
+    background-color: rgba(255, 87, 34, 0.2);
+}
+
+.delete-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.setup-form {
+    padding: 16px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    background-color: #1a1a1a;
+    border: 1px solid #2e2e2e;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #5d87ff;
+}
+
+.service-account-section {
+    margin-bottom: 16px;
+}
+
+.service-account-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 8px;
+}
+
+.section-description {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.current-connection {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.connection-info {
+    margin-bottom: 16px;
+}
+
+.info-item {
+    display: flex;
+    margin-bottom: 8px;
+}
+
+.info-item .label {
+    flex: 0 0 100px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+}
+
+.info-item .value {
+    font-size: 13px;
+    font-family: monospace;
+    word-break: break-all;
+}
+
+.update-service-account p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.file-upload-section {
+    margin-bottom: 16px;
+}
+
+.instructions {
+    margin-bottom: 16px;
+}
+
+.instruction-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.instruction-note svg {
+    color: #5d87ff;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.instruction-note p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    margin: 0;
+}
+
+.file-upload-container {
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.file-upload-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: #1a1a1a;
+    border: 1px dashed #2e2e2e;
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.file-upload-label:hover {
+    border-color: #5d87ff;
+    background-color: rgba(93, 135, 255, 0.05);
+}
+
+.file-upload-label.primary {
+    background-color: rgba(93, 135, 255, 0.1);
+    border: 1px dashed #5d87ff;
+    color: #ffffff;
+}
+
+.file-input {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+}
+
+.validation-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ff5722;
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.save-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #5d87ff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.save-button:hover:not(:disabled) {
+    background-color: #4a6ecc;
+}
+
+.save-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.spinner-sm {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.usage-instructions {
+    padding: 16px;
+}
+
+.instruction-step {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.instruction-step:last-child {
+    margin-bottom: 0;
+}
+
+.step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background-color: #5d87ff;
+    border-radius: 50%;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.step-content h4 {
+    font-size: 15px;
+    font-weight: 500;
+    margin: 0 0 4px;
+}
+
+.step-content p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    margin: 0;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-container {
+    background-color: #111111;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 500px;
+    overflow: hidden;
+    border: 1px solid #2e2e2e;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid #2e2e2e;
+}
+
+.modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    display: flex;
+    padding: 4px;
+}
+
+.close-btn:hover {
+    color: #ffffff;
+}
+
+.modal-content {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.warning-icon {
+    color: #ffab00;
+    margin-bottom: 16px;
+}
+
+.modal-content p {
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.warning-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary {
+    background-color: #2e2e2e;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: #3e3e3e;
+    color: #ffffff;
+}
+
+.btn-danger {
+    background-color: #ff5722;
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background-color: #e64a19;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.integration-icon.firebase {
+    background-color: rgba(255, 171, 0, 0.2);
+    color: #ffab00;
+}
+
+.integration-icon.airtable {
+    background-color: rgba(55, 160, 230, 0.2);
+    color: #37a0e6;
+}
+
+.integration-icon.supabase {
+    background-color: rgba(62, 207, 142, 0.2);
+    color: #3ecf8e;
+}
+
+.integration-icon.auth0 {
+    background-color: rgba(255, 87, 34, 0.2);
+    color: #ff5722;
+}
+
+.header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background-color: rgba(255, 171, 0, 0.2);
+    color: #ffab00;
+    flex-shrink: 0;
+}
+
+.header-icon.airtable {
+    background-color: rgba(55, 160, 230, 0.2);
+    color: #37a0e6;
+}
+
+.validation-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ff5722;
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+/* Additional styles for Airtable integration */
+.header-icon.airtable {
+    background-color: rgba(39, 164, 219, 0.2);
+    color: #27a4db;
+}
+
+.airtable-integration-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.api-key-section {
+    margin-bottom: 16px;
+}
+
+.api-key-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 8px;
+}
+
+.api-key-input-group {
+    position: relative;
+    margin-bottom: 16px;
+}
+
+.api-key-input {
+    width: 100%;
+    padding: 10px 12px;
+    padding-right: 40px;
+    background-color: #1a1a1a;
+    border: 1px solid #2e2e2e;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.api-key-input:focus {
+    outline: none;
+    border-color: #5d87ff;
+}
+
+.toggle-visibility-button {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.toggle-visibility-button:hover {
+    color: #ffffff;
+}
+
+.info-item .value.api-key {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: monospace;
+}
+
+.info-item .toggle-visibility {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+}
+
+.info-item .toggle-visibility:hover {
+    color: #ffffff;
+}
+
+.update-api-key p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+.integration-icon.airtable {
+    background-color: rgba(39, 164, 219, 0.2);
+    color: #27a4db;
+}
+
+.integration-icon.supabase {
+    background-color: rgba(62, 207, 142, 0.2);
+    color: #3ecf8e;
+}
+
+.integration-icon.auth0 {
+    background-color: rgba(255, 87, 34, 0.2);
+    color: #ff5722;
+}
+
+/* Additional styles for Google Sheets integration */
+.header-icon.google-sheets {
+    background-color: rgba(52, 168, 83, 0.2);
+    color: #34a853;
+}
+
+.google-sheets-integration-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.instruction-steps {
+    margin: 8px 0 0 16px;
+    padding-left: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+}
+
+.instruction-steps li {
+    margin-bottom: 6px;
+}
+
+.instruction-steps a {
+    color: #5d87ff;
+    text-decoration: underline;
+    transition: all 0.2s ease;
+}
+
+.instruction-steps a:hover {
+    color: #8ab4f8;
+}
+
+.instruction-note {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.service-account-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.service-account-actions .btn {
+    flex: 1;
+}
+
+.integration-icon.google-sheets {
+    background-color: rgba(52, 168, 83, 0.2);
+    color: #34a853;
+}

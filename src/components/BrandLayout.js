@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
 import { useSession } from 'next-auth/react';
-import { Mail, Users, BarChart, Settings, Shield, Home, Search, Bell, MoreVertical } from 'lucide-react';
+import { Mail, Users, BarChart, Settings, Shield, Home, Search, Bell, MoreVertical, Database } from 'lucide-react';
 
 export default function BrandLayout({ children, brand }) {
     const router = useRouter();
@@ -27,6 +27,7 @@ export default function BrandLayout({ children, brand }) {
         if (path.includes('/campaigns')) return 'campaigns';
         if (path.includes('/contacts')) return 'contacts';
         if (path.includes('/transactional')) return 'transactional';
+        if (path.includes('/integrations')) return 'integrations';
         if (path.includes('/settings')) return 'settings';
         if (path.includes('/verification')) return 'verification';
         return '';
@@ -96,7 +97,13 @@ export default function BrandLayout({ children, brand }) {
                             <BarChart size={20} />
                             <span>Transactional</span>
                         </Link>
-
+                        {/* <Link
+                            href={`/brands/${brand._id}/integrations`}
+                            className={`nav-item ${router.pathname.includes('/brands/[id]/integrations') ? 'active' : ''}`}
+                        >
+                            <Database size={18} />
+                            Integrations
+                        </Link> */}
                         <Link
                             href={`/brands/${brand._id}/settings`}
                             className={`nav-item ${activeMenuItem === 'settings' ? 'active' : ''}`}

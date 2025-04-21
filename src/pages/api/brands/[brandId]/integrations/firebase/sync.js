@@ -218,27 +218,39 @@ async function syncUsersToContacts(users, listId, brandId, userId, lastSyncedAt)
                     lastName = nameParts.slice(1).join(' ') || '';
                 }
 
-                // Create contact data
+                // Find this part in the syncUsersToContacts function and update it:
+
+                // Create contact data for fields we want to update for all contacts
                 const contactData = {
                     email: user.email.toLowerCase(),
                     firstName,
                     lastName,
                     phone: user.phoneNumber || '',
-                    status: user.disabled ? 'inactive' : 'active',
                     listId: new mongoose.Types.ObjectId(listId),
                     brandId: new mongoose.Types.ObjectId(brandId),
                     userId: new mongoose.Types.ObjectId(userId),
                     updatedAt: new Date(),
                 };
 
-                // Return an upsert operation
+                // Only set status for new contacts or when Firebase user is disabled
+                // This way we respect manual status changes but still sync disabled state
+                if (user.disabled) {
+                    contactData.status = 'unsubscribed'; // Override status only when user is disabled in Firebase
+                }
+
+                // Return an upsert operation with modified structure
                 return {
                     updateOne: {
                         filter: {
                             email: user.email.toLowerCase(),
                             listId: new mongoose.Types.ObjectId(listId),
                         },
-                        update: contactData,
+                        update: {
+                            $set: contactData,
+                            $setOnInsert: {
+                                createdAt: new Date(),
+                            },
+                        },
                         upsert: true,
                     },
                 };

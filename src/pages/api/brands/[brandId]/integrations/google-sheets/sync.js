@@ -183,6 +183,9 @@ export default async function handler(req, res) {
         for (let i = 0; i < dataRows.length; i += BATCH_SIZE) {
             const batch = dataRows.slice(i, i + BATCH_SIZE);
 
+            // Modify the contacts processing logic to preserve existing status
+            // Find this part in the file and update it:
+
             // Create operations for bulk write
             const operations = batch
                 .map((row) => {
@@ -205,20 +208,20 @@ export default async function handler(req, res) {
                     const lastName = lastNameColumnIndex >= 0 && row[lastNameColumnIndex] ? row[lastNameColumnIndex].toString().trim() : '';
                     const phone = phoneColumnIndex >= 0 && row[phoneColumnIndex] ? row[phoneColumnIndex].toString().trim() : '';
 
-                    // Create contact data
+                    // Create contact data - remove status from here
                     const contactData = {
                         email,
                         firstName,
                         lastName,
                         phone,
-                        status: 'active',
+                        // status: 'active', // REMOVED THIS LINE
                         listId: new mongoose.Types.ObjectId(contactListId),
                         brandId: new mongoose.Types.ObjectId(brandId),
                         userId: new mongoose.Types.ObjectId(session.user.id),
                         updatedAt: new Date(),
                     };
 
-                    // Return an upsert operation
+                    // Return an upsert operation with modified update
                     return {
                         updateOne: {
                             filter: {
@@ -227,7 +230,10 @@ export default async function handler(req, res) {
                             },
                             update: {
                                 $set: contactData,
-                                $setOnInsert: { createdAt: new Date() },
+                                $setOnInsert: {
+                                    createdAt: new Date(),
+                                    // No need to set status as the model default is 'active'
+                                },
                             },
                             upsert: true,
                         },

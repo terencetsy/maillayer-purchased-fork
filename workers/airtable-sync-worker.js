@@ -243,7 +243,6 @@ async function processAirtableSync(job) {
                         firstName,
                         lastName,
                         phone,
-                        status: 'active',
                         listId: new mongoose.Types.ObjectId(contactListId),
                         brandId: integration.brandId,
                         userId: integration.userId,

@@ -181,7 +181,6 @@ export default async function handler(req, res) {
                         firstName,
                         lastName,
                         phone,
-                        status: 'active',
                         listId: new mongoose.Types.ObjectId(contactListId),
                         brandId: new mongoose.Types.ObjectId(brandId),
                         userId: new mongoose.Types.ObjectId(session.user.id),

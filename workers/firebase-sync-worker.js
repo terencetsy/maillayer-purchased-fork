@@ -208,18 +208,29 @@ async function syncUsersToContacts(users, listId, brandId, userId, lastSyncedAt)
                     lastName = nameParts.slice(1).join(' ') || '';
                 }
 
-                // Create contact data
+                // Create contact data - without status field for normal updates
                 const contactData = {
                     email: user.email.toLowerCase(),
                     firstName,
                     lastName,
                     phone: user.phoneNumber || '',
-                    status: user.disabled ? 'inactive' : 'active',
                     listId: new mongoose.Types.ObjectId(listId),
                     brandId: new mongoose.Types.ObjectId(brandId),
                     userId: new mongoose.Types.ObjectId(userId),
                     updatedAt: new Date(),
                 };
+
+                // For new contacts, use model default ('active') unless Firebase user is disabled
+                const updateOps = {
+                    $set: contactData,
+                    $setOnInsert: { createdAt: new Date() },
+                };
+
+                // If user is disabled in Firebase, we do want to update the status
+                // This is a legitimate status change we should sync
+                if (user.disabled) {
+                    updateOps.$set.status = 'inactive';
+                }
 
                 // Return an upsert operation
                 return {
@@ -228,10 +239,7 @@ async function syncUsersToContacts(users, listId, brandId, userId, lastSyncedAt)
                             email: user.email.toLowerCase(),
                             listId: new mongoose.Types.ObjectId(listId),
                         },
-                        update: {
-                            $set: contactData,
-                            $setOnInsert: { createdAt: new Date() },
-                        },
+                        update: updateOps,
                         upsert: true,
                     },
                 };

@@ -336,7 +336,6 @@ export default function AirtableIntegration() {
 
     const handleSaveTableSync = (syncData) => {
         let updatedSyncs = [];
-
         if (editingSyncId) {
             // Update existing sync
             updatedSyncs = tableSyncs.map((sync) => (sync.id === editingSyncId ? { ...syncData, id: editingSyncId } : sync));
@@ -416,7 +415,14 @@ export default function AirtableIntegration() {
             }
 
             const data = await res.json();
+            if (data.newList) {
+                console.log('New list was created:', data.newList);
 
+                // Refresh the entire integration to get the updated tableSyncs with the new contactListId
+                await fetchAirtableIntegration();
+                setSuccess(`Successfully synced ${data.importedCount} contacts from Google Sheets to new list: ${data.newList.name}!`);
+                return;
+            }
             // Update the sync status, timestamp, and results
             const newTableSyncs = [...tableSyncs];
             const updatedSyncIndex = newTableSyncs.findIndex((sync) => sync.id === syncId);

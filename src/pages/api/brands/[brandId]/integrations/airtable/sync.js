@@ -7,6 +7,7 @@ import connectToDatabase from '@/lib/mongodb';
 import Contact from '@/models/Contact';
 import ContactList from '@/models/ContactList';
 import mongoose from 'mongoose';
+import Integration from '@/models/Integration'; // Add this import
 
 export default async function handler(req, res) {
     // Only allow POST requests
@@ -59,7 +60,7 @@ export default async function handler(req, res) {
         // Handle creating a new list if needed
         let contactListId;
         let newList = null;
-        console.log(tableSync);
+
         if (tableSync.createNewList && tableSync.newListName) {
             // Create a new contact list
             const contactList = new ContactList({
@@ -77,26 +78,42 @@ export default async function handler(req, res) {
             newList = contactList;
 
             // Update the sync config to use this list from now on
-            const tableSyncs = [...(integration.config.tableSyncs || [])];
-            const syncIndex = tableSyncs.findIndex((sync) => sync.id === syncId);
-
+            const syncIndex = integration.config.tableSyncs.findIndex((sync) => sync.id === syncId);
+            console.log('Sync index:', syncIndex);
             if (syncIndex !== -1) {
-                tableSyncs[syncIndex] = {
-                    ...tableSyncs[syncIndex],
-                    contactListId: contactList._id.toString(),
-                    createNewList: false,
-                    newListName: '',
+                // We need to update the tableSync object in memory as well
+                // This ensures we're using the correct updated object for the rest of this function
+                tableSync.contactListId = contactListId.toString();
+                tableSync.createNewList = false;
+                tableSync.newListName = '';
+
+                // Update the in-memory integration object to match
+                integration.config.tableSyncs[syncIndex] = tableSync;
+
+                // Create the update path for this specific sync in the array
+                const updatePath = `config.tableSyncs.${syncIndex}`;
+
+                // Create the update object
+                const updateData = {
+                    [`${updatePath}.contactListId`]: contactListId.toString(),
+                    [`${updatePath}.createNewList`]: false,
+                    [`${updatePath}.newListName`]: '',
                 };
 
-                // Create a new config object preserving all existing properties
-                const updatedConfig = {
-                    ...integration.config,
-                    tableSyncs,
-                };
+                try {
+                    console.log('Updating integration with new contact list:', updateData);
+                    // Perform direct MongoDB update with proper dot notation
+                    const updateResult = await Integration.updateOne({ _id: integration._id }, { $set: updateData });
 
-                await updateIntegration(integration._id, brandId, session.user.id, {
-                    config: updatedConfig,
-                });
+                    console.log('MongoDB update result:', updateResult);
+
+                    if (updateResult.modifiedCount === 0) {
+                        console.error('ERROR: Integration update did not modify any documents. List will be created again on next sync.');
+                    }
+                } catch (updateError) {
+                    console.error('Error updating integration with new contact list:', updateError);
+                    // Continue with the sync even if the update fails
+                }
             }
         } else {
             contactListId = tableSync.contactListId;
@@ -142,7 +159,6 @@ export default async function handler(req, res) {
 
         // Process records in batches to avoid overwhelming the database
         const BATCH_SIZE = 100;
-        console.log('allRecords', allRecords);
         for (let i = 0; i < allRecords.length; i += BATCH_SIZE) {
             const batch = allRecords.slice(i, i + BATCH_SIZE);
 
@@ -223,30 +239,36 @@ export default async function handler(req, res) {
         // Update the lastSyncedAt timestamp and result in the table sync configuration
         const tableSyncs = [...(integration.config.tableSyncs || [])];
         const syncIndex = tableSyncs.findIndex((sync) => sync.id === syncId);
+        // Update the lastSyncedAt timestamp and result in the table sync configuration
+        const now = new Date();
 
         if (syncIndex !== -1) {
-            const now = new Date();
-            tableSyncs[syncIndex] = {
-                ...tableSyncs[syncIndex],
-                lastSyncedAt: now.toISOString(),
-                lastSyncResult: {
+            // Create the update path for this specific sync in the array
+            const updatePath = `config.tableSyncs.${syncIndex}`;
+
+            // Update the sync status and results
+            const updateData = {
+                [`${updatePath}.lastSyncedAt`]: now.toISOString(),
+                [`${updatePath}.status`]: 'success',
+                [`${updatePath}.lastSyncResult`]: {
                     importedCount,
                     updatedCount,
                     skippedCount,
                     totalCount: allRecords.length,
                 },
-                status: 'success', // Make sure we update the status
             };
 
-            // Create a new config object preserving all existing properties
-            const updatedConfig = {
-                ...integration.config,
-                tableSyncs,
-            };
+            // Update the integration with sync results
+            console.log('Updating integration with sync results:', JSON.stringify(updateData));
 
-            await updateIntegration(integration._id, brandId, session.user.id, {
-                config: updatedConfig,
-            });
+            try {
+                const updateResult = await Integration.updateOne({ _id: integration._id }, { $set: updateData });
+
+                console.log('Sync results update result:', updateResult);
+            } catch (updateError) {
+                console.error('Error updating integration with sync results:', updateError);
+                // Continue with the response even if the update fails
+            }
         }
 
         // Update contact count for the list

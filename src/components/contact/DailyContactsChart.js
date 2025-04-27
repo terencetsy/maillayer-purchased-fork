@@ -146,6 +146,7 @@ const DailyContactsChart = ({ brandId, listId, days = 30, status = 'all' }) => {
             </div>
 
             <div className="daily-chart">
+                <pre>{JSON.stringify(chartData, null, 2)}</pre>
                 <ResponsiveContainer
                     width="100%"
                     height={350}
@@ -160,7 +161,7 @@ const DailyContactsChart = ({ brandId, listId, days = 30, status = 'all' }) => {
                             vertical={false}
                         />
                         <XAxis
-                            dataKey="date"
+                            dataKey="formattedDate"
                             tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 12 }}
                             axisLine={{ stroke: '#2e2e2e' }}
                             tickLine={{ stroke: '#2e2e2e' }}

@@ -56,21 +56,6 @@ const DailyContactsChart = ({ brandId, listId, days = 30, status = 'all' }) => {
     // Format date for display
     const formatDate = (dateStr) => {
         const date = new Date(dateStr);
-        const today = new Date();
-
-        // Check if this is today's date
-        if (dateStr === today.toISOString().split('T')[0]) {
-            return 'Today';
-        }
-
-        // Check if this is yesterday
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        if (dateStr === yesterday.toISOString().split('T')[0]) {
-            return 'Yesterday';
-        }
-
-        // Otherwise return the standard date format
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
 

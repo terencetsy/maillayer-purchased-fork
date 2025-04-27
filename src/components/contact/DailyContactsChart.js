@@ -13,6 +13,7 @@ const DailyContactsChart = ({ brandId, listId, days = 30, status = 'all' }) => {
         unsubscribed: '#f59e0b', // Warning yellow
         bounced: '#ef4444', // Error red
         complained: '#ef4444', // Also red for complaints
+        other: '#d1d5db', // Gray for remaining count
     };
 
     // Fetch daily contacts data
@@ -28,11 +29,16 @@ const DailyContactsChart = ({ brandId, listId, days = 30, status = 'all' }) => {
 
                 const data = await response.json();
 
-                // Format dates and calculate totals
-                const formattedData = data.dailyData.map((day) => ({
-                    ...day,
-                    formattedDate: formatDate(day.date),
-                }));
+                // Format dates and calculate totals, including 'other' for remaining count
+                const formattedData = data.dailyData.map((day) => {
+                    const totalStatus = day.active + day.unsubscribed + day.bounced + day.complained;
+                    const other = Math.max(0, day.count - totalStatus); // Calculate remaining count as 'other'
+                    return {
+                        ...day,
+                        formattedDate: formatDate(day.date),
+                        other, // Add 'other' field for remaining count
+                    };
+                });
 
                 setChartData(formattedData);
                 setIsLoading(false);
@@ -146,7 +152,6 @@ const DailyContactsChart = ({ brandId, listId, days = 30, status = 'all' }) => {
             </div>
 
             <div className="daily-chart">
-                <pre>{JSON.stringify(chartData, null, 2)}</pre>
                 <ResponsiveContainer
                     width="100%"
                     height={350}
@@ -206,6 +211,13 @@ const DailyContactsChart = ({ brandId, listId, days = 30, status = 'all' }) => {
                             dataKey="complained"
                             name="Complained"
                             fill={statusColors.complained}
+                            stackId="a"
+                            radius={[0, 0, 0, 0]}
+                        />
+                        <Bar
+                            dataKey="other"
+                            name="Other"
+                            fill={statusColors.other}
                             stackId="a"
                             radius={[2, 2, 0, 0]}
                         />

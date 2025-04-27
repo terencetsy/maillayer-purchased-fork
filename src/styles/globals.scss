@@ -13167,3 +13167,245 @@ h4 {
 .spinner {
     animation: spin 1.2s linear infinite;
 }
+/* Daily Contacts Chart Styles */
+.daily-chart-container {
+    background-color: #111111;
+    border-radius: 8px;
+    border: 1px solid #2e2e2e;
+    padding: 20px;
+    margin-bottom: 24px;
+    transition: all 0.2s ease;
+
+    &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        border-color: #444444;
+    }
+}
+
+.daily-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.daily-chart-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &::before {
+        content: '';
+        display: inline-block;
+        width: 4px;
+        height: 16px;
+        background-color: #5d87ff;
+        border-radius: 2px;
+    }
+}
+
+.daily-chart-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.time-range-selector {
+    display: flex;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    padding: 4px;
+    border: 1px solid #2e2e2e;
+}
+
+.time-range-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover:not(.active) {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+    }
+
+    &.active {
+        background-color: #5d87ff;
+        color: #ffffff;
+    }
+}
+
+.daily-chart {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid #2e2e2e;
+}
+
+.daily-chart-tooltip {
+    background-color: rgba(0, 0, 0, 0.85);
+    border: 1px solid #2e2e2e;
+    border-radius: 6px;
+    padding: 10px 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    .tooltip-date {
+        font-weight: 600;
+        font-size: 13px;
+        margin: 0 0 8px 0;
+        padding-bottom: 6px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+    }
+
+    .tooltip-content {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .tooltip-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+
+        .tooltip-color {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+
+        .tooltip-name {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .tooltip-value {
+            margin-left: auto;
+            font-weight: 600;
+            color: #ffffff;
+        }
+    }
+}
+
+.daily-chart-summary {
+    .summary-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        justify-content: center;
+
+        .summary-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px solid #2e2e2e;
+            border-radius: 6px;
+            padding: 10px 16px;
+            min-width: 100px;
+
+            .stat-label {
+                font-size: 12px;
+                color: rgba(255, 255, 255, 0.6);
+                margin-bottom: 4px;
+            }
+
+            .stat-value {
+                font-size: 16px;
+                font-weight: 600;
+                color: #ffffff;
+            }
+        }
+    }
+}
+
+.daily-chart-loading,
+.daily-chart-error,
+.daily-chart-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    gap: 12px;
+
+    p {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 14px;
+    }
+}
+
+.daily-chart-loading {
+    .spinner-small {
+        width: 30px;
+        height: 30px;
+        border: 3px solid rgba(93, 135, 255, 0.1);
+        border-radius: 50%;
+        border-top-color: #5d87ff;
+        animation: spin 1s linear infinite;
+    }
+}
+
+.daily-chart-error {
+    p {
+        color: #ef4444;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .daily-chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .daily-chart-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .time-range-selector {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .time-range-btn {
+        flex: 1;
+        text-align: center;
+    }
+
+    .daily-chart-summary {
+        .summary-stats {
+            flex-direction: column;
+            gap: 10px;
+
+            .summary-stat {
+                width: 100%;
+                flex-direction: row;
+                justify-content: space-between;
+
+                .stat-label {
+                    margin-bottom: 0;
+                }
+            }
+        }
+    }
+}

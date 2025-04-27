@@ -5,6 +5,7 @@ import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
 import { ArrowLeft, Search, PlusCircle, Upload, Globe, Trash, DownloadCloud, Filter, ChevronDown, X, Users, RefreshCw, Check, UserCheck, UserX, AlertOctagon } from 'lucide-react';
 import ImportContactsModal from '@/components/contact/ImportContactsModal';
+import DailyContactsChart from '@/components/contact/DailyContactsChart';
 
 export default function ContactListDetails() {
     const { data: session, status } = useSession();
@@ -492,6 +493,13 @@ export default function ContactListDetails() {
                     </button>
                 </div>
 
+                {!isLoading && contactList && (
+                    <DailyContactsChart
+                        brandId={id}
+                        listId={listId}
+                        status={statusFilter}
+                    />
+                )}
                 <div className="contacts-actions">
                     <div className="search-container">
                         <div className="search-input-wrapper">

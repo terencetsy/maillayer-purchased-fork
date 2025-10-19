@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Loader, AlertCircle, Upload, UserPlus, Globe, ArrowLeft, CheckCircle, FileText } from 'lucide-react';
+import { X, Loader, AlertCircle, Upload, ArrowLeft, CheckCircle, FileText } from 'lucide-react';
 import Papa from 'papaparse';
 
 export default function ImportContactsModal({ brandId, listId, method = 'manual', onClose, onSuccess }) {
@@ -129,7 +129,6 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
         return true;
     };
 
-    // In your ImportContactsModal.js component
     const handleManualSubmit = async (e) => {
         e.preventDefault();
 
@@ -150,7 +149,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                 },
                 body: JSON.stringify({
                     contacts: [manualContact],
-                    skipDuplicates: true, // Set to true to skip duplicates
+                    skipDuplicates: true,
                 }),
             });
 
@@ -182,7 +181,6 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
         } catch (error) {
             console.error('Error adding contact:', error);
 
-            // Check if it&apos; a duplicate error
             if (error.message && error.message.includes('duplicate')) {
                 setError('This email already exists in the contact list.');
             } else {
@@ -217,7 +215,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
             setError('');
 
             const totalContacts = parsedContacts.length;
-            const batchSize = 1000; // Process 1000 contacts per batch to stay under the 1MB limit
+            const batchSize = 1000;
 
             // Initialize batch stats
             setBatchStats({
@@ -226,6 +224,9 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                 skipped: 0,
                 total: totalContacts,
             });
+
+            let totalImported = 0;
+            let totalSkipped = 0;
 
             // Process in batches
             for (let i = 0; i < totalContacts; i += batchSize) {
@@ -252,13 +253,16 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
 
                     const batchResult = await response.json();
 
+                    totalImported += batchResult.imported;
+                    totalSkipped += batchResult.skipped;
+
                     // Update progress stats
-                    setBatchStats((prev) => ({
+                    setBatchStats({
                         processed: endIndex,
-                        imported: prev.imported + batchResult.imported,
-                        skipped: prev.skipped + batchResult.skipped,
+                        imported: totalImported,
+                        skipped: totalSkipped,
                         total: totalContacts,
-                    }));
+                    });
 
                     // Calculate and update progress percentage
                     const progressPercent = Math.round((endIndex / totalContacts) * 100);
@@ -266,19 +270,18 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                 } catch (error) {
                     console.error(`Error importing batch (contacts ${i + 1}-${Math.min(i + batchSize, totalContacts)}):`, error);
                     setError((prev) => (prev ? `${prev}; ${error.message}` : error.message));
-                    // Continue with next batch instead of stopping entirely
                 }
             }
 
             // Compile final results
             const finalResult = {
                 total: totalContacts,
-                imported: batchStats.imported,
-                skipped: batchStats.skipped,
+                imported: totalImported,
+                skipped: totalSkipped,
             };
 
             setImportResult(finalResult);
-            setStep(4); // Move to success screen
+            setStep(4);
         } catch (error) {
             console.error('Error in import process:', error);
             setError(error.message || 'An unexpected error occurred during the import process');
@@ -299,109 +302,124 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-container">
-                <div className="modal-header">
-                    <h2>{renderMethodTitle()}</h2>
-                    <button
-                        className="close-btn"
-                        onClick={onClose}
-                        aria-label="Close form"
-                    >
-                        <X size={18} />
-                    </button>
-                </div>
-
-                {error && (
-                    <div className="form-error">
-                        <AlertCircle size={16} />
-                        <span>{error}</span>
+        <div className="form-modal-overlay">
+            <div className="form-modal">
+                <div className="modal-form-container">
+                    <div className="modal-form-header">
+                        <h2>{renderMethodTitle()}</h2>
+                        <button
+                            className="modal-form-close"
+                            onClick={onClose}
+                            aria-label="Close form"
+                            type="button"
+                        >
+                            <X size={20} />
+                        </button>
                     </div>
-                )}
 
-                {success && (
-                    <div className="form-success">
-                        <CheckCircle size={16} />
-                        <span>{success}</span>
-                    </div>
-                )}
+                    {error && (
+                        <div className="alert alert--error">
+                            <AlertCircle size={16} />
+                            <span>{error}</span>
+                        </div>
+                    )}
 
-                <div className="modal-content">
+                    {success && (
+                        <div className="alert alert--success">
+                            <CheckCircle size={16} />
+                            <span>{success}</span>
+                        </div>
+                    )}
+
                     {/* Manual Contact Form */}
                     {currentMethod === 'manual' && (
                         <form
                             onSubmit={handleManualSubmit}
-                            className="modal-form"
+                            className="form"
                         >
                             <div className="form-group">
-                                <label htmlFor="email">
-                                    Email<span className="required">*</span>
+                                <label
+                                    htmlFor="email"
+                                    className="form-label"
+                                >
+                                    Email<span className="form-required">*</span>
                                 </label>
-                                <div className="input-wrapper">
-                                    <input
-                                        id="email"
-                                        name="email"
-                                        type="email"
-                                        value={manualContact.email}
-                                        onChange={handleManualChange}
-                                        placeholder="contact@example.com"
-                                        disabled={isLoading}
-                                        required
-                                    />
-                                </div>
+                                <input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    value={manualContact.email}
+                                    onChange={handleManualChange}
+                                    placeholder="contact@example.com"
+                                    disabled={isLoading}
+                                    required
+                                    className="form-input"
+                                />
                             </div>
 
                             <div className="form-row">
                                 <div className="form-group">
-                                    <label htmlFor="firstName">First Name</label>
-                                    <div className="input-wrapper">
-                                        <input
-                                            id="firstName"
-                                            name="firstName"
-                                            type="text"
-                                            value={manualContact.firstName}
-                                            onChange={handleManualChange}
-                                            placeholder="John"
-                                            disabled={isLoading}
-                                        />
-                                    </div>
+                                    <label
+                                        htmlFor="firstName"
+                                        className="form-label"
+                                    >
+                                        First Name
+                                    </label>
+                                    <input
+                                        id="firstName"
+                                        name="firstName"
+                                        type="text"
+                                        value={manualContact.firstName}
+                                        onChange={handleManualChange}
+                                        placeholder="John"
+                                        disabled={isLoading}
+                                        className="form-input"
+                                    />
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="lastName">Last Name</label>
-                                    <div className="input-wrapper">
-                                        <input
-                                            id="lastName"
-                                            name="lastName"
-                                            type="text"
-                                            value={manualContact.lastName}
-                                            onChange={handleManualChange}
-                                            placeholder="Doe"
-                                            disabled={isLoading}
-                                        />
-                                    </div>
+                                    <label
+                                        htmlFor="lastName"
+                                        className="form-label"
+                                    >
+                                        Last Name
+                                    </label>
+                                    <input
+                                        id="lastName"
+                                        name="lastName"
+                                        type="text"
+                                        value={manualContact.lastName}
+                                        onChange={handleManualChange}
+                                        placeholder="Doe"
+                                        disabled={isLoading}
+                                        className="form-input"
+                                    />
                                 </div>
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="phone">Phone Number</label>
-                                <div className="input-wrapper">
-                                    <input
-                                        id="phone"
-                                        name="phone"
-                                        type="tel"
-                                        value={manualContact.phone}
-                                        onChange={handleManualChange}
-                                        placeholder="+1 (555) 123-4567"
-                                        disabled={isLoading}
-                                    />
-                                </div>
+                                <label
+                                    htmlFor="phone"
+                                    className="form-label"
+                                >
+                                    Phone Number
+                                </label>
+                                <input
+                                    id="phone"
+                                    name="phone"
+                                    type="tel"
+                                    value={manualContact.phone}
+                                    onChange={handleManualChange}
+                                    placeholder="+1 (555) 123-4567"
+                                    disabled={isLoading}
+                                    className="form-input"
+                                />
                             </div>
 
                             <div className="form-actions">
                                 <button
                                     type="button"
-                                    className="btn btn-secondary"
+                                    className="button button--secondary"
                                     onClick={onClose}
                                     disabled={isLoading}
                                 >
@@ -409,14 +427,14 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                 </button>
                                 <button
                                     type="submit"
-                                    className="btn btn-primary"
+                                    className="button button--primary"
                                     disabled={isLoading}
                                 >
                                     {isLoading ? (
                                         <>
                                             <Loader
                                                 size={16}
-                                                className="spinner"
+                                                className="spinner-icon"
                                             />
                                             Adding...
                                         </>
@@ -430,27 +448,49 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
 
                     {/* CSV Import */}
                     {currentMethod === 'csv' && (
-                        <div className="csv-import-container">
+                        <div>
                             {/* Step 1: File Upload */}
                             {step === 1 && (
-                                <div className="csv-file-upload">
+                                <div>
                                     <div
-                                        className={`file-upload-area ${file ? 'has-file' : ''}`}
+                                        style={{
+                                            border: file ? '2px solid #2e7d32' : '2px dashed #d0d0d0',
+                                            borderRadius: '0.5rem',
+                                            padding: '2rem',
+                                            textAlign: 'center',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            backgroundColor: file ? '#f1f8f4' : '#fafafa',
+                                            marginBottom: '1rem',
+                                        }}
                                         onClick={() => fileInputRef.current.click()}
+                                        onMouseEnter={(e) => {
+                                            if (!file) e.currentTarget.style.borderColor = '#999';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (!file) e.currentTarget.style.borderColor = '#d0d0d0';
+                                        }}
                                     >
                                         {file ? (
-                                            <div className="file-info">
-                                                <FileText size={32} />
-                                                <div className="file-details">
-                                                    <div className="file-name">{file.name}</div>
-                                                    <div className="file-size">{(file.size / 1024).toFixed(1)} KB</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+                                                <FileText
+                                                    size={32}
+                                                    color="#2e7d32"
+                                                />
+                                                <div style={{ textAlign: 'left' }}>
+                                                    <div style={{ fontWeight: '500', color: '#1a1a1a' }}>{file.name}</div>
+                                                    <div style={{ fontSize: '0.875rem', color: '#666' }}>{(file.size / 1024).toFixed(1)} KB</div>
                                                 </div>
                                             </div>
                                         ) : (
                                             <>
-                                                <Upload size={32} />
-                                                <p>Click to select or drag and drop CSV file</p>
-                                                <small>Your CSV should have a header row with column names</small>
+                                                <Upload
+                                                    size={32}
+                                                    color="#666"
+                                                    style={{ marginBottom: '0.5rem' }}
+                                                />
+                                                <p style={{ margin: '0.5rem 0', color: '#1a1a1a', fontWeight: '500' }}>Click to select or drag and drop CSV file</p>
+                                                <small style={{ color: '#666' }}>Your CSV should have a header row with column names</small>
                                             </>
                                         )}
                                     </div>
@@ -463,29 +503,28 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                         style={{ display: 'none' }}
                                     />
 
-                                    <div className="csv-template-info">
-                                        <p>
-                                            Need a template?{' '}
-                                            <a
-                                                href="/csv-template.csv"
-                                                download
-                                            >
-                                                Download CSV template
-                                            </a>
-                                        </p>
-                                    </div>
+                                    <p style={{ textAlign: 'center', fontSize: '0.875rem', color: '#666', marginBottom: '1.5rem' }}>
+                                        Need a template?{' '}
+                                        <a
+                                            href="/csv-template.csv"
+                                            download
+                                            style={{ color: '#1a1a1a', textDecoration: 'underline' }}
+                                        >
+                                            Download CSV template
+                                        </a>
+                                    </p>
 
                                     <div className="form-actions">
                                         <button
                                             type="button"
-                                            className="btn btn-secondary"
+                                            className="button button--secondary"
                                             onClick={onClose}
                                         >
                                             Cancel
                                         </button>
                                         <button
                                             type="button"
-                                            className="btn btn-primary"
+                                            className="button button--primary"
                                             onClick={handleCsvNextStep}
                                             disabled={!file}
                                         >
@@ -494,20 +533,27 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                     </div>
                                 </div>
                             )}
+
                             {/* Step 2: Field Mapping */}
                             {step === 2 && (
-                                <div className="field-mapping">
-                                    <p className="mapping-info">Map the columns from your CSV file to contact fields. Email is required.</p>
+                                <div className="form">
+                                    <p
+                                        className="form-help"
+                                        style={{ marginBottom: '1rem' }}
+                                    >
+                                        Map the columns from your CSV file to contact fields. Email is required.
+                                    </p>
 
                                     <div className="form-group">
-                                        <label>
-                                            Email<span className="required">*</span>
+                                        <label className="form-label">
+                                            Email<span className="form-required">*</span>
                                         </label>
                                         <select
                                             name="email"
                                             value={mappedFields.email}
                                             onChange={handleMappingChange}
                                             required
+                                            className="form-select"
                                         >
                                             <option value="">Select a column</option>
                                             {csvHeaders.map((header) => (
@@ -522,11 +568,12 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                     </div>
 
                                     <div className="form-group">
-                                        <label>First Name</label>
+                                        <label className="form-label">First Name</label>
                                         <select
                                             name="firstName"
                                             value={mappedFields.firstName}
                                             onChange={handleMappingChange}
+                                            className="form-select"
                                         >
                                             <option value="">Select a column (optional)</option>
                                             {csvHeaders.map((header) => (
@@ -541,11 +588,12 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                     </div>
 
                                     <div className="form-group">
-                                        <label>Last Name</label>
+                                        <label className="form-label">Last Name</label>
                                         <select
                                             name="lastName"
                                             value={mappedFields.lastName}
                                             onChange={handleMappingChange}
+                                            className="form-select"
                                         >
                                             <option value="">Select a column (optional)</option>
                                             {csvHeaders.map((header) => (
@@ -560,11 +608,12 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                     </div>
 
                                     <div className="form-group">
-                                        <label>Phone</label>
+                                        <label className="form-label">Phone</label>
                                         <select
                                             name="phone"
                                             value={mappedFields.phone}
                                             onChange={handleMappingChange}
+                                            className="form-select"
                                         >
                                             <option value="">Select a column (optional)</option>
                                             {csvHeaders.map((header) => (
@@ -581,7 +630,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                     <div className="form-actions">
                                         <button
                                             type="button"
-                                            className="btn btn-outline"
+                                            className="button button--secondary"
                                             onClick={() => setStep(1)}
                                         >
                                             <ArrowLeft size={16} />
@@ -589,7 +638,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                         </button>
                                         <button
                                             type="button"
-                                            className="btn btn-primary"
+                                            className="button button--primary"
                                             onClick={handleCsvNextStep}
                                             disabled={!mappedFields.email}
                                         >
@@ -598,48 +647,90 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                     </div>
                                 </div>
                             )}
+
                             {/* Step 3: Review Contacts */}
                             {step === 3 && (
-                                <div className="review-contacts">
-                                    <p className="review-info">{parsedContacts.length} contacts found in your CSV file. These will be imported into your contact list. Duplicate emails will be skipped.</p>
+                                <div>
+                                    <p
+                                        className="form-help"
+                                        style={{ marginBottom: '1rem' }}
+                                    >
+                                        {parsedContacts.length} contacts found in your CSV file. These will be imported into your contact list. Duplicate emails will be skipped.
+                                    </p>
 
-                                    <div className="contacts-preview">
-                                        <table className="preview-table">
+                                    <div style={{ overflowX: 'auto', marginBottom: '1.5rem', border: '1px solid #f0f0f0', borderRadius: '0.5rem' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                             <thead>
-                                                <tr>
-                                                    <th>Email</th>
-                                                    <th>First Name</th>
-                                                    <th>Last Name</th>
-                                                    <th>Phone</th>
+                                                <tr style={{ backgroundColor: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
+                                                    <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#1a1a1a' }}>Email</th>
+                                                    <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#1a1a1a' }}>First Name</th>
+                                                    <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#1a1a1a' }}>Last Name</th>
+                                                    <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#1a1a1a' }}>Phone</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {parsedContacts.slice(0, 5).map((contact, index) => (
-                                                    <tr key={index}>
-                                                        <td>{contact.email}</td>
-                                                        <td>{contact.firstName}</td>
-                                                        <td>{contact.lastName}</td>
-                                                        <td>{contact.phone}</td>
+                                                    <tr
+                                                        key={index}
+                                                        style={{ borderBottom: '1px solid #f0f0f0' }}
+                                                    >
+                                                        <td style={{ padding: '0.75rem', fontSize: '0.8125rem', color: '#1a1a1a' }}>{contact.email}</td>
+                                                        <td style={{ padding: '0.75rem', fontSize: '0.8125rem', color: '#666' }}>{contact.firstName}</td>
+                                                        <td style={{ padding: '0.75rem', fontSize: '0.8125rem', color: '#666' }}>{contact.lastName}</td>
+                                                        <td style={{ padding: '0.75rem', fontSize: '0.8125rem', color: '#666' }}>{contact.phone}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
                                         </table>
-
-                                        {parsedContacts.length > 5 && <div className="more-contacts">+{parsedContacts.length - 5} more contacts</div>}
                                     </div>
+
+                                    {parsedContacts.length > 5 && <p style={{ textAlign: 'center', fontSize: '0.875rem', color: '#666', marginBottom: '1.5rem' }}>+{parsedContacts.length - 5} more contacts</p>}
+
+                                    {isBatchImporting && (
+                                        <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#fafafa', borderRadius: '0.5rem' }}>
+                                            <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9375rem', fontWeight: '500' }}>Importing Contacts in Batches</h4>
+                                            <div
+                                                style={{
+                                                    width: '100%',
+                                                    height: '0.5rem',
+                                                    backgroundColor: '#e0e0e0',
+                                                    borderRadius: '0.25rem',
+                                                    overflow: 'hidden',
+                                                    marginBottom: '1rem',
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        width: `${batchProgress}%`,
+                                                        height: '100%',
+                                                        backgroundColor: '#2e7d32',
+                                                        transition: 'width 0.3s ease',
+                                                    }}
+                                                ></div>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: '#666' }}>
+                                                <span>
+                                                    Processed: {batchStats.processed} of {batchStats.total}
+                                                </span>
+                                                <span>Imported: {batchStats.imported}</span>
+                                                <span>Skipped: {batchStats.skipped}</span>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="form-actions">
                                         <button
                                             type="button"
-                                            className="btn btn-outline"
+                                            className="button button--secondary"
                                             onClick={() => setStep(2)}
+                                            disabled={isBatchImporting}
                                         >
                                             <ArrowLeft size={16} />
                                             Back
                                         </button>
                                         <button
                                             type="button"
-                                            className="btn btn-primary"
+                                            className="button button--primary"
                                             onClick={handleCsvImport}
                                             disabled={isLoading || isBatchImporting}
                                         >
@@ -647,7 +738,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                                 <>
                                                     <Loader
                                                         size={16}
-                                                        className="spinner"
+                                                        className="spinner-icon"
                                                     />
                                                     {isBatchImporting ? `Importing... ${batchProgress}%` : 'Preparing...'}
                                                 </>
@@ -659,65 +750,39 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                 </div>
                             )}
 
-                            {step === 3 && isBatchImporting && (
-                                <div className="batch-import-progress">
-                                    <h4>Importing Contacts in Batches</h4>
-                                    <div className="progress-container">
-                                        <div
-                                            className="progress-bar"
-                                            style={{ width: `${batchProgress}%` }}
-                                            aria-valuenow={batchProgress}
-                                            aria-valuemin="0"
-                                            aria-valuemax="100"
-                                        ></div>
-                                    </div>
-                                    <div className="progress-stats">
-                                        <div className="stat-item">
-                                            <span className="stat-label">Processed:</span>
-                                            <span className="stat-value">
-                                                {batchStats.processed} of {batchStats.total}
-                                            </span>
-                                        </div>
-                                        <div className="stat-item">
-                                            <span className="stat-label">Imported:</span>
-                                            <span className="stat-value">{batchStats.imported}</span>
-                                        </div>
-                                        <div className="stat-item">
-                                            <span className="stat-label">Skipped:</span>
-                                            <span className="stat-value">{batchStats.skipped}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
+                            {/* Step 4: Import Complete */}
                             {step === 4 && importResult && (
-                                <div className="import-complete">
-                                    <div className="success-icon">
-                                        <CheckCircle size={48} />
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                                        <CheckCircle
+                                            size={48}
+                                            color="#2e7d32"
+                                        />
                                     </div>
 
-                                    <h3>Import Complete!</h3>
+                                    <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.25rem', fontWeight: '500', color: '#1a1a1a' }}>Import Complete!</h3>
 
-                                    <div className="import-stats">
-                                        <div className="stat-item">
-                                            <span className="stat-label">Total Processed:</span>
-                                            <span className="stat-value">{importResult.total}</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem', textAlign: 'left' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: '#fafafa', borderRadius: '0.375rem' }}>
+                                            <span style={{ fontSize: '0.875rem', color: '#666' }}>Total Processed:</span>
+                                            <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#1a1a1a' }}>{importResult.total}</span>
                                         </div>
-                                        <div className="stat-item">
-                                            <span className="stat-label">Successfully Added:</span>
-                                            <span className="stat-value">{importResult.imported}</span>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: '#e8f5e9', borderRadius: '0.375rem' }}>
+                                            <span style={{ fontSize: '0.875rem', color: '#2e7d32' }}>Successfully Added:</span>
+                                            <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#2e7d32' }}>{importResult.imported}</span>
                                         </div>
-                                        <div className="stat-item">
-                                            <span className="stat-label">Duplicates Skipped:</span>
-                                            <span className="stat-value">{importResult.skipped}</span>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: '#fff3e0', borderRadius: '0.375rem' }}>
+                                            <span style={{ fontSize: '0.875rem', color: '#f57c00' }}>Duplicates Skipped:</span>
+                                            <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#f57c00' }}>{importResult.skipped}</span>
                                         </div>
                                     </div>
 
                                     <div className="form-actions">
                                         <button
                                             type="button"
-                                            className="btn btn-primary"
+                                            className="button button--primary"
                                             onClick={onSuccess}
+                                            style={{ width: '100%' }}
                                         >
                                             Done
                                         </button>

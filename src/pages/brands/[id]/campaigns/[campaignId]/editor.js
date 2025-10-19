@@ -83,7 +83,6 @@ export default function CampaignEditor() {
 
     const handleContentChange = (newContent) => {
         setContent(newContent);
-        // Clear any previous save messages
         setSaveMessage('');
     };
 
@@ -110,7 +109,6 @@ export default function CampaignEditor() {
 
             setSaveMessage('Campaign saved successfully');
 
-            // Clear success message after 3 seconds
             setTimeout(() => {
                 setSaveMessage('');
             }, 3000);
@@ -123,16 +121,15 @@ export default function CampaignEditor() {
     };
 
     const handleSend = () => {
-        // Navigate to the send page
         router.push(`/brands/${id}/campaigns/${campaignId}/send`);
     };
 
     if (isLoading || !brand || !campaign) {
         return (
             <BrandLayout brand={brand}>
-                <div className="loading-section">
-                    <div className="spinner"></div>
-                    <p>Loading campaign editor...</p>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', gap: '1rem' }}>
+                    <div style={{ width: '2rem', height: '2rem', border: '3px solid #f0f0f0', borderTopColor: '#1a1a1a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+                    <p style={{ margin: 0, fontSize: '0.9375rem', color: '#666' }}>Loading campaign editor...</p>
                 </div>
             </BrandLayout>
         );
@@ -140,30 +137,56 @@ export default function CampaignEditor() {
 
     return (
         <BrandLayout brand={brand}>
-            <div className="campaign-editor-page">
-                <div className="editor-top-bar">
-                    <div className="editor-nav">
-                        <Link
-                            href={`/brands/${id}/campaigns`}
-                            className="back-link"
-                        >
-                            <ArrowLeft size={16} />
-                            <span>All the campaigns</span>
-                        </Link>
-                    </div>
+            <div className="campaigns-container">
+                {/* Top Bar */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <Link
+                        href={`/brands/${id}/campaigns`}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            color: '#666',
+                            textDecoration: 'none',
+                            fontSize: '0.875rem',
+                        }}
+                    >
+                        <ArrowLeft size={16} />
+                        <span>All campaigns</span>
+                    </Link>
 
-                    <div className="editor-actions">
-                        {saveMessage && <div className="status-message success">{saveMessage}</div>}
-                        {error && <div className="status-message error">{error}</div>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        {saveMessage && (
+                            <div
+                                className="alert alert--success"
+                                style={{ marginBottom: 0, padding: '0.5rem 0.75rem', fontSize: '0.8125rem' }}
+                            >
+                                <span>{saveMessage}</span>
+                            </div>
+                        )}
+
+                        {error && (
+                            <div
+                                className="alert alert--error"
+                                style={{ marginBottom: 0, padding: '0.5rem 0.75rem', fontSize: '0.8125rem' }}
+                            >
+                                <span>{error}</span>
+                            </div>
+                        )}
 
                         <button
-                            className="btn-save"
+                            className="button button--secondary"
                             onClick={handleSave}
                             disabled={isSaving}
                         >
                             {isSaving ? (
                                 <>
-                                    <div className="button-spinner"></div>
+                                    <span
+                                        className="spinner-icon"
+                                        style={{ animation: 'spin 0.8s linear infinite' }}
+                                    >
+                                        ⟳
+                                    </span>
                                     <span>Saving...</span>
                                 </>
                             ) : (
@@ -176,7 +199,7 @@ export default function CampaignEditor() {
 
                         {campaign.status === 'draft' && (
                             <button
-                                className="btn-send"
+                                className="button button--primary"
                                 onClick={handleSend}
                             >
                                 <Send size={16} />
@@ -186,25 +209,50 @@ export default function CampaignEditor() {
                     </div>
                 </div>
 
-                <div className="campaign-header">
-                    <h1>{campaign.name}</h1>
-                    <div className="subject-line">
-                        <span>Subject:</span> {campaign.subject}
+                {/* Campaign Header */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: '500', color: '#1a1a1a' }}>{campaign.name}</h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#666' }}>
+                        <span style={{ fontWeight: '500' }}>Subject:</span>
+                        <span>{campaign.subject}</span>
                     </div>
                 </div>
 
-                <div className="editor-container">
-                    <div className="editor-info-bar">
-                        <Info size={14} />
-                        <span>Email preview - Your subscribers will see content as displayed below</span>
-                    </div>
+                {/* Info Bar */}
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.75rem 1rem',
+                        backgroundColor: '#f0f9ff',
+                        border: '1px solid #bfdbfe',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.8125rem',
+                        color: '#1e40af',
+                        marginBottom: '1rem',
+                    }}
+                >
+                    <Info size={14} />
+                    <span>Email preview - Your subscribers will see content as displayed below</span>
+                </div>
 
+                {/* Editor Container */}
+                <div
+                    style={{
+                        background: '#fff',
+                        border: '1px solid #f0f0f0',
+                        borderRadius: '0.75rem',
+                        padding: '1.5rem',
+                        minHeight: '500px',
+                    }}
+                >
                     <UnifiedEditor
                         value={content}
                         onChange={handleContentChange}
                         placeholder="Write your email content or switch to HTML mode..."
                         editable={true}
-                        defaultMode="visual" // Start with visual editor
+                        defaultMode="visual"
                     />
                 </div>
             </div>

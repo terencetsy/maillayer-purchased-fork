@@ -7,7 +7,8 @@ html {
 }
 
 button,
-input {
+input,
+select {
     font-family: 'Sora', sans-serif !important;
     font-weight: 300 !important;
 }
@@ -177,10 +178,16 @@ input {
                         display: flex;
                         padding: 5px;
                         border-radius: 5px;
+                        border: 0;
+                        align-items: center;
+                        gap: 5px;
+                        border: 1px solid #ddd;
+                        cursor: pointer;
                     }
 
                     .delete-btn {
                         border: 0;
+                        border: 1px solid #ddd;
 
                         svg {
                             path {

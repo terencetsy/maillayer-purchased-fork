@@ -24,7 +24,10 @@ export default function BrandLayout({ children, brand }) {
     // Determine active menu item based on the current path
     const getActiveMenuItem = () => {
         const path = router.pathname;
+        console.log(path);
+        if (path.includes('/brands/[id]/campaigns/[campaignId]')) return 'campaignEditor';
         if (path.includes('/campaigns')) return 'campaigns';
+        if (path.includes('/brands/[id]/contacts/[listId]')) return 'contactsList';
         if (path.includes('/contacts')) return 'contacts';
         if (path.includes('/transactional')) return 'transactional';
         if (path.includes('/integrations')) return 'integrations';
@@ -155,7 +158,9 @@ export default function BrandLayout({ children, brand }) {
                     <header className="top-header">
                         <h1 className="page-title">
                             {activeMenuItem === 'campaigns' && 'Campaigns'}
+                            {activeMenuItem === 'campaignEditor' && ''}
                             {activeMenuItem === 'contacts' && 'Contacts'}
+                            {activeMenuItem === 'contactsList' && ''}
                             {activeMenuItem === 'analytics' && 'Analytics'}
                             {activeMenuItem === 'settings' && 'Settings'}
                             {activeMenuItem === 'verification' && 'Verification'}

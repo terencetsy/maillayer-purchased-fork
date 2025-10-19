@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
-import { ArrowLeft, Search, PlusCircle, Upload, Globe, Trash, DownloadCloud, Filter, ChevronDown, X, Users, RefreshCw, Check, UserCheck, UserX, AlertOctagon } from 'lucide-react';
+import { ArrowLeft, Search, PlusCircle, Upload, Trash, DownloadCloud, ChevronDown, X, Users, RefreshCw, Check, UserCheck, UserX, AlertOctagon } from 'lucide-react';
 import ImportContactsModal from '@/components/contact/ImportContactsModal';
 import DailyContactsChart from '@/components/contact/DailyContactsChart';
 
@@ -59,6 +59,17 @@ export default function ContactListDetails() {
             fetchContacts();
         }
     }, [contactList, currentPage, sortField, sortOrder, searchQuery, statusFilter]);
+
+    useEffect(() => {
+        const handleClickOutside = () => {
+            if (showDropdown) {
+                setShowDropdown(false);
+            }
+        };
+
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [showDropdown]);
 
     const fetchBrandDetails = async () => {
         try {
@@ -160,7 +171,6 @@ export default function ContactListDetails() {
         setShowImportModal(false);
         setSuccess('Contacts imported successfully!');
 
-        // Clear success message after 3 seconds
         setTimeout(() => {
             setSuccess('');
         }, 3000);
@@ -193,7 +203,7 @@ export default function ContactListDetails() {
 
     const handleStatusFilterChange = (newStatus) => {
         setStatusFilter(newStatus);
-        setCurrentPage(1); // Reset to first page when changing filter
+        setCurrentPage(1);
     };
 
     const handleDeleteSelected = async () => {
@@ -219,13 +229,11 @@ export default function ContactListDetails() {
                 throw new Error('Failed to delete contacts');
             }
 
-            // Clear selected contacts and refresh list
             setSelectedContacts([]);
             setSuccess(`Successfully deleted ${selectedContacts.length} contacts`);
             fetchContactList();
             fetchContacts();
 
-            // Clear success message after 3 seconds
             setTimeout(() => {
                 setSuccess('');
             }, 3000);
@@ -282,16 +290,14 @@ export default function ContactListDetails() {
             }
 
             setSuccess(`Contact status updated to ${newStatus}`);
-            fetchContacts(); // Refresh contact list
+            fetchContacts();
 
-            // Clear status update modal if open
             if (showStatusUpdateModal) {
                 setShowStatusUpdateModal(false);
                 setSelectedStatus('');
                 setStatusUpdateReason('');
             }
 
-            // Clear success message after 3 seconds
             setTimeout(() => {
                 setSuccess('');
             }, 3000);
@@ -338,14 +344,12 @@ export default function ContactListDetails() {
             const data = await res.json();
             setSuccess(`Updated ${data.updated} contacts to ${selectedStatus}`);
             setSelectedContacts([]);
-            fetchContacts(); // Refresh contact list
+            fetchContacts();
 
-            // Close the modal
             setShowStatusUpdateModal(false);
             setSelectedStatus('');
             setStatusUpdateReason('');
 
-            // Clear success message after 3 seconds
             setTimeout(() => {
                 setSuccess('');
             }, 3000);
@@ -357,7 +361,8 @@ export default function ContactListDetails() {
         }
     };
 
-    const toggleDropdown = () => {
+    const toggleDropdown = (e) => {
+        e.stopPropagation();
         setShowDropdown(!showDropdown);
     };
 
@@ -366,18 +371,18 @@ export default function ContactListDetails() {
         setCurrentPage(1);
     };
 
-    const getStatusBadgeClass = (status) => {
+    const getStatusBadgeStyle = (status) => {
         switch (status) {
             case 'active':
-                return 'badge-success';
+                return { padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: '#e8f5e9', color: '#2e7d32', display: 'inline-flex', alignItems: 'center', gap: '4px' };
             case 'unsubscribed':
-                return 'badge-warning';
+                return { padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: '#fff3e0', color: '#f57c00', display: 'inline-flex', alignItems: 'center', gap: '4px' };
             case 'bounced':
-                return 'badge-danger';
+                return { padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: '#ffebee', color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: '4px' };
             case 'complained':
-                return 'badge-danger';
+                return { padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: '#ffebee', color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: '4px' };
             default:
-                return 'badge-default';
+                return { padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: '#f5f5f5', color: '#666', display: 'inline-flex', alignItems: 'center', gap: '4px' };
         }
     };
 
@@ -399,9 +404,9 @@ export default function ContactListDetails() {
     if (!brand || isLoadingList) {
         return (
             <BrandLayout brand={brand}>
-                <div className="loading-section">
-                    <div className="spinner"></div>
-                    <p>Loading contact list...</p>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', gap: '1rem' }}>
+                    <div style={{ width: '2rem', height: '2rem', border: '3px solid #f0f0f0', borderTopColor: '#1a1a1a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+                    <p style={{ margin: 0, fontSize: '0.9375rem', color: '#666' }}>Loading contact list...</p>
                 </div>
             </BrandLayout>
         );
@@ -409,34 +414,36 @@ export default function ContactListDetails() {
 
     return (
         <BrandLayout brand={brand}>
-            <div className="contact-list-details-container">
-                <div className="details-header">
-                    <div className="header-left">
-                        <Link
-                            href={`/brands/${id}/contacts`}
-                            className="back-link"
-                        >
-                            <ArrowLeft size={16} />
-                            <span>Back to Contact Lists</span>
-                        </Link>
-                        <div className="list-info">
-                            <h1>{contactList.name}</h1>
-                            {contactList.description && <p className="list-description">{contactList.description}</p>}
-                            <div className="list-stats">
-                                <span>{contactList.contactCount || 0} contacts total</span>
-                                <span>•</span>
-                                <span>Created {new Date(contactList.createdAt).toLocaleDateString()}</span>
-                            </div>
+            <div className="campaigns-container">
+                {/* Header */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <Link
+                        href={`/brands/${id}/contacts`}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#666', textDecoration: 'none', fontSize: '0.875rem', marginBottom: '1rem' }}
+                    >
+                        <ArrowLeft size={16} />
+                        <span>Back to Contact Lists</span>
+                    </Link>
+                    <div>
+                        <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: '500', color: '#1a1a1a' }}>{contactList.name}</h1>
+                        {contactList.description && <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9375rem', color: '#666' }}>{contactList.description}</p>}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#999' }}>
+                            <span>{contactList.contactCount || 0} contacts total</span>
+                            <span>•</span>
+                            <span>Created {new Date(contactList.createdAt).toLocaleDateString()}</span>
                         </div>
                     </div>
                 </div>
 
                 {error && (
-                    <div className="alert alert-error">
+                    <div
+                        className="alert alert--error"
+                        style={{ marginBottom: '1rem' }}
+                    >
                         <span>{error}</span>
                         <button
                             onClick={() => setError('')}
-                            className="close-btn"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center' }}
                         >
                             <X size={16} />
                         </button>
@@ -444,55 +451,120 @@ export default function ContactListDetails() {
                 )}
 
                 {success && (
-                    <div className="alert alert-success">
+                    <div
+                        className="alert alert--success"
+                        style={{ marginBottom: '1rem' }}
+                    >
                         <span>{success}</span>
                         <button
                             onClick={() => setSuccess('')}
-                            className="close-btn"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center' }}
                         >
                             <X size={16} />
                         </button>
                     </div>
                 )}
 
-                <div className="status-summary">
+                {/* Status Summary */}
+                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', overflowX: 'auto' }}>
                     <button
-                        className={`status-item ${statusFilter === 'all' ? 'active' : ''}`}
                         onClick={() => handleStatusFilterChange('all')}
+                        style={{
+                            padding: '0.75rem 1rem',
+                            border: statusFilter === 'all' ? '2px solid #1a1a1a' : '1px solid #e0e0e0',
+                            borderRadius: '0.5rem',
+                            background: statusFilter === 'all' ? '#fafafa' : '#fff',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            minWidth: '100px',
+                        }}
                     >
-                        <span className="status-count">{contactList.contactCount || 0}</span>
-                        <span className="status-label">All</span>
+                        <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1a1a1a' }}>{contactList.contactCount || 0}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' }}>All</span>
                     </button>
                     <button
-                        className={`status-item ${statusFilter === 'active' ? 'active' : ''}`}
                         onClick={() => handleStatusFilterChange('active')}
+                        style={{
+                            padding: '0.75rem 1rem',
+                            border: statusFilter === 'active' ? '2px solid #2e7d32' : '1px solid #e0e0e0',
+                            borderRadius: '0.5rem',
+                            background: statusFilter === 'active' ? '#e8f5e9' : '#fff',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            minWidth: '100px',
+                        }}
                     >
-                        <span className="status-count">{contactStatusCounts.active || 0}</span>
-                        <span className="status-label">Active</span>
+                        <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#2e7d32' }}>{contactStatusCounts.active || 0}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#2e7d32', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active</span>
                     </button>
                     <button
-                        className={`status-item ${statusFilter === 'unsubscribed' ? 'active' : ''}`}
                         onClick={() => handleStatusFilterChange('unsubscribed')}
+                        style={{
+                            padding: '0.75rem 1rem',
+                            border: statusFilter === 'unsubscribed' ? '2px solid #f57c00' : '1px solid #e0e0e0',
+                            borderRadius: '0.5rem',
+                            background: statusFilter === 'unsubscribed' ? '#fff3e0' : '#fff',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            minWidth: '100px',
+                        }}
                     >
-                        <span className="status-count">{contactStatusCounts.unsubscribed || 0}</span>
-                        <span className="status-label">Unsubscribed</span>
+                        <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f57c00' }}>{contactStatusCounts.unsubscribed || 0}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#f57c00', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Unsubscribed</span>
                     </button>
                     <button
-                        className={`status-item ${statusFilter === 'bounced' ? 'active' : ''}`}
                         onClick={() => handleStatusFilterChange('bounced')}
+                        style={{
+                            padding: '0.75rem 1rem',
+                            border: statusFilter === 'bounced' ? '2px solid #dc2626' : '1px solid #e0e0e0',
+                            borderRadius: '0.5rem',
+                            background: statusFilter === 'bounced' ? '#ffebee' : '#fff',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            minWidth: '100px',
+                        }}
                     >
-                        <span className="status-count">{contactStatusCounts.bounced || 0}</span>
-                        <span className="status-label">Bounced</span>
+                        <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#dc2626' }}>{contactStatusCounts.bounced || 0}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bounced</span>
                     </button>
                     <button
-                        className={`status-item ${statusFilter === 'complained' ? 'active' : ''}`}
                         onClick={() => handleStatusFilterChange('complained')}
+                        style={{
+                            padding: '0.75rem 1rem',
+                            border: statusFilter === 'complained' ? '2px solid #dc2626' : '1px solid #e0e0e0',
+                            borderRadius: '0.5rem',
+                            background: statusFilter === 'complained' ? '#ffebee' : '#fff',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            minWidth: '100px',
+                        }}
                     >
-                        <span className="status-count">{contactStatusCounts.complained || 0}</span>
-                        <span className="status-label">Complained</span>
+                        <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#dc2626' }}>{contactStatusCounts.complained || 0}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Complained</span>
                     </button>
                 </div>
 
+                {/* Chart */}
                 {!isLoading && contactList && (
                     <DailyContactsChart
                         brandId={id}
@@ -500,9 +572,20 @@ export default function ContactListDetails() {
                         status={statusFilter}
                     />
                 )}
-                <div className="contacts-actions">
-                    <div className="search-container">
-                        <div className="search-input-wrapper">
+
+                {/* Actions Bar */}
+                <div
+                    className="campaigns-header"
+                    style={{ marginTop: '1.5rem' }}
+                >
+                    <div
+                        className="search-container"
+                        style={{ display: 'flex', gap: '0.5rem' }}
+                    >
+                        <div
+                            className="search-input-wrapper"
+                            style={{ position: 'relative' }}
+                        >
                             <Search
                                 size={18}
                                 className="search-icon"
@@ -513,21 +596,33 @@ export default function ContactListDetails() {
                                 value={searchQuery}
                                 onChange={(e) => {
                                     setSearchQuery(e.target.value);
-                                    setCurrentPage(1); // Reset to first page on search
+                                    setCurrentPage(1);
                                 }}
                                 className="search-input"
                             />
                             {searchQuery && (
                                 <button
-                                    className="clear-search"
                                     onClick={clearSearch}
+                                    style={{
+                                        position: 'absolute',
+                                        right: '0.625rem',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        padding: '0.25rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        color: '#666',
+                                    }}
                                 >
                                     <X size={16} />
                                 </button>
                             )}
                         </div>
                         <button
-                            className="filter-button"
+                            className="button button--secondary button--small"
                             onClick={() => fetchContacts()}
                             title="Refresh contacts"
                         >
@@ -535,10 +630,10 @@ export default function ContactListDetails() {
                         </button>
                     </div>
 
-                    <div className="actions-right">
-                        <div className="dropdown">
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <div style={{ position: 'relative' }}>
                             <button
-                                className="import-button"
+                                className="button button--secondary"
                                 onClick={toggleDropdown}
                             >
                                 <Upload size={16} />
@@ -546,17 +641,61 @@ export default function ContactListDetails() {
                                 <ChevronDown size={16} />
                             </button>
                             {showDropdown && (
-                                <div className="dropdown-menu">
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        right: 0,
+                                        marginTop: '0.25rem',
+                                        background: '#ffffff',
+                                        border: '1px solid #f0f0f0',
+                                        borderRadius: '0.5rem',
+                                        boxShadow: '0 4px 12px 0 rgba(0, 0, 0, 0.1)',
+                                        minWidth: '180px',
+                                        zIndex: 100,
+                                        overflow: 'hidden',
+                                    }}
+                                >
                                     <button
-                                        className="dropdown-item"
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.625rem 0.875rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.625rem',
+                                            background: 'transparent',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            fontSize: '0.8125rem',
+                                            color: '#1a1a1a',
+                                            transition: 'all 0.15s ease',
+                                            textAlign: 'left',
+                                        }}
                                         onClick={() => handleImportContacts('manual')}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = '#f8f8f8')}
+                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                     >
                                         <PlusCircle size={16} />
                                         <span>Add Manually</span>
                                     </button>
                                     <button
-                                        className="dropdown-item"
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.625rem 0.875rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.625rem',
+                                            background: 'transparent',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            fontSize: '0.8125rem',
+                                            color: '#1a1a1a',
+                                            transition: 'all 0.15s ease',
+                                            textAlign: 'left',
+                                        }}
                                         onClick={() => handleImportContacts('csv')}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = '#f8f8f8')}
+                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                     >
                                         <Upload size={16} />
                                         <span>Import CSV</span>
@@ -566,7 +705,7 @@ export default function ContactListDetails() {
                         </div>
 
                         <button
-                            className="export-button"
+                            className="button button--secondary"
                             onClick={handleExportContacts}
                             disabled={contactList.contactCount === 0}
                         >
@@ -577,15 +716,16 @@ export default function ContactListDetails() {
                         {selectedContacts.length > 0 && (
                             <>
                                 <button
-                                    className="status-button"
+                                    className="button button--secondary"
                                     onClick={() => setShowStatusUpdateModal(true)}
                                 >
                                     <UserCheck size={16} />
                                     <span>Update Status</span>
                                 </button>
                                 <button
-                                    className="delete-button"
+                                    className="button button--secondary"
                                     onClick={handleDeleteSelected}
+                                    style={{ color: '#dc2626' }}
                                 >
                                     <Trash size={16} />
                                     <span>Delete ({selectedContacts.length})</span>
@@ -596,25 +736,25 @@ export default function ContactListDetails() {
                 </div>
 
                 {/* Contacts Table */}
-                <div className="contacts-table-container">
+                <div style={{ marginTop: '1rem' }}>
                     {isLoading ? (
-                        <div className="table-loading">
-                            <div className="spinner"></div>
-                            <p>Loading contacts...</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', gap: '1rem' }}>
+                            <div style={{ width: '2rem', height: '2rem', border: '3px solid #f0f0f0', borderTopColor: '#1a1a1a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+                            <p style={{ margin: 0, fontSize: '0.9375rem', color: '#666' }}>Loading contacts...</p>
                         </div>
                     ) : (
                         <>
                             {contacts.length === 0 ? (
-                                <div className="empty-contacts">
-                                    <div className="icon-wrapper">
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', textAlign: 'center' }}>
+                                    <div style={{ width: '4rem', height: '4rem', borderRadius: '1rem', background: 'linear-gradient(145deg, #f5f5f5 0%, #e8e8e8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', marginBottom: '1.5rem' }}>
                                         <Users size={32} />
                                     </div>
-                                    <h3>No contacts found</h3>
-                                    {searchQuery || statusFilter !== 'all' ? <p>No contacts match your search criteria. Try a different search term or clear your filters.</p> : <p>This list doesn't have any contacts yet. Import contacts to get started.</p>}
-                                    <div className="empty-actions">
+                                    <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: '500', color: '#1a1a1a' }}>No contacts found</h3>
+                                    <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.9375rem', color: '#666', maxWidth: '400px' }}>{searchQuery || statusFilter !== 'all' ? 'No contacts match your search criteria. Try a different search term or clear your filters.' : "This list doesn't have any contacts yet. Import contacts to get started."}</p>
+                                    <div style={{ display: 'flex', gap: '0.75rem' }}>
                                         {searchQuery || statusFilter !== 'all' ? (
                                             <button
-                                                className="btn btn-secondary"
+                                                className="button button--secondary"
                                                 onClick={() => {
                                                     clearSearch();
                                                     setStatusFilter('all');
@@ -624,7 +764,7 @@ export default function ContactListDetails() {
                                             </button>
                                         ) : (
                                             <button
-                                                className="btn btn-primary"
+                                                className="button button--primary"
                                                 onClick={() => handleImportContacts('csv')}
                                             >
                                                 <Upload size={16} />
@@ -635,112 +775,112 @@ export default function ContactListDetails() {
                                 </div>
                             ) : (
                                 <>
-                                    <table className="contacts-table">
+                                    <table className="campaigns-table">
                                         <thead>
                                             <tr>
-                                                <th className="checkbox-cell">
+                                                <th style={{ width: '40px' }}>
                                                     <input
                                                         type="checkbox"
                                                         checked={selectedContacts.length === contacts.length && contacts.length > 0}
                                                         onChange={handleSelectAll}
+                                                        style={{ cursor: 'pointer' }}
                                                     />
                                                 </th>
                                                 <th
-                                                    className={`sortable ${sortField === 'email' ? 'active' : ''}`}
+                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
                                                     onClick={() => handleSort('email')}
                                                 >
-                                                    Email Address
-                                                    {sortField === 'email' && <span className={`sort-icon ${sortOrder === 'desc' ? 'desc' : ''}`}>↓</span>}
+                                                    Email {sortField === 'email' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
                                                 </th>
                                                 <th
-                                                    className={`sortable ${sortField === 'firstName' ? 'active' : ''}`}
+                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
                                                     onClick={() => handleSort('firstName')}
                                                 >
-                                                    First Name
-                                                    {sortField === 'firstName' && <span className={`sort-icon ${sortOrder === 'desc' ? 'desc' : ''}`}>↓</span>}
+                                                    First Name {sortField === 'firstName' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
                                                 </th>
                                                 <th
-                                                    className={`sortable ${sortField === 'lastName' ? 'active' : ''}`}
+                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
                                                     onClick={() => handleSort('lastName')}
                                                 >
-                                                    Last Name
-                                                    {sortField === 'lastName' && <span className={`sort-icon ${sortOrder === 'desc' ? 'desc' : ''}`}>↓</span>}
+                                                    Last Name {sortField === 'lastName' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
                                                 </th>
                                                 <th
-                                                    className={`sortable ${sortField === 'status' ? 'active' : ''}`}
+                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
                                                     onClick={() => handleSort('status')}
                                                 >
-                                                    Status
-                                                    {sortField === 'status' && <span className={`sort-icon ${sortOrder === 'desc' ? 'desc' : ''}`}>↓</span>}
+                                                    Status {sortField === 'status' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
                                                 </th>
                                                 <th>Phone</th>
                                                 <th
-                                                    className={`sortable ${sortField === 'createdAt' ? 'active' : ''}`}
+                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
                                                     onClick={() => handleSort('createdAt')}
                                                 >
-                                                    Added
-                                                    {sortField === 'createdAt' && <span className={`sort-icon ${sortOrder === 'desc' ? 'desc' : ''}`}>↓</span>}
+                                                    Added {sortField === 'createdAt' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
                                                 </th>
-                                                <th className="actions-cell">Actions</th>
+                                                <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {contacts.map((contact) => (
-                                                <tr
-                                                    key={contact._id}
-                                                    className={`contact-row-${contact.status || 'active'}`}
-                                                >
-                                                    <td className="checkbox-cell">
+                                                <tr key={contact._id}>
+                                                    <td>
                                                         <input
                                                             type="checkbox"
                                                             checked={selectedContacts.includes(contact._id)}
                                                             onChange={() => handleContactSelect(contact._id)}
+                                                            style={{ cursor: 'pointer' }}
                                                         />
                                                     </td>
                                                     <td>{contact.email}</td>
                                                     <td>{contact.firstName || '-'}</td>
                                                     <td>{contact.lastName || '-'}</td>
                                                     <td>
-                                                        <span className={`status-badge ${getStatusBadgeClass(contact.status || 'active')}`}>
+                                                        <span style={getStatusBadgeStyle(contact.status || 'active')}>
                                                             {getStatusIcon(contact.status || 'active')}
                                                             <span>{contact.status || 'active'}</span>
                                                         </span>
                                                     </td>
                                                     <td>{contact.phone || '-'}</td>
                                                     <td>{new Date(contact.createdAt).toLocaleDateString()}</td>
-                                                    <td className="actions-cell">
-                                                        {contact.status !== 'active' && (
+                                                    <td className="actions-col">
+                                                        <div className="action-buttons">
+                                                            {contact.status !== 'active' && (
+                                                                <button
+                                                                    className="action-btn"
+                                                                    onClick={() => handleUpdateContactStatus(contact._id, 'active')}
+                                                                    title="Set as Active"
+                                                                >
+                                                                    <UserCheck
+                                                                        size={14}
+                                                                        style={{ color: '#2e7d32' }}
+                                                                    />
+                                                                </button>
+                                                            )}
+                                                            {contact.status !== 'unsubscribed' && (
+                                                                <button
+                                                                    className="action-btn"
+                                                                    onClick={() => handleUpdateContactStatus(contact._id, 'unsubscribed')}
+                                                                    title="Unsubscribe"
+                                                                >
+                                                                    <UserX
+                                                                        size={14}
+                                                                        style={{ color: '#f57c00' }}
+                                                                    />
+                                                                </button>
+                                                            )}
                                                             <button
-                                                                className="dropdown-item text-success"
-                                                                onClick={() => handleUpdateContactStatus(contact._id, 'active')}
+                                                                className="action-btn delete-btn"
+                                                                onClick={() => {
+                                                                    if (window.confirm('Are you sure you want to delete this contact?')) {
+                                                                        setSelectedContacts([contact._id]);
+                                                                        handleDeleteSelected();
+                                                                    }
+                                                                }}
+                                                                title="Delete"
                                                             >
-                                                                <UserCheck size={14} />
-                                                                <span>Set as Active</span>
+                                                                <Trash size={14} />
                                                             </button>
-                                                        )}
-
-                                                        {contact.status !== 'unsubscribed' && (
-                                                            <button
-                                                                className="dropdown-item text-warning"
-                                                                onClick={() => handleUpdateContactStatus(contact._id, 'unsubscribed')}
-                                                            >
-                                                                <UserX size={14} />
-                                                                <span>Unsubscribe</span>
-                                                            </button>
-                                                        )}
-                                                        <button
-                                                            className="dropdown-item text-danger"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                if (window.confirm('Are you sure you want to delete this contact?')) {
-                                                                    handleContactSelect(contact._id);
-                                                                    handleDeleteSelected();
-                                                                }
-                                                            }}
-                                                        >
-                                                            <Trash size={14} />
-                                                            <span>Delete</span>
-                                                        </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -749,21 +889,19 @@ export default function ContactListDetails() {
 
                                     {/* Pagination */}
                                     {totalPages > 1 && (
-                                        <div className="pagination">
+                                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.5rem', padding: '1rem' }}>
                                             <button
-                                                className="pagination-btn prev"
+                                                className="button button--secondary button--small"
                                                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                                                 disabled={currentPage === 1}
                                             >
                                                 Previous
                                             </button>
-
-                                            <div className="pagination-info">
+                                            <span style={{ fontSize: '0.875rem', color: '#666' }}>
                                                 Page {currentPage} of {totalPages}
-                                            </div>
-
+                                            </span>
                                             <button
-                                                className="pagination-btn next"
+                                                className="button button--secondary button--small"
                                                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                                                 disabled={currentPage === totalPages}
                                             >
@@ -791,70 +929,85 @@ export default function ContactListDetails() {
 
             {/* Status Update Modal */}
             {showStatusUpdateModal && (
-                <div className="modal-overlay">
-                    <div className="modal-container status-update-modal">
-                        <div className="modal-header">
-                            <h3>Update Contact Status</h3>
-                            <button
-                                className="close-btn"
-                                onClick={() => setShowStatusUpdateModal(false)}
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
-                        <div className="modal-content">
-                            <p>Update the status for {selectedContacts.length} selected contacts.</p>
-
-                            <div className="form-group">
-                                <label>New Status</label>
-                                <select
-                                    value={selectedStatus}
-                                    onChange={(e) => setSelectedStatus(e.target.value)}
-                                    required
-                                >
-                                    <option value="">Select a status</option>
-                                    <option value="active">Active</option>
-                                    <option value="unsubscribed">Unsubscribed</option>
-                                    <option value="bounced">Bounced</option>
-                                    <option value="complained">Complained</option>
-                                </select>
-                            </div>
-
-                            <div className="form-group">
-                                <label>Reason (optional)</label>
-                                <textarea
-                                    value={statusUpdateReason}
-                                    onChange={(e) => setStatusUpdateReason(e.target.value)}
-                                    placeholder="Enter a reason for this status change..."
-                                    rows={3}
-                                ></textarea>
-                            </div>
-
-                            <div className="modal-actions">
+                <div className="form-modal-overlay">
+                    <div className="form-modal">
+                        <div className="modal-form-container">
+                            <div className="modal-form-header">
+                                <h2>Update Contact Status</h2>
                                 <button
-                                    className="btn btn-secondary"
+                                    className="modal-form-close"
                                     onClick={() => setShowStatusUpdateModal(false)}
-                                    disabled={isUpdatingContact}
+                                    type="button"
                                 >
-                                    Cancel
+                                    <X size={20} />
                                 </button>
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={handleBulkStatusUpdate}
-                                    disabled={!selectedStatus || isUpdatingContact}
-                                >
-                                    {isUpdatingContact ? (
-                                        <>
-                                            <span className="spinner-sm"></span>
-                                            Updating...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Check size={16} />
-                                            Update Contacts
-                                        </>
-                                    )}
-                                </button>
+                            </div>
+
+                            <p
+                                className="form-help"
+                                style={{ marginBottom: '1rem' }}
+                            >
+                                Update the status for {selectedContacts.length} selected contacts.
+                            </p>
+
+                            <div className="form">
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        New Status<span className="form-required">*</span>
+                                    </label>
+                                    <select
+                                        value={selectedStatus}
+                                        onChange={(e) => setSelectedStatus(e.target.value)}
+                                        required
+                                        className="form-select"
+                                    >
+                                        <option value="">Select a status</option>
+                                        <option value="active">Active</option>
+                                        <option value="unsubscribed">Unsubscribed</option>
+                                        <option value="bounced">Bounced</option>
+                                        <option value="complained">Complained</option>
+                                    </select>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Reason (optional)</label>
+                                    <textarea
+                                        value={statusUpdateReason}
+                                        onChange={(e) => setStatusUpdateReason(e.target.value)}
+                                        placeholder="Enter a reason for this status change..."
+                                        rows={3}
+                                        className="form-textarea"
+                                    ></textarea>
+                                </div>
+
+                                <div className="form-actions">
+                                    <button
+                                        type="button"
+                                        className="button button--secondary"
+                                        onClick={() => setShowStatusUpdateModal(false)}
+                                        disabled={isUpdatingContact}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="button button--primary"
+                                        onClick={handleBulkStatusUpdate}
+                                        disabled={!selectedStatus || isUpdatingContact}
+                                    >
+                                        {isUpdatingContact ? (
+                                            <>
+                                                <span className="spinner-icon">⟳</span>
+                                                Updating...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Check size={16} />
+                                                Update Contacts
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

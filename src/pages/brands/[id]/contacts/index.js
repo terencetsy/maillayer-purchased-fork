@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import BrandLayout from '@/components/BrandLayout';
-import { PlusCircle, Users } from 'lucide-react';
-import ContactListItem from '@/components/contact/ContactListItem';
+import { PlusCircle, Search, Users, Trash, UploadCloud, UserPlus, ExternalLink } from 'lucide-react';
 import CreateContactListModal from '@/components/contact/CreateContactListModal';
 import ImportContactsModal from '@/components/contact/ImportContactsModal';
+import { Eye, PlusSign } from '@/lib/icons';
+import Link from 'next/link';
 
 export default function BrandContacts() {
     const { data: session, status } = useSession();
@@ -16,11 +17,12 @@ export default function BrandContacts() {
     const [contactLists, setContactLists] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Modals state
     const [showCreateListModal, setShowCreateListModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
-    const [importMethod, setImportMethod] = useState(null); // 'manual', 'csv', or 'api'
+    const [importMethod, setImportMethod] = useState(null);
     const [selectedListId, setSelectedListId] = useState(null);
 
     useEffect(() => {
@@ -84,74 +86,112 @@ export default function BrandContacts() {
     };
 
     const handleCreateListSuccess = (newList) => {
-        setContactLists([...contactLists, newList]);
+        setContactLists([newList, ...contactLists]);
         setShowCreateListModal(false);
     };
 
-    const handleDeleteList = async (listId) => {
-        try {
-            const res = await fetch(`/api/brands/${id}/contact-lists/${listId}`, {
-                method: 'DELETE',
-                credentials: 'same-origin',
-            });
+    const handleDeleteList = async (e, listId) => {
+        e.preventDefault();
+        e.stopPropagation();
 
-            if (!res.ok) {
-                throw new Error('Failed to delete contact list');
+        const list = contactLists.find((l) => l._id === listId);
+        if (!list) return;
+
+        if (window.confirm(`Are you sure you want to delete the "${list.name}" contact list?`)) {
+            try {
+                const res = await fetch(`/api/brands/${id}/contact-lists/${listId}`, {
+                    method: 'DELETE',
+                    credentials: 'same-origin',
+                });
+
+                if (!res.ok) {
+                    throw new Error('Failed to delete contact list');
+                }
+
+                setContactLists(contactLists.filter((list) => list._id !== listId));
+            } catch (error) {
+                console.error('Error deleting contact list:', error);
+                setError(error.message);
             }
-
-            // Remove the deleted list from state
-            setContactLists(contactLists.filter((list) => list._id !== listId));
-        } catch (error) {
-            console.error('Error deleting contact list:', error);
-            setError(error.message);
         }
     };
 
-    const handleImportContacts = (listId, method) => {
+    const handleImportContacts = (e, listId, method) => {
+        e.preventDefault();
+        e.stopPropagation();
         setSelectedListId(listId);
         setImportMethod(method);
         setShowImportModal(true);
     };
 
     const handleImportSuccess = () => {
-        // Refresh the contact lists to update contact counts
         fetchContactLists();
         setShowImportModal(false);
     };
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        });
+    };
+
+    // Filter contact lists based on search query
+    const filteredContactLists = contactLists.filter((list) => {
+        const searchLower = searchQuery.toLowerCase();
+        return list.name.toLowerCase().includes(searchLower) || (list.description && list.description.toLowerCase().includes(searchLower));
+    });
 
     if (isLoading && !brand) return null;
 
     return (
         <BrandLayout brand={brand}>
-            <div className="contacts-container">
-                {/* Header with Create Button */}
-                <div className="contacts-header">
+            <div className="campaigns-container">
+                {/* Search and Create Bar */}
+                <div className="campaigns-header">
+                    <div className="search-container">
+                        <div className="search-input-wrapper">
+                            <Search
+                                size={18}
+                                className="search-icon"
+                            />
+                            <input
+                                type="text"
+                                placeholder="Search contact lists..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="search-input"
+                            />
+                        </div>
+                    </div>
                     <button
-                        className="create-button"
+                        className="button button--primary"
                         onClick={handleCreateList}
                     >
-                        <PlusCircle size={18} />
+                        <PlusSign size={18} />
                         Create Contact List
                     </button>
                 </div>
 
-                {/* Contact Lists */}
+                {/* Contact Lists Table or Empty State */}
                 {isLoading ? (
-                    <div className="loading-section">
-                        <div className="spinner"></div>
-                        <p>Loading contact lists...</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', gap: '1rem' }}>
+                        <div style={{ width: '2rem', height: '2rem', border: '3px solid #f0f0f0', borderTopColor: '#1a1a1a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+                        <p style={{ margin: 0, fontSize: '0.9375rem', color: '#666' }}>Loading contact lists...</p>
                     </div>
                 ) : (
                     <>
                         {contactLists.length === 0 ? (
-                            <div className="empty-state">
-                                <div className="icon-wrapper">
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', textAlign: 'center' }}>
+                                <div style={{ width: '4rem', height: '4rem', borderRadius: '1rem', background: 'linear-gradient(145deg, #f5f5f5 0%, #e8e8e8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', marginBottom: '1.5rem' }}>
                                     <Users size={32} />
                                 </div>
-                                <h2>No contact lists yet</h2>
-                                <p>Create your first contact list to start managing your contacts</p>
+                                <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: 500, color: '#1a1a1a' }}>No contact lists yet</h2>
+                                <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.9375rem', color: '#666', maxWidth: '400px' }}>Create your first contact list to start managing your contacts</p>
                                 <button
-                                    className="btn btn-primary"
+                                    className="button button--primary"
                                     onClick={handleCreateList}
                                 >
                                     <PlusCircle size={18} />
@@ -159,17 +199,90 @@ export default function BrandContacts() {
                                 </button>
                             </div>
                         ) : (
-                            <div className="contact-lists-grid">
-                                {contactLists.map((list) => (
-                                    <ContactListItem
-                                        key={list._id}
-                                        list={list}
-                                        brandId={id}
-                                        onDelete={() => handleDeleteList(list._id)}
-                                        onImport={handleImportContacts}
-                                    />
-                                ))}
-                            </div>
+                            <>
+                                {filteredContactLists.length === 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem', textAlign: 'center' }}>
+                                        <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: 500, color: '#1a1a1a' }}>No matching contact lists</h2>
+                                        <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.9375rem', color: '#666' }}>No contact lists match your search criteria</p>
+                                        <button
+                                            className="button button--secondary"
+                                            onClick={() => setSearchQuery('')}
+                                        >
+                                            Clear Search
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <table className="campaigns-table">
+                                        <thead>
+                                            <tr>
+                                                <th>List Name</th>
+                                                <th>Contacts</th>
+                                                <th>Created</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filteredContactLists.map((list) => (
+                                                <tr key={list._id}>
+                                                    <td className="campaign-col">
+                                                        <div className="campaign-info">
+                                                            <Users size={16} />
+                                                            <div>
+                                                                <div style={{ fontWeight: '500' }}>{list.name}</div>
+                                                                {list.description && <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '2px' }}>{list.description}</div>}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div className="stats-value">
+                                                            <span style={{ fontWeight: '500' }}>{list.contactCount || 0}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td>{formatDate(list.createdAt)}</td>
+                                                    <td>
+                                                        <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: '#e8f5e9', color: '#2e7d32' }}>Active</span>
+                                                    </td>
+                                                    <td className="actions-col">
+                                                        <div className="action-buttons">
+                                                            <Link
+                                                                href={`/brands/${id}/contacts/${list._id}`}
+                                                                className="action-btn"
+                                                                title="View Details"
+                                                            >
+                                                                <Eye />
+                                                            </Link>
+                                                            <button
+                                                                className="action-btn"
+                                                                onClick={(e) => handleImportContacts(e, list._id, 'manual')}
+                                                                title="Add Contact"
+                                                            >
+                                                                <UserPlus size={16} />
+                                                                Add
+                                                            </button>
+                                                            <button
+                                                                className="action-btn"
+                                                                onClick={(e) => handleImportContacts(e, list._id, 'csv')}
+                                                                title="Import CSV"
+                                                            >
+                                                                <UploadCloud size={16} />
+                                                                Import
+                                                            </button>
+                                                            {/* <button
+                                                                className="action-btn delete-btn"
+                                                                onClick={(e) => handleDeleteList(e, list._id)}
+                                                                title="Delete List"
+                                                            >
+                                                                <Trash size={16} />
+                                                            </button> */}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </>
                         )}
                     </>
                 )}

@@ -59,23 +59,21 @@ export default function CampaignForm({ brand, onCancel, onSuccess }) {
     };
 
     return (
-        <div
-            className="modern-form-container"
-            style={{ padding: 20 }}
-        >
-            <div className="form-header">
+        <div className="modal-form-container">
+            <div className="modal-form-header">
                 <h2>Create a New Campaign</h2>
                 <button
-                    className="close-btn"
+                    className="modal-form-close"
                     onClick={onCancel}
                     aria-label="Close form"
+                    type="button"
                 >
-                    <X size={18} />
+                    <X size={20} />
                 </button>
             </div>
 
             {error && (
-                <div className="form-error">
+                <div className="alert alert--error">
                     <AlertCircle size={16} />
                     <span>{error}</span>
                 </div>
@@ -83,48 +81,52 @@ export default function CampaignForm({ brand, onCancel, onSuccess }) {
 
             <form
                 onSubmit={handleSubmit}
-                className="modern-form"
+                className="form"
             >
                 <div className="form-group">
-                    <label htmlFor="name">
-                        Campaign Name<span className="required">*</span>
+                    <label
+                        htmlFor="name"
+                        className="form-label"
+                    >
+                        Campaign Name<span className="form-required">*</span>
                     </label>
-                    <div className="input-wrapper">
-                        <input
-                            id="name"
-                            name="name"
-                            type="text"
-                            value={formData.name}
-                            onChange={handleChange}
-                            placeholder="Fall Sale 2025"
-                            disabled={isLoading}
-                        />
-                    </div>
-                    <p className="input-help">Internal name to identify your campaign</p>
+                    <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        value={formData.name}
+                        onChange={handleChange}
+                        placeholder="Fall Sale 2025"
+                        disabled={isLoading}
+                        className="form-input"
+                    />
+                    <p className="form-help">Internal name to identify your campaign</p>
                 </div>
 
                 <div className="form-group">
-                    <label htmlFor="subject">
-                        Email Subject<span className="required">*</span>
+                    <label
+                        htmlFor="subject"
+                        className="form-label"
+                    >
+                        Email Subject<span className="form-required">*</span>
                     </label>
-                    <div className="input-wrapper">
-                        <input
-                            id="subject"
-                            name="subject"
-                            type="text"
-                            value={formData.subject}
-                            onChange={handleChange}
-                            placeholder="Don't miss our fall sale! 20% off everything"
-                            disabled={isLoading}
-                        />
-                    </div>
-                    <p className="input-help">This will appear as the subject line of your email</p>
+                    <input
+                        id="subject"
+                        name="subject"
+                        type="text"
+                        value={formData.subject}
+                        onChange={handleChange}
+                        placeholder="Don't miss our fall sale! 20% off everything"
+                        disabled={isLoading}
+                        className="form-input"
+                    />
+                    <p className="form-help">This will appear as the subject line of your email</p>
                 </div>
 
                 <div className="form-actions">
                     <button
                         type="button"
-                        className="btn btn-secondary"
+                        className="button button--secondary"
                         onClick={onCancel}
                         disabled={isLoading}
                     >
@@ -132,14 +134,14 @@ export default function CampaignForm({ brand, onCancel, onSuccess }) {
                     </button>
                     <button
                         type="submit"
-                        className="btn btn-primary"
+                        className="button button--primary"
                         disabled={isLoading}
                     >
                         {isLoading ? (
                             <>
                                 <Loader
                                     size={16}
-                                    className="spinner"
+                                    className="spinner-icon"
                                 />
                                 Creating...
                             </>

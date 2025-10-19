@@ -5,6 +5,7 @@ import BrandLayout from '@/components/BrandLayout';
 import { PlusCircle, Search, Filter, Mail } from 'lucide-react';
 import CampaignForm from '@/components/CampaignForm';
 import CampaignList from '@/components/CampaignList';
+import { PlusSign } from '@/lib/icons';
 
 export default function BrandCampaigns() {
     const { data: session, status } = useSession();
@@ -116,10 +117,10 @@ export default function BrandCampaigns() {
                         </div>
                     </div>
                     <button
-                        className="create-button"
+                        className="button button--primary"
                         onClick={handleCreateClick}
                     >
-                        <PlusCircle size={18} />
+                        <PlusSign size={18} />
                         Create Campaign
                     </button>
                 </div>

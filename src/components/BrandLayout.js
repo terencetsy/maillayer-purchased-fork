@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
 import { useSession } from 'next-auth/react';
-import { Mail, Users, BarChart, Settings, Shield, Home, Search, Bell, MoreVertical, Database } from 'lucide-react';
+import { Code, ContactBook, DatabaseSync, Home03, Mail02, Setting07, Shield02 } from '@/lib/icons';
 
 export default function BrandLayout({ children, brand }) {
     const router = useRouter();
@@ -62,78 +62,93 @@ export default function BrandLayout({ children, brand }) {
 
             <div className="app-container">
                 {/* Sidebar */}
-                <aside className="sidebar">
-                    <div className="sidebar-header">
-                        <div className="brand-logo">
-                            <div className="logo-icon"></div>
-                            <div className="brand-info">
-                                <div className="brand-name">{brand.name}</div>
-                                <div className="brand-email">{brand.website}</div>
+                <div className="sidebar">
+                    <div>
+                        <div className="sidebar-header">
+                            <div className="brand-logo">
+                                <div className="logo-icon">
+                                    <img
+                                        src={`https://www.google.com/s2/favicons?sz=64&domain_url=${brand.website}`}
+                                        height={24}
+                                        width={24}
+                                    />
+                                </div>
+                                <div className="brand-info">
+                                    <div className="brand-name">{brand.name}</div>
+                                    <div className="brand-website">{brand.website}</div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <nav className="sidebar-nav">
-                        <Link
-                            href={`/brands/${brand._id}/campaigns`}
-                            className={`nav-item ${activeMenuItem === 'campaigns' ? 'active' : ''}`}
-                        >
-                            <Mail size={20} />
-                            <span>Campaigns</span>
-                        </Link>
-
-                        <Link
-                            href={`/brands/${brand._id}/contacts`}
-                            className={`nav-item ${activeMenuItem === 'contacts' ? 'active' : ''}`}
-                        >
-                            <Users size={20} />
-                            <span>Contacts</span>
-                        </Link>
-
-                        <Link
-                            href={`/brands/${brand._id}/transactional`}
-                            className={`nav-item ${activeMenuItem === 'transactional' ? 'active' : ''}`}
-                        >
-                            <BarChart size={20} />
-                            <span>Transactional</span>
-                        </Link>
-                        <Link
-                            href={`/brands/${brand._id}/integrations`}
-                            className={`nav-item ${router.pathname.includes('/brands/[id]/integrations') ? 'active' : ''}`}
-                        >
-                            <Database size={18} />
-                            Integrations
-                        </Link>
-                        <Link
-                            href={`/brands/${brand._id}/settings`}
-                            className={`nav-item ${activeMenuItem === 'settings' ? 'active' : ''}`}
-                        >
-                            <Settings size={20} />
-                            <span>Settings</span>
-                        </Link>
-
-                        {(brand.status === 'pending_setup' || brand.status === 'pending_verification') && (
+                        <nav className="sidebar-nav">
                             <Link
-                                href={`/brands/${brand._id}/verification`}
-                                className={`nav-item verification ${activeMenuItem === 'verification' ? 'active' : ''}`}
+                                href={`/brands/${brand._id}/campaigns`}
+                                className={`nav-item ${activeMenuItem === 'campaigns' ? 'active' : ''}`}
                             >
-                                <Shield size={20} />
-                                <span>Verification</span>
-                                <span className="verification-badge">Required</span>
+                                <Mail02 size={20} />
+                                <span>Campaigns</span>
                             </Link>
-                        )}
-                    </nav>
+
+                            <Link
+                                href={`/brands/${brand._id}/contacts`}
+                                className={`nav-item ${activeMenuItem === 'contacts' ? 'active' : ''}`}
+                            >
+                                <ContactBook size={20} />
+                                <span>Contacts</span>
+                            </Link>
+
+                            <Link
+                                href={`/brands/${brand._id}/transactional`}
+                                className={`nav-item ${activeMenuItem === 'transactional' ? 'active' : ''}`}
+                            >
+                                <Code size={20} />
+                                <span>Transactional</span>
+                            </Link>
+                            <Link
+                                href={`/brands/${brand._id}/integrations`}
+                                className={`nav-item ${router.pathname.includes('/brands/[id]/integrations') ? 'active' : ''}`}
+                            >
+                                <DatabaseSync size={18} />
+                                Integrations
+                            </Link>
+                            <Link
+                                href={`/brands/${brand._id}/settings`}
+                                className={`nav-item ${activeMenuItem === 'settings' ? 'active' : ''}`}
+                            >
+                                <Setting07 size={20} />
+                                <span>Settings</span>
+                            </Link>
+
+                            {(brand.status === 'pending_setup' || brand.status === 'pending_verification') && (
+                                <Link
+                                    href={`/brands/${brand._id}/verification`}
+                                    className={`nav-item verification ${activeMenuItem === 'verification' ? 'active' : ''}`}
+                                >
+                                    <Shield02 />
+                                    <span>Verification</span>
+                                    <span className="verification-badge">Required</span>
+                                </Link>
+                            )}
+                            <div className="divider" />
+                            <Link
+                                href="/brands"
+                                className="nav-item secondary"
+                            >
+                                <Home03 size={20} />
+                                <span>Back to Brands</span>
+                            </Link>
+                        </nav>
+                    </div>
 
                     <div className="sidebar-footer">
                         <Link
                             href="/brands"
                             className="nav-item secondary"
                         >
-                            <Home size={20} />
-                            <span>Back to Brands</span>
+                            <span>20,000 emails sent</span>
                         </Link>
                     </div>
-                </aside>
+                </div>
 
                 {/* Main content */}
                 <main className="brand-main-content">
@@ -145,23 +160,6 @@ export default function BrandLayout({ children, brand }) {
                             {activeMenuItem === 'settings' && 'Settings'}
                             {activeMenuItem === 'verification' && 'Verification'}
                         </h1>
-
-                        <div className="header-actions">
-                            <div className="user-menu">
-                                <button className="notification-bell">
-                                    <Bell size={20} />
-                                </button>
-
-                                <div className="user-profile">
-                                    <div className="avatar">{session?.user?.name?.charAt(0) || 'U'}</div>
-                                    <span className="user-name">{session?.user?.name || 'User'}</span>
-                                </div>
-
-                                <button className="more-options">
-                                    <MoreVertical size={20} />
-                                </button>
-                            </div>
-                        </div>
                     </header>
 
                     <div className="content-area">{children}</div>

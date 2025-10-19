@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { formatDistance } from 'date-fns';
-import { Mail, Eye, Edit, Copy, Trash, PieChart, Users, AlertOctagon, UserMinus } from 'lucide-react';
+import { ArrowBounce28Filled, Copy01, Delete02, Edit01, Eye, Mail02, PieChart, UserMinus01 } from '@/lib/icons';
 
 const CampaignList = ({ campaigns, brandId }) => {
     const handleDuplicate = async (campaignId, campaignName) => {
@@ -97,10 +97,9 @@ const CampaignList = ({ campaigns, brandId }) => {
                             <td className="campaign-col">
                                 <div className="campaign-info">
                                     <div className="email-icon">
-                                        <Mail size={18} />
+                                        <Mail02 />
                                     </div>
                                     <div className="campaign-details">
-                                        <div className="campaign-name">{campaign.name}</div>
                                         <div className="campaign-subject">{campaign.subject}</div>
                                     </div>
                                 </div>
@@ -118,7 +117,7 @@ const CampaignList = ({ campaigns, brandId }) => {
                             </td>
                             <td className="unsub-col">
                                 <div className="stats-value">
-                                    <UserMinus
+                                    <UserMinus01
                                         size={14}
                                         className="stats-icon"
                                     />
@@ -127,7 +126,7 @@ const CampaignList = ({ campaigns, brandId }) => {
                             </td>
                             <td className="bounce-col">
                                 <div className="stats-value">
-                                    <AlertOctagon
+                                    <ArrowBounce28Filled
                                         size={14}
                                         className="stats-icon"
                                     />
@@ -139,7 +138,7 @@ const CampaignList = ({ campaigns, brandId }) => {
                                 <div className="action-buttons">
                                     <Link
                                         href={`/brands/${brandId}/campaigns/${campaign._id}`}
-                                        className="view-btn"
+                                        className="action-btn view-btn"
                                         title="View Campaign"
                                     >
                                         <Eye size={16} />
@@ -147,25 +146,25 @@ const CampaignList = ({ campaigns, brandId }) => {
                                     {campaign.status === 'draft' && (
                                         <Link
                                             href={`/brands/${brandId}/campaigns/${campaign._id}/editor`}
-                                            className="edit-btn"
+                                            className="action-btn edit-btn"
                                             title="Edit Campaign"
                                         >
-                                            <Edit size={16} />
+                                            <Edit01 size={16} />
                                         </Link>
                                     )}
                                     <div
-                                        className="duplicate-btn"
+                                        className="action-btn duplicate-btn"
                                         onClick={() => handleDuplicate(campaign._id, campaign.name)}
                                     >
-                                        <Copy size={16} />
+                                        <Copy01 size={16} />
                                     </div>
                                     {campaign.status === 'draft' && (
                                         <button
-                                            className="delete-btn"
+                                            className="action-btn delete-btn"
                                             title="Delete Campaign"
                                             onClick={() => handleDelete(campaign._id)}
                                         >
-                                            <Trash size={16} />
+                                            <Delete02 size={16} />
                                         </button>
                                     )}
                                 </div>

@@ -3,9 +3,9 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
-import { ArrowLeft, BarChart2, Users, Eye, X, Clock, Calendar, Send, Mail, MousePointer, AlertTriangle, Filter, Download, ChevronLeft, ChevronRight, MailX } from 'lucide-react';
+import { ArrowLeft, Mail, MousePointer, AlertTriangle, Filter, Download, ChevronLeft, ChevronRight, MailX, Users, Eye, X, Clock, Calendar, Send } from 'lucide-react';
 import { formatDistance } from 'date-fns';
-import GeoStats from '@/components/GeoStats';
+import ContactsBarChart from '@/components/contact/ContactsBarChart';
 
 export default function CampaignDetail() {
     const { data: session, status } = useSession();
@@ -15,6 +15,7 @@ export default function CampaignDetail() {
     const [brand, setBrand] = useState(null);
     const [campaign, setCampaign] = useState(null);
     const [stats, setStats] = useState(null);
+    const [geoStats, setGeoStats] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -56,10 +57,10 @@ export default function CampaignDetail() {
         if (campaign && campaign.status !== 'draft') {
             fetchCampaignStats();
             fetchCampaignEvents();
+            fetchGeoStats();
         }
     }, [campaign]);
 
-    // Fetch events when pagination or filters change
     useEffect(() => {
         if (campaign && campaign.status !== 'draft') {
             fetchCampaignEvents();
@@ -132,6 +133,30 @@ export default function CampaignDetail() {
         }
     };
 
+    const fetchGeoStats = async () => {
+        try {
+            const res = await fetch(`/api/brands/${id}/campaigns/${campaignId}/geo-stats`, {
+                credentials: 'same-origin',
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to fetch geo stats');
+            }
+
+            const data = await res.json();
+
+            // Transform geo data for bar chart
+            const chartData = data.map((item) => ({
+                date: item.country || 'Unknown',
+                value: item.count || 0,
+            }));
+
+            setGeoStats(chartData);
+        } catch (error) {
+            console.error('Error fetching geo stats:', error);
+        }
+    };
+
     const fetchCampaignEvents = async () => {
         try {
             setEventsLoading(true);
@@ -173,7 +198,6 @@ export default function CampaignDetail() {
             [name]: value,
         }));
 
-        // Reset to page 1 when changing filters
         setPagination((prev) => ({
             ...prev,
             page: 1,
@@ -188,11 +212,9 @@ export default function CampaignDetail() {
     };
 
     const exportEvents = async () => {
-        // Placeholder implementation
         alert('Export functionality would be implemented here');
     };
 
-    // Format the date nicely
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
@@ -205,81 +227,70 @@ export default function CampaignDetail() {
         });
     };
 
-    // Helper to format event type for display
     const formatEventType = (type) => {
+        const iconProps = { size: 14 };
+
         switch (type) {
             case 'open':
                 return {
                     label: 'Open',
-                    icon: (
-                        <Mail
-                            size={14}
-                            className="cd-event-icon cd-event-icon-open"
-                        />
-                    ),
+                    icon: <Mail {...iconProps} />,
+                    color: '#16a34a',
                 };
             case 'click':
                 return {
                     label: 'Click',
-                    icon: (
-                        <MousePointer
-                            size={14}
-                            className="cd-event-icon cd-event-icon-click"
-                        />
-                    ),
+                    icon: <MousePointer {...iconProps} />,
+                    color: '#2563eb',
                 };
             case 'bounce':
                 return {
                     label: 'Bounce',
-                    icon: (
-                        <X
-                            size={14}
-                            className="cd-event-icon cd-event-icon-bounce"
-                        />
-                    ),
+                    icon: <X {...iconProps} />,
+                    color: '#dc2626',
                 };
             case 'complaint':
                 return {
                     label: 'Complaint',
-                    icon: (
-                        <AlertTriangle
-                            size={14}
-                            className="cd-event-icon cd-event-icon-complaint"
-                        />
-                    ),
+                    icon: <AlertTriangle {...iconProps} />,
+                    color: '#d97706',
                 };
             case 'delivery':
                 return {
                     label: 'Delivery',
-                    icon: (
-                        <Mail
-                            size={14}
-                            className="cd-event-icon cd-event-icon-delivery"
-                        />
-                    ),
+                    icon: <Mail {...iconProps} />,
+                    color: '#059669',
                 };
             case 'unsubscribe':
                 return {
                     label: 'Unsubscribe',
-                    icon: (
-                        <MailX
-                            size={14}
-                            className="cd-event-icon cd-event-icon-unsubscribe"
-                        />
-                    ),
+                    icon: <MailX {...iconProps} />,
+                    color: '#dc2626',
                 };
             default:
-                return { label: type, icon: null };
+                return { label: type, icon: null, color: '#666' };
         }
     };
 
-    // If loading or brand/campaign not loaded yet
     if (isLoading || !brand || !campaign) {
         return (
             <BrandLayout brand={brand}>
-                <div className="cd-loading">
-                    <div className="cd-spinner"></div>
+                <div className="loading-section">
+                    <div className="spinner"></div>
                     <p>Loading campaign details...</p>
+                </div>
+            </BrandLayout>
+        );
+    }
+
+    if (error) {
+        return (
+            <BrandLayout brand={brand}>
+                <div
+                    className="alert alert--error"
+                    style={{ margin: '2rem' }}
+                >
+                    <span>{error}</span>
                 </div>
             </BrandLayout>
         );
@@ -287,357 +298,361 @@ export default function CampaignDetail() {
 
     return (
         <BrandLayout brand={brand}>
-            <div className="cd-container">
+            <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
                 {/* Navigation */}
-                <div className="cd-header">
+                <div style={{ marginBottom: '1.5rem' }}>
                     <Link
                         href={`/brands/${id}/campaigns`}
-                        className="cd-back-link"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#666', textDecoration: 'none', fontSize: '0.875rem', marginBottom: '1rem' }}
                     >
                         <ArrowLeft size={16} />
                         <span>Back to campaigns</span>
                     </Link>
 
-                    <div className="cd-campaign-header">
-                        <h1>{campaign.name}</h1>
-                        <div className="cd-campaign-meta">
-                            <span className={`cd-status-badge cd-status-${campaign.status}`}>{campaign.status === 'draft' ? 'Draft' : campaign.status === 'sending' ? 'Sending' : campaign.status === 'sent' ? 'Sent' : campaign.status === 'scheduled' ? 'Scheduled' : campaign.status}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                        <div>
+                            <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: '500', color: '#1a1a1a' }}>{campaign.name}</h1>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <span className={`status-badge status-${campaign.status}`}>{campaign.status === 'draft' ? 'Draft' : campaign.status === 'sending' ? 'Sending' : campaign.status === 'sent' ? 'Sent' : campaign.status === 'scheduled' ? 'Scheduled' : campaign.status}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Campaign Summary */}
-                <div className="cd-summary-card">
-                    <div className="cd-card-header">
+                {/* Campaign Overview Card */}
+                <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', padding: '1.5rem', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1rem', paddingBottom: '0.75rem', borderBottom: '1px solid #f5f5f5' }}>
                         <Mail size={18} />
-                        <h3>Campaign Overview</h3>
+                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: '500', color: '#1a1a1a' }}>Campaign Overview</h2>
                     </div>
-                    <div className="cd-card-content">
-                        <div className="cd-summary-grid">
-                            <div className="cd-summary-item">
-                                <span className="cd-summary-label">Subject</span>
-                                <span className="cd-summary-value">{campaign.subject}</span>
-                            </div>
 
-                            <div className="cd-summary-item">
-                                <span className="cd-summary-label">
-                                    <Calendar size={14} />
-                                    Created
-                                </span>
-                                <span className="cd-summary-value">{formatDate(campaign.createdAt)}</span>
-                            </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Subject</span>
+                            <span style={{ fontSize: '0.9375rem', color: '#1a1a1a' }}>{campaign.subject}</span>
+                        </div>
 
-                            <div className="cd-summary-item">
-                                <span className="cd-summary-label">
-                                    <Send size={14} />
-                                    Sent
-                                </span>
-                                <span className="cd-summary-value">{formatDate(campaign.sentAt) || 'Not sent yet'}</span>
-                            </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                                <Calendar size={14} />
+                                Created
+                            </span>
+                            <span style={{ fontSize: '0.9375rem', color: '#1a1a1a' }}>{formatDate(campaign.createdAt)}</span>
+                        </div>
 
-                            <div className="cd-summary-item">
-                                <span className="cd-summary-label">
-                                    <Users size={14} />
-                                    Recipients
-                                </span>
-                                <span className="cd-summary-value">{campaign.stats?.recipients || 0} contacts</span>
-                            </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                                <Send size={14} />
+                                Sent
+                            </span>
+                            <span style={{ fontSize: '0.9375rem', color: '#1a1a1a' }}>{formatDate(campaign.sentAt) || 'Not sent yet'}</span>
+                        </div>
 
-                            <div className="cd-summary-item">
-                                <span className="cd-summary-label">From</span>
-                                <span className="cd-summary-value">
-                                    {campaign.fromName || brand.name} &lt;{campaign.fromEmail || brand.fromEmail || 'Not set'}&gt;
-                                </span>
-                            </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                                <Users size={14} />
+                                Recipients
+                            </span>
+                            <span style={{ fontSize: '0.9375rem', color: '#1a1a1a' }}>{campaign.stats?.recipients || 0} contacts</span>
+                        </div>
 
-                            <div className="cd-summary-item">
-                                <button
-                                    className="cd-preview-btn"
-                                    onClick={() => setShowPreviewModal(true)}
-                                >
-                                    <Eye size={14} />
-                                    <span>View Email Preview</span>
-                                </button>
-                            </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>From</span>
+                            <span style={{ fontSize: '0.9375rem', color: '#1a1a1a' }}>
+                                {campaign.fromName || brand.name} &lt;{campaign.fromEmail || brand.fromEmail || 'Not set'}&gt;
+                            </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                            <button
+                                className="button button--secondary button--small"
+                                onClick={() => setShowPreviewModal(true)}
+                            >
+                                <Eye size={14} />
+                                <span>Preview Email</span>
+                            </button>
                         </div>
                     </div>
                 </div>
 
                 {/* Performance Stats */}
                 {campaign.status !== 'draft' && (
-                    <div className="cd-section">
-                        <h2 className="cd-section-title">
-                            <BarChart2 size={20} />
-                            <span>Campaign Performance</span>
-                        </h2>
+                    <>
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', margin: '0 0 1rem 0', fontSize: '1.125rem', fontWeight: '500', color: '#1a1a1a' }}>Campaign Performance</h2>
 
-                        {!stats ? (
-                            <div className="cd-loading-inline">
-                                <div className="cd-spinner-small"></div>
-                                <p>Loading statistics...</p>
-                            </div>
-                        ) : (
-                            <div className="cd-stats-cards">
-                                <div className="cd-stat-card">
-                                    <div className="cd-stat-icon cd-stat-icon-delivered">
-                                        <Mail size={18} />
+                            {!stats ? (
+                                <div className="loading-section">
+                                    <div className="spinner"></div>
+                                    <p>Loading statistics...</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                                    <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '0.5rem', background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', flexShrink: 0 }}>
+                                            <Mail size={20} />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1a1a1a', lineHeight: 1, marginBottom: '0.25rem' }}>{stats.recipients || 0}</div>
+                                            <div style={{ fontSize: '0.8125rem', color: '#666' }}>Recipients</div>
+                                        </div>
                                     </div>
-                                    <div className="cd-stat-content">
-                                        <div className="cd-stat-value">{stats.recipients || 0}</div>
-                                        <div className="cd-stat-label">Recipients</div>
+
+                                    <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '0.5rem', background: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', flexShrink: 0 }}>
+                                            <Mail size={20} />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1a1a1a', lineHeight: 1, marginBottom: '0.25rem' }}>{stats.open?.unique || 0}</div>
+                                            <div style={{ fontSize: '0.8125rem', color: '#666' }}>Unique Opens</div>
+                                            <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem' }}>{stats.openRate || 0}% open rate</div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '0.5rem', background: 'rgba(251, 191, 36, 0.1)', color: '#d97706', flexShrink: 0 }}>
+                                            <MousePointer size={20} />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1a1a1a', lineHeight: 1, marginBottom: '0.25rem' }}>{stats.click?.unique || 0}</div>
+                                            <div style={{ fontSize: '0.8125rem', color: '#666' }}>Unique Clicks</div>
+                                            <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem' }}>{stats.clickRate || 0}% click rate</div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '0.5rem', background: 'rgba(107, 114, 128, 0.1)', color: '#6b7280', flexShrink: 0 }}>
+                                            <Users size={20} />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1a1a1a', lineHeight: 1, marginBottom: '0.25rem' }}>{stats.unsubscribed?.total || 0}</div>
+                                            <div style={{ fontSize: '0.8125rem', color: '#666' }}>Unsubscribes</div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', flexShrink: 0 }}>
+                                            <AlertTriangle size={20} />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1a1a1a', lineHeight: 1, marginBottom: '0.25rem' }}>{stats.bounce?.total || 0}</div>
+                                            <div style={{ fontSize: '0.8125rem', color: '#666' }}>Bounces</div>
+                                            <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem' }}>{stats.recipients ? (((stats.bounce?.total || 0) / stats.recipients) * 100).toFixed(1) : 0}% bounce rate</div>
+                                        </div>
                                     </div>
                                 </div>
-
-                                <div className="cd-stat-card">
-                                    <div className="cd-stat-icon cd-stat-icon-opened">
-                                        <Mail size={18} />
-                                    </div>
-                                    <div className="cd-stat-content">
-                                        <div className="cd-stat-value">{stats.open?.unique || 0}</div>
-                                        <div className="cd-stat-label">Unique Opens</div>
-                                        <div className="cd-stat-percent">{stats.openRate || 0}% open rate</div>
-                                    </div>
-                                </div>
-
-                                <div className="cd-stat-card">
-                                    <div className="cd-stat-icon cd-stat-icon-clicked">
-                                        <MousePointer size={18} />
-                                    </div>
-                                    <div className="cd-stat-content">
-                                        <div className="cd-stat-value">{stats.click?.unique || 0}</div>
-                                        <div className="cd-stat-label">Unique Clicks</div>
-                                        <div className="cd-stat-percent">{stats.clickRate || 0}% click rate</div>
-                                    </div>
-                                </div>
-
-                                <div className="cd-stat-card">
-                                    <div className="cd-stat-icon cd-stat-icon-unsubscribed">
-                                        <Users size={18} />
-                                    </div>
-                                    <div className="cd-stat-content">
-                                        <div className="cd-stat-value">{stats.unsubscribed?.total || 0}</div>
-                                        <div className="cd-stat-label">Unsubscribes</div>
-                                    </div>
-                                </div>
-
-                                <div className="cd-stat-card">
-                                    <div className="cd-stat-icon cd-stat-icon-bounced">
-                                        <AlertTriangle size={18} />
-                                    </div>
-                                    <div className="cd-stat-content">
-                                        <div className="cd-stat-value">{stats.bounce?.total || 0}</div>
-                                        <div className="cd-stat-label">Bounces</div>
-                                        <div className="cd-stat-percent">{stats.recipients ? (((stats.bounce?.total || 0) / stats.recipients) * 100).toFixed(1) : 0}% bounce rate</div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Events Section */}
-                {campaign.status !== 'draft' && (
-                    <div className="cd-section">
-                        <GeoStats
-                            campaignId={campaignId}
-                            brandId={id}
-                        />
-                        <div className="cd-events-header">
-                            <h2 className="cd-section-title">
-                                <Clock size={20} />
-                                <span>Email Activity</span>
-                            </h2>
-
-                            <div className="cd-events-actions">
-                                <button
-                                    className="cd-btn cd-btn-outline"
-                                    onClick={() => setShowFilters(!showFilters)}
-                                >
-                                    <Filter size={14} />
-                                    <span>Filter</span>
-                                </button>
-
-                                <button
-                                    className="cd-btn cd-btn-outline"
-                                    onClick={exportEvents}
-                                >
-                                    <Download size={14} />
-                                    <span>Export</span>
-                                </button>
-                            </div>
+                            )}
                         </div>
 
-                        {/* Filters */}
-                        {showFilters && (
-                            <div className="cd-events-filters">
-                                <div className="cd-filter-group">
-                                    <label>Event Type</label>
-                                    <select
-                                        name="eventType"
-                                        value={filters.eventType}
-                                        onChange={handleFilterChange}
-                                    >
-                                        <option value="">All Events</option>
-                                        <option value="open">Opens</option>
-                                        <option value="click">Clicks</option>
-                                        <option value="bounce">Bounces</option>
-                                        <option value="complaint">Complaints</option>
-                                        <option value="delivery">Deliveries</option>
-                                    </select>
-                                </div>
-
-                                <div className="cd-filter-group">
-                                    <label>Email Address</label>
-                                    <input
-                                        type="text"
-                                        name="email"
-                                        value={filters.email}
-                                        onChange={handleFilterChange}
-                                        placeholder="Filter by email"
-                                    />
-                                </div>
-
-                                <div className="cd-filter-group">
-                                    <label>Sort By</label>
-                                    <select
-                                        name="sort"
-                                        value={filters.sort}
-                                        onChange={handleFilterChange}
-                                    >
-                                        <option value="timestamp">Date/Time</option>
-                                        <option value="email">Email</option>
-                                        <option value="eventType">Event Type</option>
-                                    </select>
-                                </div>
-
-                                <div className="cd-filter-group">
-                                    <label>Order</label>
-                                    <select
-                                        name="order"
-                                        value={filters.order}
-                                        onChange={handleFilterChange}
-                                    >
-                                        <option value="desc">Newest First</option>
-                                        <option value="asc">Oldest First</option>
-                                    </select>
-                                </div>
-                            </div>
+                        {/* Geographic Distribution */}
+                        {geoStats.length > 0 && (
+                            <ContactsBarChart
+                                data={geoStats}
+                                title="Geographic Distribution"
+                                totalLabel="opens"
+                            />
                         )}
 
-                        {/* Events Table */}
-                        {eventsLoading ? (
-                            <div className="cd-loading-inline">
-                                <div className="cd-spinner-small"></div>
-                                <p>Loading events...</p>
-                            </div>
-                        ) : events.length > 0 ? (
-                            <div className="cd-card cd-events-card">
-                                <div className="cd-events-table-container">
-                                    <table className="cd-events-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Event</th>
-                                                <th>Email</th>
-                                                <th>Date/Time</th>
-                                                <th>Details</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {events.map((event, index) => {
-                                                const eventInfo = formatEventType(event.eventType || event.type);
-                                                return (
-                                                    <tr key={event._id || index}>
-                                                        <td className="cd-event-type">
-                                                            {eventInfo.icon}
-                                                            <span>{eventInfo.label}</span>
-                                                        </td>
-                                                        <td>{event.email}</td>
-                                                        <td>
-                                                            <span
-                                                                className="cd-event-time"
-                                                                title={new Date(event.timestamp).toLocaleString()}
-                                                            >
-                                                                {formatDistance(new Date(event.timestamp), new Date(), { addSuffix: true })}
-                                                            </span>
-                                                        </td>
-                                                        <td>
-                                                            {(event.eventType === 'click' || event.type === 'click') && (event.metadata?.url || event.url) && (
-                                                                <span
-                                                                    className="cd-event-url"
-                                                                    title={event.metadata?.url || event.url}
-                                                                >
-                                                                    {event.metadata?.url || event.url}
-                                                                </span>
-                                                            )}
-                                                            {(event.eventType === 'bounce' || event.type === 'bounce') && (
-                                                                <span className="cd-event-reason">
-                                                                    {event.metadata?.bounceType || event.reason || 'Bounce'}
-                                                                    {event.metadata?.diagnosticCode ? ` - ${event.metadata.diagnosticCode}` : ''}
-                                                                </span>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
+                        {/* Events Section */}
+                        <div style={{ marginTop: '1.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', margin: 0, fontSize: '1.125rem', fontWeight: '500', color: '#1a1a1a' }}>
+                                    <Clock size={20} />
+                                    Email Activity
+                                </h2>
+
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button
+                                        className="button button--secondary button--small"
+                                        onClick={() => setShowFilters(!showFilters)}
+                                    >
+                                        <Filter size={14} />
+                                        <span>Filter</span>
+                                    </button>
+
+                                    <button
+                                        className="button button--secondary button--small"
+                                        onClick={exportEvents}
+                                    >
+                                        <Download size={14} />
+                                        <span>Export</span>
+                                    </button>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="cd-empty-events">
-                                <p>No events have been recorded for this campaign yet.</p>
-                            </div>
-                        )}
 
-                        {/* Pagination */}
-                        {events.length > 0 && pagination.totalPages > 1 && (
-                            <div className="cd-pagination">
-                                <button
-                                    className="cd-pagination-btn"
-                                    onClick={() => handlePageChange(pagination.page - 1)}
-                                    disabled={pagination.page <= 1}
-                                >
-                                    <ChevronLeft size={16} />
-                                    <span>Previous</span>
-                                </button>
+                            {/* Filters */}
+                            {showFilters && (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', padding: '1rem', background: '#fafafa', borderRadius: '0.5rem', marginBottom: '1rem' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '500', color: '#666', marginBottom: '0.5rem' }}>Event Type</label>
+                                        <select
+                                            name="eventType"
+                                            value={filters.eventType}
+                                            onChange={handleFilterChange}
+                                            className="form-select"
+                                        >
+                                            <option value="">All Events</option>
+                                            <option value="open">Opens</option>
+                                            <option value="click">Clicks</option>
+                                            <option value="bounce">Bounces</option>
+                                            <option value="complaint">Complaints</option>
+                                            <option value="delivery">Deliveries</option>
+                                        </select>
+                                    </div>
 
-                                <div className="cd-pagination-info">
-                                    Page {pagination.page} of {pagination.totalPages}
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '500', color: '#666', marginBottom: '0.5rem' }}>Email Address</label>
+                                        <input
+                                            type="text"
+                                            name="email"
+                                            value={filters.email}
+                                            onChange={handleFilterChange}
+                                            placeholder="Filter by email"
+                                            className="form-input"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '500', color: '#666', marginBottom: '0.5rem' }}>Sort By</label>
+                                        <select
+                                            name="sort"
+                                            value={filters.sort}
+                                            onChange={handleFilterChange}
+                                            className="form-select"
+                                        >
+                                            <option value="timestamp">Date/Time</option>
+                                            <option value="email">Email</option>
+                                            <option value="eventType">Event Type</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '500', color: '#666', marginBottom: '0.5rem' }}>Order</label>
+                                        <select
+                                            name="order"
+                                            value={filters.order}
+                                            onChange={handleFilterChange}
+                                            className="form-select"
+                                        >
+                                            <option value="desc">Newest First</option>
+                                            <option value="asc">Oldest First</option>
+                                        </select>
+                                    </div>
                                 </div>
+                            )}
 
-                                <button
-                                    className="cd-pagination-btn"
-                                    onClick={() => handlePageChange(pagination.page + 1)}
-                                    disabled={pagination.page >= pagination.totalPages}
-                                >
-                                    <span>Next</span>
-                                    <ChevronRight size={16} />
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                            {/* Events Table */}
+                            {eventsLoading ? (
+                                <div className="loading-section">
+                                    <div className="spinner"></div>
+                                    <p>Loading events...</p>
+                                </div>
+                            ) : events.length > 0 ? (
+                                <>
+                                    <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', overflow: 'hidden' }}>
+                                        <table className="campaigns-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Event</th>
+                                                    <th>Email</th>
+                                                    <th>Date/Time</th>
+                                                    <th>Details</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {events.map((event, index) => {
+                                                    const eventInfo = formatEventType(event.eventType || event.type);
+                                                    return (
+                                                        <tr key={event._id || index}>
+                                                            <td>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                    <span style={{ color: eventInfo.color }}>{eventInfo.icon}</span>
+                                                                    <span>{eventInfo.label}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td>{event.email}</td>
+                                                            <td>
+                                                                <span title={new Date(event.timestamp).toLocaleString()}>{formatDistance(new Date(event.timestamp), new Date(), { addSuffix: true })}</span>
+                                                            </td>
+                                                            <td>
+                                                                {(event.eventType === 'click' || event.type === 'click') && (event.metadata?.url || event.url) && (
+                                                                    <span
+                                                                        style={{ fontSize: '0.8125rem', color: '#666' }}
+                                                                        title={event.metadata?.url || event.url}
+                                                                    >
+                                                                        {(event.metadata?.url || event.url).length > 50 ? `${(event.metadata?.url || event.url).substring(0, 50)}...` : event.metadata?.url || event.url}
+                                                                    </span>
+                                                                )}
+                                                                {(event.eventType === 'bounce' || event.type === 'bounce') && (
+                                                                    <span style={{ fontSize: '0.8125rem', color: '#666' }}>
+                                                                        {event.metadata?.bounceType || event.reason || 'Bounce'}
+                                                                        {event.metadata?.diagnosticCode ? ` - ${event.metadata.diagnosticCode}` : ''}
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Pagination */}
+                                    {pagination.totalPages > 1 && (
+                                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.5rem', padding: '1rem' }}>
+                                            <button
+                                                className="button button--secondary button--small"
+                                                onClick={() => handlePageChange(pagination.page - 1)}
+                                                disabled={pagination.page <= 1}
+                                            >
+                                                <ChevronLeft size={16} />
+                                                <span>Previous</span>
+                                            </button>
+
+                                            <span style={{ fontSize: '0.875rem', color: '#666' }}>
+                                                Page {pagination.page} of {pagination.totalPages}
+                                            </span>
+
+                                            <button
+                                                className="button button--secondary button--small"
+                                                onClick={() => handlePageChange(pagination.page + 1)}
+                                                disabled={pagination.page >= pagination.totalPages}
+                                            >
+                                                <span>Next</span>
+                                                <ChevronRight size={16} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', textAlign: 'center' }}>
+                                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#666' }}>No events have been recorded for this campaign yet.</p>
+                                </div>
+                            )}
+                        </div>
+                    </>
                 )}
 
                 {/* Email Preview Modal */}
                 {showPreviewModal && (
-                    <div className="cd-modal-overlay">
-                        <div className="cd-modal">
-                            <div className="cd-modal-header">
-                                <h3>Email Preview</h3>
+                    <div className="modal-overlay">
+                        <div className="modal-container">
+                            <div className="modal-header">
+                                <h2>Email Preview</h2>
                                 <button
-                                    className="cd-close-btn"
+                                    className="close-btn"
                                     onClick={() => setShowPreviewModal(false)}
                                 >
                                     <X size={18} />
                                 </button>
                             </div>
-                            <div className="cd-modal-content">
-                                <div className="cd-email-subject">
-                                    <span>Subject:</span> {campaign.subject}
+                            <div className="modal-body">
+                                <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #f0f0f0' }}>
+                                    <span style={{ fontSize: '0.8125rem', fontWeight: '500', color: '#666' }}>Subject:</span> <span style={{ fontSize: '0.875rem', color: '#1a1a1a' }}>{campaign.subject}</span>
                                 </div>
                                 <div
-                                    className="cd-email-preview"
                                     dangerouslySetInnerHTML={{ __html: campaign.content || '<p>No content available.</p>' }}
+                                    style={{ fontFamily: 'Arial, sans-serif', fontSize: '0.9375rem', lineHeight: '1.6', color: '#1a1a1a' }}
                                 ></div>
                             </div>
                         </div>

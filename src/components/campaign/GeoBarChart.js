@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import * as flags from 'country-flag-icons/react/3x2';
 
 export default function GeoBarChart({ data = [], title = 'Data', totalLabel = 'Total', type = 'location' }) {
     const [hoveredIndex, setHoveredIndex] = useState(null);
 
-    // Country code mapping (you might want to expand this)
+    // Country code mapping - expanded list
     const getCountryCode = (countryName) => {
         const countryMap = {
             'United States': 'US',
@@ -65,19 +64,17 @@ export default function GeoBarChart({ data = [], title = 'Data', totalLabel = 'T
         return countryMap[countryName] || null;
     };
 
-    // Get country flag component
-    const CountryFlag = ({ countryName }) => {
+    // Get country flag emoji
+    const getCountryFlag = (countryName) => {
         const countryCode = getCountryCode(countryName);
-        if (!countryCode) return null;
+        if (!countryCode) return '🌐';
 
-        const FlagComponent = flags[countryCode];
-        if (!FlagComponent) return null;
-
-        return (
-            <div style={{ width: '24px', height: '16px', borderRadius: '2px', overflow: 'hidden', border: '1px solid #e5e5e5' }}>
-                <FlagComponent style={{ width: '100%', height: '100%', display: 'block' }} />
-            </div>
-        );
+        // Convert country code to flag emoji
+        const codePoints = countryCode
+            .toUpperCase()
+            .split('')
+            .map((char) => 127397 + char.charCodeAt());
+        return String.fromCodePoint(...codePoints);
     };
 
     if (!data || data.length === 0) {
@@ -116,8 +113,8 @@ export default function GeoBarChart({ data = [], title = 'Data', totalLabel = 'T
                     alignItems: 'flex-end',
                     justifyContent: 'flex-start',
                     gap: '12px',
-                    height: '280px',
-                    padding: '20px 0',
+                    minHeight: '320px',
+                    padding: '20px 0 60px 0',
                     position: 'relative',
                     borderBottom: '1px solid #f0f0f0',
                     overflowX: 'auto',
@@ -145,8 +142,17 @@ export default function GeoBarChart({ data = [], title = 'Data', totalLabel = 'T
                         >
                             {/* Flag (only for countries) */}
                             {type === 'countries' && (
-                                <div style={{ height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>
-                                    <CountryFlag countryName={item.date} />
+                                <div
+                                    style={{
+                                        height: '28px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginBottom: '4px',
+                                        fontSize: '24px',
+                                    }}
+                                >
+                                    {getCountryFlag(item.date)}
                                 </div>
                             )}
 
@@ -158,11 +164,11 @@ export default function GeoBarChart({ data = [], title = 'Data', totalLabel = 'T
                                     flexDirection: 'column',
                                     alignItems: 'center',
                                     justifyContent: 'flex-end',
-                                    height: type === 'countries' ? '200px' : '220px',
+                                    height: type === 'countries' ? '200px' : '228px',
                                     position: 'relative',
                                 }}
                             >
-                                {/* Value Label and Percentage */}
+                                {/* Value Label and Percentage on Hover */}
                                 <div
                                     style={{
                                         display: 'flex',
@@ -172,27 +178,18 @@ export default function GeoBarChart({ data = [], title = 'Data', totalLabel = 'T
                                         marginBottom: '6px',
                                         opacity: isHovered ? 1 : 0,
                                         transition: 'opacity 0.2s ease',
+                                        position: 'absolute',
+                                        top: '-30px',
+                                        backgroundColor: '#1a1a1a',
+                                        color: '#fff',
+                                        padding: '4px 8px',
+                                        borderRadius: '4px',
+                                        whiteSpace: 'nowrap',
+                                        zIndex: 10,
                                     }}
                                 >
-                                    <div
-                                        style={{
-                                            fontSize: '12px',
-                                            fontWeight: '700',
-                                            color: '#1a1a1a',
-                                            whiteSpace: 'nowrap',
-                                        }}
-                                    >
-                                        {item.value}
-                                    </div>
-                                    <div
-                                        style={{
-                                            fontSize: '10px',
-                                            fontWeight: '600',
-                                            color: '#666',
-                                            whiteSpace: 'nowrap',
-                                        }}
-                                    >
-                                        {percentage}%
+                                    <div style={{ fontSize: '11px', fontWeight: '600' }}>
+                                        {item.value} ({percentage}%)
                                     </div>
                                 </div>
 
@@ -200,7 +197,7 @@ export default function GeoBarChart({ data = [], title = 'Data', totalLabel = 'T
                                 <div
                                     style={{
                                         width: '48px',
-                                        background: isHovered ? '#f0f0f0' : '#f5f5f5',
+                                        background: '#f5f5f5',
                                         borderRadius: '6px 6px 0 0',
                                         position: 'relative',
                                         minHeight: '8px',
@@ -208,9 +205,10 @@ export default function GeoBarChart({ data = [], title = 'Data', totalLabel = 'T
                                         transition: 'all 0.3s ease',
                                         overflow: 'hidden',
                                         cursor: 'pointer',
+                                        transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
                                     }}
                                 >
-                                    {/* Bar Fill */}
+                                    {/* Bar Fill - Always dark color */}
                                     <div
                                         style={{
                                             position: 'absolute',
@@ -218,15 +216,15 @@ export default function GeoBarChart({ data = [], title = 'Data', totalLabel = 'T
                                             left: 0,
                                             right: 0,
                                             height: '100%',
-                                            background: isHovered ? 'linear-gradient(180deg, #1a1a1a 0%, #4a4a4a 100%)' : 'linear-gradient(180deg, #666 0%, #999 100%)',
+                                            background: isHovered ? 'linear-gradient(180deg, #0a0a0a 0%, #2a2a2a 100%)' : 'linear-gradient(180deg, #1a1a1a 0%, #4a4a4a 100%)',
                                             borderRadius: '6px 6px 0 0',
                                             transition: 'all 0.3s ease',
-                                            boxShadow: isHovered ? '0 0 20px rgba(26, 26, 26, 0.3)' : 'none',
+                                            boxShadow: isHovered ? '0 4px 20px rgba(26, 26, 26, 0.4)' : '0 2px 8px rgba(26, 26, 26, 0.2)',
                                         }}
                                     ></div>
 
-                                    {/* Percentage inside bar (always visible) */}
-                                    {heightPercentage > 15 && (
+                                    {/* Percentage inside bar (for tall bars) */}
+                                    {heightPercentage > 20 && (
                                         <div
                                             style={{
                                                 position: 'absolute',
@@ -234,8 +232,8 @@ export default function GeoBarChart({ data = [], title = 'Data', totalLabel = 'T
                                                 left: '50%',
                                                 transform: 'translateX(-50%)',
                                                 fontSize: '10px',
-                                                fontWeight: '600',
-                                                color: isHovered ? '#fff' : 'rgba(255, 255, 255, 0.9)',
+                                                fontWeight: '700',
+                                                color: '#fff',
                                                 whiteSpace: 'nowrap',
                                                 zIndex: 1,
                                             }}
@@ -246,20 +244,23 @@ export default function GeoBarChart({ data = [], title = 'Data', totalLabel = 'T
                                 </div>
                             </div>
 
-                            {/* Label (Country/City/Device name) */}
+                            {/* Label (Country/City/Device name) - Always show */}
                             <div
                                 style={{
-                                    fontSize: '11px',
-                                    color: '#666',
-                                    fontWeight: '500',
+                                    fontSize: '10px',
+                                    color: isHovered ? '#1a1a1a' : '#666',
+                                    fontWeight: isHovered ? '600' : '500',
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
-                                    maxWidth: '70px',
+                                    maxWidth: '80px',
                                     textAlign: 'center',
-                                    transform: 'rotate(-45deg)',
-                                    transformOrigin: 'center',
-                                    marginTop: '20px',
+                                    position: 'absolute',
+                                    bottom: '-50px',
+                                    left: '50%',
+                                    transform: 'translateX(-50%) rotate(-45deg)',
+                                    transformOrigin: 'center center',
+                                    transition: 'all 0.2s ease',
                                 }}
                                 title={item.date}
                             >

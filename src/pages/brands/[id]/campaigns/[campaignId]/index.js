@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
-import { ArrowLeft, Mail, MousePointer, AlertTriangle, Filter, Download, ChevronLeft, ChevronRight, MailX, Users, Eye, X, Clock, Calendar, Send } from 'lucide-react';
+import { ArrowLeft, Mail, MousePointer, AlertTriangle, Filter, Download, ChevronLeft, ChevronRight, MailX, Users, Eye, X, Clock, Calendar, Send, Globe, MapPin, Smartphone, Monitor, Tablet, Server, ChevronDown } from 'lucide-react';
 import { formatDistance } from 'date-fns';
 import ContactsBarChart from '@/components/contact/ContactsBarChart';
 
@@ -15,7 +15,6 @@ export default function CampaignDetail() {
     const [brand, setBrand] = useState(null);
     const [campaign, setCampaign] = useState(null);
     const [stats, setStats] = useState(null);
-    const [geoStats, setGeoStats] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -24,6 +23,33 @@ export default function CampaignDetail() {
     const [events, setEvents] = useState([]);
     const [eventsLoading, setEventsLoading] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
+
+    // Geographic & Device Insights
+    const [geoData, setGeoData] = useState({
+        countries: [],
+        cities: [],
+        devices: [],
+        browsers: [],
+        operatingSystems: [],
+        totalEvents: 0,
+        appliedFilter: null,
+    });
+    const [activeGeoTab, setActiveGeoTab] = useState('location');
+    const [mapView, setMapView] = useState('countries');
+    const [geoLoading, setGeoLoading] = useState(true);
+    const [eventTypeFilter, setEventTypeFilter] = useState('open');
+    const [showGeoFilters, setShowGeoFilters] = useState(false);
+
+    // Event types for filtering
+    const eventTypes = [
+        { value: '', label: 'All Events' },
+        { value: 'open', label: 'Opens' },
+        { value: 'click', label: 'Clicks' },
+        { value: 'delivery', label: 'Deliveries' },
+        { value: 'bounce', label: 'Bounces' },
+        { value: 'complaint', label: 'Complaints' },
+        { value: 'unsubscribe', label: 'Unsubscribes' },
+    ];
 
     // Pagination
     const [pagination, setPagination] = useState({
@@ -66,6 +92,12 @@ export default function CampaignDetail() {
             fetchCampaignEvents();
         }
     }, [pagination.page, filters]);
+
+    useEffect(() => {
+        if (campaign && campaign.status !== 'draft') {
+            fetchGeoStats();
+        }
+    }, [eventTypeFilter]);
 
     const fetchBrandDetails = async () => {
         try {
@@ -135,25 +167,28 @@ export default function CampaignDetail() {
 
     const fetchGeoStats = async () => {
         try {
-            const res = await fetch(`/api/brands/${id}/campaigns/${campaignId}/geostats`, {
+            setGeoLoading(true);
+
+            // Using the correct API route from the original GeoStats component
+            let url = `/api/brands/${id}/campaigns/${campaignId}/geostats`;
+            if (eventTypeFilter) {
+                url += `?eventType=${eventTypeFilter}`;
+            }
+
+            const response = await fetch(url, {
                 credentials: 'same-origin',
             });
 
-            if (!res.ok) {
-                throw new Error('Failed to fetch geo stats');
+            if (!response.ok) {
+                throw new Error('Failed to fetch geo statistics');
             }
 
-            const data = await res.json();
-
-            // Transform geo data for bar chart
-            const chartData = data.map((item) => ({
-                date: item.country || 'Unknown',
-                value: item.count || 0,
-            }));
-
-            setGeoStats(chartData);
+            const data = await response.json();
+            setGeoData(data);
         } catch (error) {
-            console.error('Error fetching geo stats:', error);
+            console.error('Error fetching geo statistics:', error);
+        } finally {
+            setGeoLoading(false);
         }
     };
 
@@ -270,6 +305,46 @@ export default function CampaignDetail() {
             default:
                 return { label: type, icon: null, color: '#666' };
         }
+    };
+
+    // Transform geo data for ContactsBarChart
+    const getChartData = () => {
+        if (activeGeoTab === 'location') {
+            const data = mapView === 'countries' ? geoData.countries : geoData.cities;
+            return data.slice(0, 15).map((item) => ({
+                date: item.name,
+                value: item.value,
+            }));
+        } else if (activeGeoTab === 'devices') {
+            return geoData.devices.map((item) => ({
+                date: item.name,
+                value: item.value,
+            }));
+        } else if (activeGeoTab === 'browsers') {
+            return geoData.browsers.slice(0, 15).map((item) => ({
+                date: item.name,
+                value: item.value,
+            }));
+        } else if (activeGeoTab === 'os') {
+            return geoData.operatingSystems.slice(0, 15).map((item) => ({
+                date: item.name,
+                value: item.value,
+            }));
+        }
+        return [];
+    };
+
+    const getChartTitle = () => {
+        if (activeGeoTab === 'location') {
+            return mapView === 'countries' ? 'Top Countries' : 'Top Cities';
+        } else if (activeGeoTab === 'devices') {
+            return 'Device Types';
+        } else if (activeGeoTab === 'browsers') {
+            return 'Browser Types';
+        } else if (activeGeoTab === 'os') {
+            return 'Operating Systems';
+        }
+        return 'Data';
     };
 
     if (isLoading || !brand || !campaign) {
@@ -444,14 +519,199 @@ export default function CampaignDetail() {
                             )}
                         </div>
 
-                        {/* Geographic Distribution */}
-                        {geoStats.length > 0 && (
-                            <ContactsBarChart
-                                data={geoStats}
-                                title="Geographic Distribution"
-                                totalLabel="opens"
-                            />
-                        )}
+                        {/* Geographic & Device Insights */}
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', margin: 0, fontSize: '1.125rem', fontWeight: '500', color: '#1a1a1a' }}>
+                                    <Globe size={20} />
+                                    Geographic & Device Insights
+                                </h2>
+
+                                <button
+                                    className="button button--secondary button--small"
+                                    onClick={() => setShowGeoFilters(!showGeoFilters)}
+                                >
+                                    <Filter size={14} />
+                                    <span>Filter</span>
+                                    <ChevronDown
+                                        size={14}
+                                        style={{ transform: showGeoFilters ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+                                    />
+                                </button>
+                            </div>
+
+                            {showGeoFilters && (
+                                <div style={{ padding: '1rem', background: '#fafafa', borderRadius: '0.5rem', marginBottom: '1rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                                        <div style={{ flex: '1 1 200px' }}>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '500', color: '#666', marginBottom: '0.5rem' }}>Event Type</label>
+                                            <select
+                                                value={eventTypeFilter}
+                                                onChange={(e) => setEventTypeFilter(e.target.value)}
+                                                className="form-select"
+                                            >
+                                                {eventTypes.map((type) => (
+                                                    <option
+                                                        key={type.value}
+                                                        value={type.value}
+                                                    >
+                                                        {type.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {eventTypeFilter && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: '#fff', borderRadius: '0.375rem', border: '1px solid #e5e5e5' }}>
+                                                <span style={{ fontSize: '0.75rem', color: '#666' }}>Active:</span>
+                                                <span style={{ fontSize: '0.75rem', fontWeight: '500', color: '#1a1a1a' }}>{eventTypes.find((t) => t.value === eventTypeFilter)?.label}</span>
+                                                <button
+                                                    onClick={() => setEventTypeFilter('')}
+                                                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0', display: 'flex', color: '#666', fontSize: '1.25rem', lineHeight: 1 }}
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Tabs */}
+                            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', overflowX: 'auto', borderBottom: '1px solid #f0f0f0' }}>
+                                <button
+                                    onClick={() => setActiveGeoTab('location')}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.75rem 1rem',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        borderBottom: activeGeoTab === 'location' ? '2px solid #1a1a1a' : '2px solid transparent',
+                                        fontSize: '0.875rem',
+                                        color: activeGeoTab === 'location' ? '#1a1a1a' : '#666',
+                                        fontWeight: activeGeoTab === 'location' ? '500' : '400',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                >
+                                    <Globe size={16} />
+                                    <span>Location</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveGeoTab('devices')}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.75rem 1rem',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        borderBottom: activeGeoTab === 'devices' ? '2px solid #1a1a1a' : '2px solid transparent',
+                                        fontSize: '0.875rem',
+                                        color: activeGeoTab === 'devices' ? '#1a1a1a' : '#666',
+                                        fontWeight: activeGeoTab === 'devices' ? '500' : '400',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                >
+                                    <Smartphone size={16} />
+                                    <span>Devices</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveGeoTab('browsers')}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.75rem 1rem',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        borderBottom: activeGeoTab === 'browsers' ? '2px solid #1a1a1a' : '2px solid transparent',
+                                        fontSize: '0.875rem',
+                                        color: activeGeoTab === 'browsers' ? '#1a1a1a' : '#666',
+                                        fontWeight: activeGeoTab === 'browsers' ? '500' : '400',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                >
+                                    <Globe size={16} />
+                                    <span>Browsers</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveGeoTab('os')}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.75rem 1rem',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        borderBottom: activeGeoTab === 'os' ? '2px solid #1a1a1a' : '2px solid transparent',
+                                        fontSize: '0.875rem',
+                                        color: activeGeoTab === 'os' ? '#1a1a1a' : '#666',
+                                        fontWeight: activeGeoTab === 'os' ? '500' : '400',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                >
+                                    <Server size={16} />
+                                    <span>OS</span>
+                                </button>
+                            </div>
+
+                            {/* Location Tab - Toggle between Countries/Cities */}
+                            {activeGeoTab === 'location' && (
+                                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                                    <button
+                                        onClick={() => setMapView('countries')}
+                                        className={`button button--small ${mapView === 'countries' ? 'button--primary' : 'button--secondary'}`}
+                                    >
+                                        <Globe size={14} />
+                                        <span>Countries</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setMapView('cities')}
+                                        className={`button button--small ${mapView === 'cities' ? 'button--primary' : 'button--secondary'}`}
+                                    >
+                                        <MapPin size={14} />
+                                        <span>Cities</span>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Chart */}
+                            {geoLoading ? (
+                                <div className="loading-section">
+                                    <div className="spinner"></div>
+                                    <p>Loading geographic insights...</p>
+                                </div>
+                            ) : geoData.totalEvents === 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', textAlign: 'center' }}>
+                                    <Globe
+                                        size={24}
+                                        style={{ color: '#999', marginBottom: '1rem' }}
+                                    />
+                                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#666' }}>No location data available{eventTypeFilter ? ` for ${eventTypeFilter} events` : ''}</p>
+                                    {eventTypeFilter && (
+                                        <button
+                                            className="button button--secondary button--small"
+                                            onClick={() => setEventTypeFilter('')}
+                                            style={{ marginTop: '1rem' }}
+                                        >
+                                            Clear filter
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                <ContactsBarChart
+                                    data={getChartData()}
+                                    title={getChartTitle()}
+                                    totalLabel="events"
+                                />
+                            )}
+                        </div>
 
                         {/* Events Section */}
                         <div style={{ marginTop: '1.5rem' }}>

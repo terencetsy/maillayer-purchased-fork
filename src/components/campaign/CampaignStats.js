@@ -6,6 +6,7 @@ import BrandLayout from '@/components/BrandLayout';
 import { ArrowLeft, Mail, MousePointer, AlertTriangle, Filter, Download, ChevronLeft, ChevronRight, MailX, Users, Eye, X, Clock, Calendar, Send, Globe, MapPin, Smartphone, Monitor, Tablet, Server, ChevronDown } from 'lucide-react';
 import { formatDistance } from 'date-fns';
 import ContactsBarChart from '@/components/contact/ContactsBarChart';
+import GeoBarChart from '@/components/campaign/GeoBarChart';
 
 export default function CampaignDetail() {
     const { data: session, status } = useSession();
@@ -682,6 +683,7 @@ export default function CampaignDetail() {
                             )}
 
                             {/* Chart */}
+                            {/* Chart */}
                             {geoLoading ? (
                                 <div className="loading-section">
                                     <div className="spinner"></div>
@@ -705,10 +707,11 @@ export default function CampaignDetail() {
                                     )}
                                 </div>
                             ) : (
-                                <ContactsBarChart
+                                <GeoBarChart
                                     data={getChartData()}
                                     title={getChartTitle()}
                                     totalLabel="events"
+                                    type={activeGeoTab === 'location' ? (mapView === 'countries' ? 'countries' : 'cities') : activeGeoTab}
                                 />
                             )}
                         </div>

@@ -53,8 +53,21 @@ export default function ContactsBarChart({ data = [], title = 'Daily Activity', 
     const aggregatedData = getAggregatedData();
     const maxValue = Math.max(...aggregatedData.map((item) => item.value), 1);
 
-    // Format date
-    const formatDate = (dateStr, item) => {
+    // Check if data contains dates or plain text
+    const isDateData = (dateStr) => {
+        if (!dateStr) return false;
+        const date = new Date(dateStr);
+        return date instanceof Date && !isNaN(date) && dateStr.includes('-');
+    };
+
+    // Format date or return plain text
+    const formatLabel = (dateStr, item) => {
+        // If it's not a date (like country, device, browser name), return as is
+        if (!isDateData(dateStr)) {
+            return dateStr;
+        }
+
+        // Otherwise format as date
         const date = new Date(dateStr);
         if (item.isWeek) {
             return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -99,7 +112,7 @@ export default function ContactsBarChart({ data = [], title = 'Daily Activity', 
                 <div>
                     <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: '600', color: '#1a1a1a', marginBottom: '0.25rem' }}>{title}</h3>
                     <span style={{ fontSize: '0.8125rem', color: '#999' }}>
-                        {data.length} days
+                        {data.length} {isDateData(data[0]?.date) ? 'days' : 'items'}
                         {aggregatedData[0]?.isWeek && ' (weekly)'}
                         {aggregatedData[0]?.isBiWeek && ' (bi-weekly)'}
                     </span>
@@ -199,7 +212,7 @@ export default function ContactsBarChart({ data = [], title = 'Daily Activity', 
                                 </div>
                             </div>
 
-                            {/* Date Label */}
+                            {/* Label */}
                             {shouldShowLabel(index) && (
                                 <div
                                     style={{
@@ -212,8 +225,9 @@ export default function ContactsBarChart({ data = [], title = 'Daily Activity', 
                                         maxWidth: '100%',
                                         textAlign: 'center',
                                     }}
+                                    title={formatLabel(item.date, item)}
                                 >
-                                    {formatDate(item.date, item)}
+                                    {formatLabel(item.date, item)}
                                 </div>
                             )}
                         </div>

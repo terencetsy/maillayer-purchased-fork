@@ -312,22 +312,22 @@ export default function CampaignDetail() {
         if (activeGeoTab === 'location') {
             const data = mapView === 'countries' ? geoData.countries : geoData.cities;
             return data.slice(0, 15).map((item) => ({
-                date: item.name,
+                date: item.name, // This will be the country/city name
                 value: item.value,
             }));
         } else if (activeGeoTab === 'devices') {
             return geoData.devices.map((item) => ({
-                date: item.name,
+                date: item.name, // Device name
                 value: item.value,
             }));
         } else if (activeGeoTab === 'browsers') {
             return geoData.browsers.slice(0, 15).map((item) => ({
-                date: item.name,
+                date: item.name, // Browser name
                 value: item.value,
             }));
         } else if (activeGeoTab === 'os') {
             return geoData.operatingSystems.slice(0, 15).map((item) => ({
-                date: item.name,
+                date: item.name, // OS name
                 value: item.value,
             }));
         }

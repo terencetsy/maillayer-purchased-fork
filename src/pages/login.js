@@ -3,7 +3,8 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import { SendMail } from '@/lib/icons';
+import { MailOutgoing } from '@/lib/icons';
+import { Loader } from 'lucide-react';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -47,76 +48,86 @@ export default function Login() {
     return (
         <>
             <Head>
-                <title>Login | Maillayer</title>
+                <title>Login - Maillayer</title>
                 <meta
                     name="description"
-                    content="Login to your Maillayer account"
+                    content="Login to your account"
                 />
             </Head>
 
-            <div className="auth-container">
-                <div className="auth-card">
-                    <div className="auth-header">
-                        <div className="logo">
-                            <SendMail />
-                        </div>
-                        <h1>Welcome back</h1>
-                        <p>Sign in to your Maillayer account</p>
-                    </div>
-
-                    {error && <div className="alert alert-error">{error}</div>}
-
-                    <form onSubmit={handleSubmit}>
-                        <div className="form-group">
-                            <label htmlFor="email">Email address</label>
-                            <input
-                                id="email"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="you@example.com"
-                                disabled={isLoading}
-                            />
+            <div className="auth-page">
+                <div className="auth-container">
+                    <div className="auth-card">
+                        <div className="auth-logo">
+                            <MailOutgoing size={32} />
+                            <span>Maillayer</span>
                         </div>
 
-                        <div className="form-group">
-                            <label htmlFor="password">Password</label>
-                            <input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
-                                disabled={isLoading}
-                            />
+                        <div className="auth-header">
+                            <h1>Welcome back</h1>
+                            <p>Sign in to your account</p>
                         </div>
-                        <div className="form-group">
-                            <div className="flex justify-end">
-                                <Link
-                                    href="/forgot-password"
-                                    className="text-sm"
-                                >
-                                    Forgot your password?
-                                </Link>
+
+                        {error && <div className="alert alert-error">{error}</div>}
+
+                        <form
+                            onSubmit={handleSubmit}
+                            className="auth-form"
+                        >
+                            <div className="form-group">
+                                <label htmlFor="email">Email</label>
+                                <input
+                                    id="email"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="you@example.com"
+                                    disabled={isLoading}
+                                    autoComplete="email"
+                                />
                             </div>
+
+                            <div className="form-group">
+                                <label htmlFor="password">Password</label>
+                                <input
+                                    id="password"
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Enter your password"
+                                    disabled={isLoading}
+                                    autoComplete="current-password"
+                                />
+                            </div>
+
+                            <div className="auth-forgot">
+                                <Link href="/forgot-password">Forgot password?</Link>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="button button--primary button--full"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader
+                                            size={16}
+                                            className="spinner"
+                                        />
+                                        <span>Signing in...</span>
+                                    </>
+                                ) : (
+                                    <span>Sign in</span>
+                                )}
+                            </button>
+                        </form>
+
+                        <div className="auth-footer">
+                            <p>
+                                Don&apos;t have an account? <Link href="/signup">Sign up</Link>
+                            </p>
                         </div>
-
-                        <button
-                            type="submit"
-                            className="btn btn-primary btn-block"
-                            disabled={isLoading}
-                        >
-                            <span>{isLoading ? 'Signing in...' : 'Sign in'}</span>
-                        </button>
-                    </form>
-
-                    <div className="text-center mt-lg">
-                        <Link
-                            href="/signup"
-                            className="auth-link"
-                        >
-                            Don't have an account yet? Set up Maillayer
-                        </Link>
                     </div>
                 </div>
             </div>

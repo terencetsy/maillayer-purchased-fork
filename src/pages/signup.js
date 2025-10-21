@@ -3,7 +3,8 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import { SendMail } from '@/lib/icons';
+import { MailOutgoing } from '@/lib/icons';
+import { Loader } from 'lucide-react';
 
 export default function Signup() {
     const router = useRouter();
@@ -92,90 +93,108 @@ export default function Signup() {
     return (
         <>
             <Head>
-                <title>Setup Maillayer | Maillayer</title>
+                <title>Sign Up - Maillayer</title>
                 <meta
                     name="description"
-                    content="Set up your Maillayer admin account"
+                    content="Create your account"
                 />
             </Head>
 
-            <div className="auth-container">
-                <div className="auth-card">
-                    <div className="auth-header">
-                        <div className="logo">
-                            <SendMail />
-                        </div>
-                        <h1>Welcome to Maillayer</h1>
-                        <p>Create your administrator account</p>
-                    </div>
-
-                    {error && <div className="alert alert-error">{error}</div>}
-
-                    <form onSubmit={handleSubmit}>
-                        <div className="form-group">
-                            <label htmlFor="name">Full name</label>
-                            <input
-                                id="name"
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="John Doe"
-                                disabled={isLoading}
-                            />
+            <div className="auth-page">
+                <div className="auth-container">
+                    <div className="auth-card">
+                        <div className="auth-logo">
+                            <MailOutgoing size={32} />
+                            <span>Maillayer</span>
                         </div>
 
-                        <div className="form-group">
-                            <label htmlFor="email">Email address</label>
-                            <input
-                                id="email"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="you@example.com"
-                                disabled={isLoading}
-                            />
+                        <div className="auth-header">
+                            <h1>Create account</h1>
+                            <p>Set up your administrator account</p>
                         </div>
 
-                        <div className="form-group">
-                            <label htmlFor="password">Password</label>
-                            <input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Min. 8 characters"
-                                disabled={isLoading}
-                            />
-                        </div>
+                        {error && <div className="alert alert-error">{error}</div>}
 
-                        <div className="form-group">
-                            <label htmlFor="confirmPassword">Confirm password</label>
-                            <input
-                                id="confirmPassword"
-                                type="password"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                placeholder="Re-enter password"
-                                disabled={isLoading}
-                            />
-                        </div>
-
-                        <button
-                            type="submit"
-                            className="btn btn-primary btn-block"
-                            disabled={isLoading}
+                        <form
+                            onSubmit={handleSubmit}
+                            className="auth-form"
                         >
-                            <span>{isLoading ? 'Setting up...' : 'Create account'}</span>
-                        </button>
-                    </form>
+                            <div className="form-group">
+                                <label htmlFor="name">Full Name</label>
+                                <input
+                                    id="name"
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="John Doe"
+                                    disabled={isLoading}
+                                    autoComplete="name"
+                                />
+                            </div>
 
-                    <div className="text-center mt-lg">
-                        <Link
-                            href="/login"
-                            className="auth-link"
-                        >
-                            Already have an account? Sign in
-                        </Link>
+                            <div className="form-group">
+                                <label htmlFor="email">Email</label>
+                                <input
+                                    id="email"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="you@example.com"
+                                    disabled={isLoading}
+                                    autoComplete="email"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="password">Password</label>
+                                <input
+                                    id="password"
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Min. 8 characters"
+                                    disabled={isLoading}
+                                    autoComplete="new-password"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="confirmPassword">Confirm Password</label>
+                                <input
+                                    id="confirmPassword"
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    placeholder="Re-enter password"
+                                    disabled={isLoading}
+                                    autoComplete="new-password"
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="button button--primary button--full"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader
+                                            size={16}
+                                            className="spinner"
+                                        />
+                                        <span>Creating account...</span>
+                                    </>
+                                ) : (
+                                    <span>Create Account</span>
+                                )}
+                            </button>
+                        </form>
+
+                        <div className="auth-footer">
+                            <p>
+                                Already have an account? <Link href="/login">Sign in</Link>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

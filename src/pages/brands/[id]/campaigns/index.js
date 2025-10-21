@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import BrandLayout from '@/components/BrandLayout';
-import { PlusCircle, Search, Filter, Mail } from 'lucide-react';
 import CampaignForm from '@/components/CampaignForm';
 import CampaignList from '@/components/CampaignList';
-import { PlusSign } from '@/lib/icons';
+import { Mail02, PlusSign, PlusSignCircle, Search01 } from '@/lib/icons';
 
 export default function BrandCampaigns() {
     const { data: session, status } = useSession();
@@ -103,7 +102,7 @@ export default function BrandCampaigns() {
                 <div className="campaigns-header">
                     <div className="search-container">
                         <div className="search-input-wrapper">
-                            <Search
+                            <Search01
                                 size={18}
                                 className="search-icon"
                             />
@@ -150,15 +149,15 @@ export default function BrandCampaigns() {
                             {campaigns.length === 0 ? (
                                 <div className="empty-state">
                                     <div className="icon-wrapper">
-                                        <Mail size={36} />
+                                        <Mail02 size={36} />
                                     </div>
                                     <h2>No campaigns yet</h2>
                                     <p>Create your first email campaign to start engaging with your audience</p>
                                     <button
-                                        className="btn btn-primary"
+                                        className="button button--secondary"
                                         onClick={handleCreateClick}
                                     >
-                                        <PlusCircle size={18} />
+                                        <PlusSignCircle size={18} />
                                         Create Campaign
                                     </button>
                                 </div>
@@ -169,7 +168,7 @@ export default function BrandCampaigns() {
                                             <h2>No matching campaigns</h2>
                                             <p>No campaigns match your search criteria</p>
                                             <button
-                                                className="btn btn-secondary"
+                                                className="button button--secondary"
                                                 onClick={() => setSearchQuery('')}
                                             >
                                                 Clear Search

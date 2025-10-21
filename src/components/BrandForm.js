@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Loader, AlertCircle, Globe } from 'lucide-react';
+import { X, Loader, AlertCircle } from 'lucide-react';
 
 export default function BrandForm({ onCancel, onSuccess }) {
     const [formData, setFormData] = useState({
@@ -21,13 +21,11 @@ export default function BrandForm({ onCancel, onSuccess }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validate form
         if (!formData.name || !formData.website) {
             setError('Please fill in all required fields');
             return;
         }
 
-        // Simple website validation
         if (!formData.website.includes('.')) {
             setError('Please enter a valid website address');
             return;
@@ -64,98 +62,96 @@ export default function BrandForm({ onCancel, onSuccess }) {
     };
 
     return (
-        <div className="modern-form-container">
-            <div className="form-header">
-                <h2>Create a New Brand</h2>
-                <button
-                    className="close-btn"
-                    onClick={onCancel}
-                    aria-label="Close form"
-                >
-                    <X size={18} />
-                </button>
-            </div>
-
-            <p className="form-description">Let&apos; start by setting up your brand. You can configure email sending later.</p>
-
-            {error && (
-                <div className="form-error">
-                    <AlertCircle size={16} />
-                    <span>{error}</span>
-                </div>
-            )}
-
-            <form
-                onSubmit={handleSubmit}
-                className="modern-form"
+        <div
+            className="modal-overlay"
+            onClick={onCancel}
+        >
+            <div
+                className="modal-container"
+                onClick={(e) => e.stopPropagation()}
             >
-                <div className="form-group">
-                    <label htmlFor="name">
-                        Brand Name<span className="required">*</span>
-                    </label>
-                    <div className="input-wrapper">
-                        <input
-                            id="name"
-                            name="name"
-                            type="text"
-                            value={formData.name}
-                            onChange={handleChange}
-                            placeholder="My Company"
-                            disabled={isLoading}
-                        />
-                    </div>
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="website">
-                        Brand Website<span className="required">*</span>
-                    </label>
-                    <div className="input-wrapper">
-                        <Globe
-                            size={16}
-                            className="input-icon"
-                        />
-                        <input
-                            id="website"
-                            name="website"
-                            type="text"
-                            value={formData.website}
-                            onChange={handleChange}
-                            placeholder="example.com"
-                            disabled={isLoading}
-                        />
-                    </div>
-                    <p className="input-help">Enter your website domain without http:// or https://</p>
-                </div>
-
-                <div className="form-actions">
+                <div className="modal-header">
+                    <h3>Create Brand</h3>
                     <button
-                        type="button"
-                        className="btn btn-secondary"
+                        className="close-btn"
                         onClick={onCancel}
                         disabled={isLoading}
                     >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={isLoading}
-                    >
-                        {isLoading ? (
-                            <>
-                                <Loader
-                                    size={16}
-                                    className="spinner"
-                                />
-                                Creating...
-                            </>
-                        ) : (
-                            'Create Brand'
-                        )}
+                        <X size={18} />
                     </button>
                 </div>
-            </form>
+
+                <div className="modal-content">
+                    {error && (
+                        <div className="alert alert-error">
+                            <AlertCircle size={16} />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    <form
+                        onSubmit={handleSubmit}
+                        className="modal-form"
+                    >
+                        <div className="form-group">
+                            <label htmlFor="name">Brand Name</label>
+                            <input
+                                id="name"
+                                name="name"
+                                type="text"
+                                value={formData.name}
+                                onChange={handleChange}
+                                placeholder="My Company"
+                                disabled={isLoading}
+                                required
+                            />
+                        </div>
+                        <br />
+                        <div className="form-group">
+                            <label htmlFor="website">Website</label>
+                            <input
+                                id="website"
+                                name="website"
+                                type="text"
+                                value={formData.website}
+                                onChange={handleChange}
+                                placeholder="example.com"
+                                disabled={isLoading}
+                                required
+                            />
+                            <p className="hint-text">Enter domain without http:// or https://</p>
+                        </div>
+
+                        <div className="modal-actions">
+                            <button
+                                type="button"
+                                className="button button--secondary"
+                                onClick={onCancel}
+                                disabled={isLoading}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="button button--primary"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader
+                                            size={16}
+                                            className="spinner"
+                                        />
+                                        <span>Creating...</span>
+                                    </>
+                                ) : (
+                                    <span>Create Brand</span>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     );
 }

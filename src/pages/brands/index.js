@@ -3,9 +3,9 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { Plus, Search, LogOut, X, Mail } from 'lucide-react';
+import { Plus, LogOut, Mail } from 'lucide-react';
 import BrandForm from '@/components/BrandForm';
-import { SendMail } from '@/lib/icons';
+import { MailOutgoing } from '@/lib/icons';
 
 export default function Dashboard() {
     const { data: session, status } = useSession();
@@ -14,7 +14,6 @@ export default function Dashboard() {
     const [brands, setBrands] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showCreateForm, setShowCreateForm] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -79,20 +78,15 @@ export default function Dashboard() {
         setShowCreateForm(false);
     };
 
-    const getStatusBadge = (status) => {
-        const statusConfig = {
-            active: { label: 'Active', class: 'success' },
-            inactive: { label: 'Inactive', class: 'neutral' },
-            pending_setup: { label: 'Setup Needed', class: 'warning' },
-            pending_verification: { label: 'Verification Pending', class: 'error' },
+    const getStatusConfig = (status) => {
+        const configs = {
+            active: { label: 'Active', class: 'status-active' },
+            inactive: { label: 'Inactive', class: 'status-inactive' },
+            pending_setup: { label: 'Setup Required', class: 'status-warning' },
+            pending_verification: { label: 'Pending', class: 'status-pending' },
         };
-
-        const config = statusConfig[status] || { label: status, class: 'neutral' };
-
-        return <span className={`status-badge ${config.class}`}>{config.label}</span>;
+        return configs[status] || { label: status, class: 'status-inactive' };
     };
-
-    const filteredBrands = brands.filter((brand) => brand.name.toLowerCase().includes(searchQuery.toLowerCase()) || brand.website.toLowerCase().includes(searchQuery.toLowerCase()));
 
     if (status === 'loading' || isLoading) {
         return (
@@ -111,7 +105,7 @@ export default function Dashboard() {
                 <title>Brands - Maillayer</title>
                 <meta
                     name="description"
-                    content="Brand Dashboard"
+                    content="Manage your brands"
                 />
                 <link
                     rel="icon"
@@ -120,25 +114,24 @@ export default function Dashboard() {
             </Head>
 
             <div className="brands-page">
-                <header className="brands-header">
-                    <div className="header-left">
+                {/* Header */}
+                <header className="page-header">
+                    <div className="header-content">
                         <Link
                             href="/brands"
-                            className="logo"
+                            className="brand-logo"
                         >
-                            <SendMail size={24} />
+                            <MailOutgoing size={24} />
                             <span>Maillayer</span>
                         </Link>
-                    </div>
 
-                    <div className="header-right">
-                        <div className="user-menu">
-                            <div className="user-info">
-                                <div className="avatar">{userProfile?.name?.charAt(0) || 'U'}</div>
+                        <div className="header-right">
+                            <div className="user-section">
+                                <div className="user-avatar">{userProfile?.name?.charAt(0) || 'U'}</div>
                                 <span className="user-name">{userProfile?.name || 'User'}</span>
                             </div>
                             <button
-                                className="logout-btn"
+                                className="btn-icon"
                                 onClick={handleSignOut}
                                 title="Sign out"
                             >
@@ -148,53 +141,26 @@ export default function Dashboard() {
                     </div>
                 </header>
 
-                <main className="brands-main">
-                    <div className="brands-container">
-                        <div className="page-header">
-                            <div className="header-content">
-                                <h1>Brands</h1>
-                                {brands.length > 0 && (
-                                    <span className="count-badge">
-                                        {brands.length} {brands.length === 1 ? 'brand' : 'brands'}
-                                    </span>
-                                )}
-                            </div>
-
-                            <div className="header-actions">
-                                {brands.length > 0 && (
-                                    <div className="search-box">
-                                        <Search size={16} />
-                                        <input
-                                            type="text"
-                                            placeholder="Search brands..."
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                        />
-                                        {searchQuery && (
-                                            <button
-                                                className="clear-btn"
-                                                onClick={() => setSearchQuery('')}
-                                            >
-                                                <X size={16} />
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-
-                                {!showCreateForm && (
-                                    <button
-                                        className="button button--primary"
-                                        onClick={handleCreateClick}
-                                    >
-                                        <Plus size={16} />
-                                        <span>New Brand</span>
-                                    </button>
-                                )}
-                            </div>
+                {/* Main */}
+                <main className="page-main">
+                    <div className="page-container">
+                        {/* Title Bar */}
+                        <div className="title-bar">
+                            <h1>Brands</h1>
+                            {!showCreateForm && brands.length > 0 && (
+                                <button
+                                    className="button button--primary"
+                                    onClick={handleCreateClick}
+                                >
+                                    <Plus size={16} />
+                                    <span>New Brand</span>
+                                </button>
+                            )}
                         </div>
 
+                        {/* Content */}
                         {showCreateForm ? (
-                            <div className="create-form-card">
+                            <div className="form-card">
                                 <BrandForm
                                     onCancel={handleCancelCreate}
                                     onSuccess={handleCreateSuccess}
@@ -203,9 +169,9 @@ export default function Dashboard() {
                         ) : (
                             <>
                                 {brands.length === 0 ? (
-                                    <div className="empty-state">
+                                    <div className="empty-view">
                                         <div className="empty-icon">
-                                            <Mail size={48} />
+                                            <Mail size={40} />
                                         </div>
                                         <h2>No brands yet</h2>
                                         <p>Create your first brand to start sending campaigns</p>
@@ -218,45 +184,61 @@ export default function Dashboard() {
                                         </button>
                                     </div>
                                 ) : (
-                                    <>
-                                        {filteredBrands.length === 0 ? (
-                                            <div className="empty-state">
-                                                <h2>No results</h2>
-                                                <p>No brands match "{searchQuery}"</p>
-                                                <button
-                                                    className="button button--secondary"
-                                                    onClick={() => setSearchQuery('')}
-                                                >
-                                                    Clear Search
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="brands-grid">
-                                                {filteredBrands.map((brand) => (
-                                                    <Link
-                                                        href={`/brands/${brand._id}`}
-                                                        key={brand._id}
-                                                        className="brand-card"
-                                                    >
-                                                        <div className="brand-card-header">
-                                                            <h3>{brand.name}</h3>
-                                                            {getStatusBadge(brand.status)}
-                                                        </div>
-                                                        <div className="brand-card-body">
-                                                            <div className="brand-info">
-                                                                <span className="label">Website</span>
-                                                                <span className="value">{brand.website}</span>
-                                                            </div>
-                                                            <div className="brand-info">
-                                                                <span className="label">Created</span>
-                                                                <span className="value">{new Date(brand.createdAt).toLocaleDateString()}</span>
-                                                            </div>
-                                                        </div>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </>
+                                    <div className="table-container">
+                                        <table className="brands-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Brand</th>
+                                                    <th>Website</th>
+                                                    <th>Status</th>
+                                                    <th>Created</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {brands.map((brand) => {
+                                                    const statusConfig = getStatusConfig(brand.status);
+                                                    return (
+                                                        <tr
+                                                            key={brand._id}
+                                                            onClick={() => router.push(`/brands/${brand._id}`)}
+                                                        >
+                                                            <td>
+                                                                <div className="brand-cell">
+                                                                    <img
+                                                                        src={`https://www.google.com/s2/favicons?sz=64&domain_url=${brand.website}`}
+                                                                        alt={brand.name}
+                                                                        className="brand-favicon"
+                                                                        onError={(e) => {
+                                                                            e.target.src =
+                                                                                'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"%3E%3Crect width="32" height="32" fill="%23e5e5e5" rx="4"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23666" font-size="14" font-weight="600"%3E' +
+                                                                                brand.name.charAt(0).toUpperCase() +
+                                                                                '%3C/text%3E%3C/svg%3E';
+                                                                        }}
+                                                                    />
+                                                                    <span className="brand-name">{brand.name}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <span className="brand-website">{brand.website}</span>
+                                                            </td>
+                                                            <td>
+                                                                <span className={`status-badge ${statusConfig.class}`}>{statusConfig.label}</span>
+                                                            </td>
+                                                            <td>
+                                                                <span className="brand-date">
+                                                                    {new Date(brand.createdAt).toLocaleDateString('en-US', {
+                                                                        month: 'short',
+                                                                        day: 'numeric',
+                                                                        year: 'numeric',
+                                                                    })}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 )}
                             </>
                         )}

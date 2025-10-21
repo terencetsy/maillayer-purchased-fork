@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import { SendMail } from '@/lib/icons';
+import { MailOutgoing } from '@/lib/icons';
+import { Loader } from 'lucide-react';
 
 export default function ResetPassword() {
     const router = useRouter();
@@ -16,7 +17,6 @@ export default function ResetPassword() {
     const [isTokenValid, setIsTokenValid] = useState(null);
 
     useEffect(() => {
-        // Verify the token when it's available in the URL
         const verifyToken = async () => {
             if (!token) return;
 
@@ -81,14 +81,13 @@ export default function ResetPassword() {
                 throw new Error(data.message || 'Something went wrong');
             }
 
-            setMessage('Your password has been reset successfully. You can now log in with your new password.');
+            setMessage('Your password has been reset successfully. Redirecting to login...');
             setPassword('');
             setConfirmPassword('');
 
-            // Redirect to login page after 3 seconds
             setTimeout(() => {
                 router.push('/login');
-            }, 3000);
+            }, 2000);
         } catch (error) {
             console.error('Reset password error:', error);
             setError(error.message || 'An unexpected error occurred');
@@ -100,95 +99,130 @@ export default function ResetPassword() {
     // Show loading state while verifying token
     if (isTokenValid === null && token) {
         return (
-            <div className="auth-container">
-                <div className="auth-card">
-                    <div className="auth-header">
-                        <div className="logo">
-                            <SendMail />
+            <>
+                <Head>
+                    <title>Reset Password - Maillayer</title>
+                    <meta
+                        name="description"
+                        content="Reset your password"
+                    />
+                </Head>
+                <div className="auth-page">
+                    <div className="auth-container">
+                        <div className="auth-card">
+                            <div className="auth-logo">
+                                <MailOutgoing size={32} />
+                                <span>Maillayer</span>
+                            </div>
+                            <div className="auth-header">
+                                <h1>Reset Password</h1>
+                                <p>Verifying your reset link...</p>
+                            </div>
+                            <div className="auth-loading">
+                                <Loader
+                                    size={24}
+                                    className="spinner"
+                                />
+                            </div>
                         </div>
-                        <h1>Reset Password</h1>
-                        <p>Verifying your reset link...</p>
                     </div>
                 </div>
-            </div>
+            </>
         );
     }
 
     return (
         <>
             <Head>
-                <title>Reset Password | Maillayer</title>
+                <title>Reset Password - Maillayer</title>
                 <meta
                     name="description"
-                    content="Reset your Maillayer account password"
+                    content="Reset your password"
                 />
             </Head>
 
-            <div className="auth-container">
-                <div className="auth-card">
-                    <div className="auth-header">
-                        <div className="logo">
-                            <SendMail />
+            <div className="auth-page">
+                <div className="auth-container">
+                    <div className="auth-card">
+                        <div className="auth-logo">
+                            <MailOutgoing size={32} />
+                            <span>Maillayer</span>
                         </div>
-                        <h1>Reset Password</h1>
-                        <p>Create a new password for your account</p>
-                    </div>
 
-                    {error && <div className="alert alert-error">{error}</div>}
-                    {message && <div className="alert alert-success">{message}</div>}
-
-                    {isTokenValid ? (
-                        <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label htmlFor="password">New Password</label>
-                                <input
-                                    id="password"
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Min. 8 characters"
-                                    disabled={isLoading}
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="confirmPassword">Confirm New Password</label>
-                                <input
-                                    id="confirmPassword"
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    placeholder="Re-enter password"
-                                    disabled={isLoading}
-                                />
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="btn btn-primary btn-block"
-                                disabled={isLoading}
-                            >
-                                <span>{isLoading ? 'Resetting...' : 'Reset Password'}</span>
-                            </button>
-                        </form>
-                    ) : (
-                        <div className="text-center mt-lg">
-                            <Link
-                                href="/forgot-password"
-                                className="btn btn-secondary btn-block"
-                            >
-                                Request a new reset link
-                            </Link>
+                        <div className="auth-header">
+                            <h1>Reset Password</h1>
+                            <p>Create a new password for your account</p>
                         </div>
-                    )}
 
-                    <div className="text-center mt-lg">
-                        <Link
-                            href="/login"
-                            className="auth-link"
-                        >
-                            Remember your password? Sign in
-                        </Link>
+                        {error && <div className="alert alert-error">{error}</div>}
+
+                        {message && <div className="alert alert-success">{message}</div>}
+
+                        {isTokenValid ? (
+                            <form
+                                onSubmit={handleSubmit}
+                                className="auth-form"
+                            >
+                                <div className="form-group">
+                                    <label htmlFor="password">New Password</label>
+                                    <input
+                                        id="password"
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="Min. 8 characters"
+                                        disabled={isLoading}
+                                        autoComplete="new-password"
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="confirmPassword">Confirm Password</label>
+                                    <input
+                                        id="confirmPassword"
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        placeholder="Re-enter password"
+                                        disabled={isLoading}
+                                        autoComplete="new-password"
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className="button button--primary button--full"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <Loader
+                                                size={16}
+                                                className="spinner"
+                                            />
+                                            <span>Resetting...</span>
+                                        </>
+                                    ) : (
+                                        <span>Reset Password</span>
+                                    )}
+                                </button>
+                            </form>
+                        ) : (
+                            <div className="auth-form">
+                                <Link
+                                    href="/forgot-password"
+                                    className="button button--secondary button--full"
+                                >
+                                    Request New Link
+                                </Link>
+                            </div>
+                        )}
+
+                        <div className="auth-footer">
+                            <p>
+                                Remember your password? <Link href="/login">Sign in</Link>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

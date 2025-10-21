@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import { SendMail } from '@/lib/icons';
+import { MailOutgoing } from '@/lib/icons';
+import { Loader } from 'lucide-react';
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -51,55 +52,71 @@ export default function ForgotPassword() {
     return (
         <>
             <Head>
-                <title>Forgot Password | Maillayer</title>
+                <title>Forgot Password - Maillayer</title>
                 <meta
                     name="description"
-                    content="Reset your Maillayer account password"
+                    content="Reset your password"
                 />
             </Head>
 
-            <div className="auth-container">
-                <div className="auth-card">
-                    <div className="auth-header">
-                        <div className="logo">
-                            <SendMail />
+            <div className="auth-page">
+                <div className="auth-container">
+                    <div className="auth-card">
+                        <div className="auth-logo">
+                            <MailOutgoing size={32} />
+                            <span>Maillayer</span>
                         </div>
-                        <h1>Forgot Password</h1>
-                        <p>Enter your email to receive password reset instructions</p>
-                    </div>
 
-                    {error && <div className="alert alert-error">{error}</div>}
-                    {message && <div className="alert alert-success">{message}</div>}
+                        <div className="auth-header">
+                            <h1>Forgot Password</h1>
+                            <p>Enter your email to receive reset instructions</p>
+                        </div>
 
-                    <form onSubmit={handleSubmit}>
-                        <div className="form-group">
-                            <label htmlFor="email">Email address</label>
-                            <input
-                                id="email"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="you@example.com"
+                        {error && <div className="alert alert-error">{error}</div>}
+
+                        {message && <div className="alert alert-success">{message}</div>}
+
+                        <form
+                            onSubmit={handleSubmit}
+                            className="auth-form"
+                        >
+                            <div className="form-group">
+                                <label htmlFor="email">Email</label>
+                                <input
+                                    id="email"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="you@example.com"
+                                    disabled={isLoading}
+                                    autoComplete="email"
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="button button--primary button--full"
                                 disabled={isLoading}
-                            />
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader
+                                            size={16}
+                                            className="spinner"
+                                        />
+                                        <span>Sending...</span>
+                                    </>
+                                ) : (
+                                    <span>Send Reset Link</span>
+                                )}
+                            </button>
+                        </form>
+
+                        <div className="auth-footer">
+                            <p>
+                                Remember your password? <Link href="/login">Sign in</Link>
+                            </p>
                         </div>
-
-                        <button
-                            type="submit"
-                            className="btn btn-primary btn-block"
-                            disabled={isLoading}
-                        >
-                            <span>{isLoading ? 'Sending...' : 'Send reset link'}</span>
-                        </button>
-                    </form>
-
-                    <div className="text-center mt-lg">
-                        <Link
-                            href="/login"
-                            className="auth-link"
-                        >
-                            Remember your password? Sign in
-                        </Link>
                     </div>
                 </div>
             </div>

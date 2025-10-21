@@ -20,7 +20,6 @@ export default function TransactionalTemplateForm({ brand, onCancel, onSuccess }
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validate form
         if (!formData.name || !formData.subject) {
             setError('Please fill in all required fields');
             return;
@@ -54,93 +53,96 @@ export default function TransactionalTemplateForm({ brand, onCancel, onSuccess }
     };
 
     return (
-        <div className="form-container">
-            <div className="form-header">
-                <h2>Create Transactional Template</h2>
-                <button
-                    className="close-btn"
-                    onClick={onCancel}
-                >
-                    <X size={20} />
-                </button>
-            </div>
-
-            <div className="form-description">Create a new transactional email template that can be sent programmatically via API.</div>
-
-            {error && (
-                <div className="form-error">
-                    <AlertCircle size={16} />
-                    <span>{error}</span>
-                </div>
-            )}
-
-            <form
-                onSubmit={handleSubmit}
-                className="modern-form"
+        <div
+            className="modal-overlay"
+            onClick={onCancel}
+        >
+            <div
+                className="modal-container"
+                onClick={(e) => e.stopPropagation()}
             >
-                <div className="form-group">
-                    <label htmlFor="name">
-                        Template Name<span className="required">*</span>
-                    </label>
-                    <div className="input-wrapper">
-                        <input
-                            id="name"
-                            name="name"
-                            type="text"
-                            value={formData.name}
-                            onChange={handleChange}
-                            placeholder="E.g., Welcome Email, Password Reset"
-                            disabled={isSaving}
-                        />
-                    </div>
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="subject">
-                        Email Subject<span className="required">*</span>
-                    </label>
-                    <div className="input-wrapper">
-                        <input
-                            id="subject"
-                            name="subject"
-                            type="text"
-                            value={formData.subject}
-                            onChange={handleChange}
-                            placeholder="Email subject line"
-                            disabled={isSaving}
-                        />
-                    </div>
-                    <div className="form-help">You can use variables like [firstName] in your subject line.</div>
-                </div>
-
-                <div className="form-actions">
+                <div className="modal-header">
+                    <h3>Create Template</h3>
                     <button
-                        type="button"
-                        className="btn btn-secondary"
+                        className="close-btn"
                         onClick={onCancel}
                         disabled={isSaving}
                     >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={isSaving}
-                    >
-                        {isSaving ? (
-                            <>
-                                <Loader
-                                    size={16}
-                                    className="spinner"
-                                />
-                                Creating...
-                            </>
-                        ) : (
-                            'Create Template'
-                        )}
+                        <X size={18} />
                     </button>
                 </div>
-            </form>
+
+                <div className="modal-content">
+                    {error && (
+                        <div className="alert alert-error">
+                            <AlertCircle size={16} />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    <form
+                        onSubmit={handleSubmit}
+                        className="modal-form"
+                    >
+                        <div className="form-group">
+                            <label htmlFor="name">Template Name</label>
+                            <input
+                                id="name"
+                                name="name"
+                                type="text"
+                                value={formData.name}
+                                onChange={handleChange}
+                                placeholder="Welcome Email"
+                                disabled={isSaving}
+                                required
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="subject">Email Subject</label>
+                            <input
+                                id="subject"
+                                name="subject"
+                                type="text"
+                                value={formData.subject}
+                                onChange={handleChange}
+                                placeholder="Welcome to {{company}}"
+                                disabled={isSaving}
+                                required
+                            />
+                            <p className="hint-text">Use variables like {`{{firstName}}`} in your subject</p>
+                        </div>
+
+                        <div className="modal-actions">
+                            <button
+                                type="button"
+                                className="button button--secondary"
+                                onClick={onCancel}
+                                disabled={isSaving}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="button button--primary"
+                                disabled={isSaving}
+                            >
+                                {isSaving ? (
+                                    <>
+                                        <Loader
+                                            size={16}
+                                            className="spinner"
+                                        />
+                                        <span>Creating...</span>
+                                    </>
+                                ) : (
+                                    <span>Create Template</span>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     );
 }

@@ -1,3 +1,5 @@
+// src/services/campaignService.js
+
 import connectToDatabase from '@/lib/mongodb';
 import Campaign from '@/models/Campaign';
 import mongoose from 'mongoose';
@@ -15,17 +17,30 @@ export async function createCampaign(campaignData) {
     return campaign;
 }
 
-export async function getCampaignsByBrandId(brandId, userId) {
+export async function getCampaignsByBrandId(brandId, userId, options = {}) {
     await connectToDatabase();
+
+    const { skip = 0, limit = 10 } = options;
 
     const campaigns = await Campaign.find({
         brandId,
         userId,
     })
         .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
         .lean();
 
     return campaigns;
+}
+
+export async function getCampaignsCount(brandId, userId) {
+    await connectToDatabase();
+
+    return await Campaign.countDocuments({
+        brandId,
+        userId,
+    });
 }
 
 export async function getCampaignById(campaignId, userId) {

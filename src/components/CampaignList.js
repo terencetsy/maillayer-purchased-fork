@@ -1,5 +1,3 @@
-// src/components/CampaignList.js
-
 import React from 'react';
 import Link from 'next/link';
 import { formatDistance } from 'date-fns';
@@ -7,6 +5,8 @@ import { ArrowBounce28Filled, Copy01, Delete02, Edit01, Eye, Mail02, PieChart, U
 
 const CampaignList = ({ campaigns, brandId }) => {
     const handleDuplicate = async (campaignId, campaignName) => {
+        // Implementation for duplicating campaign
+        // You'll need to create an API endpoint for this
         try {
             const response = await fetch(`/api/brands/${brandId}/campaigns/${campaignId}/duplicate`, {
                 method: 'POST',
@@ -17,6 +17,7 @@ const CampaignList = ({ campaigns, brandId }) => {
             });
 
             if (response.ok) {
+                // Refresh the page or update the list
                 window.location.reload();
             } else {
                 alert('Failed to duplicate campaign');
@@ -27,6 +28,7 @@ const CampaignList = ({ campaigns, brandId }) => {
         }
     };
 
+    // Function to handle campaign deletion
     const handleDelete = async (campaignId) => {
         if (confirm('Are you sure you want to delete this campaign? This action cannot be undone.')) {
             try {
@@ -35,6 +37,7 @@ const CampaignList = ({ campaigns, brandId }) => {
                 });
 
                 if (response.ok) {
+                    // Refresh the page or update the list
                     window.location.reload();
                 } else {
                     alert('Failed to delete campaign');
@@ -46,6 +49,7 @@ const CampaignList = ({ campaigns, brandId }) => {
         }
     };
 
+    // Function to render the status badge
     const renderStatusBadge = (status) => {
         switch (status) {
             case 'draft':
@@ -60,32 +64,16 @@ const CampaignList = ({ campaigns, brandId }) => {
                 return <span className="status-badge queued">Queued</span>;
             case 'failed':
                 return <span className="status-badge failed">Failed</span>;
-            case 'warmup':
-                return <span className="status-badge warmup">Warmup</span>;
             default:
                 return <span className="status-badge">{status}</span>;
         }
     };
 
+    // Format the date nicely
     const formatDate = (dateString) => {
         if (!dateString) return 'Not sent';
         const date = new Date(dateString);
         return formatDistance(date, new Date(), { addSuffix: true });
-    };
-
-    // Render loading skeleton for stats
-    const renderStatsSkeleton = () => (
-        <div className="stats-skeleton">
-            <div
-                className="skeleton-bar"
-                style={{ width: '30px', height: '12px', backgroundColor: '#e5e5e5', borderRadius: '4px' }}
-            ></div>
-        </div>
-    );
-
-    // Check if campaign needs stats (not draft or scheduled)
-    const needsStats = (campaign) => {
-        return campaign.status !== 'draft' && campaign.status !== 'scheduled';
     };
 
     return (
@@ -117,82 +105,34 @@ const CampaignList = ({ campaigns, brandId }) => {
                                 </div>
                             </td>
                             <td className="status-col">{renderStatusBadge(campaign.status)}</td>
-
-                            {/* Recipients */}
-                            <td className="recipients-col">{needsStats(campaign) ? (campaign.statsLoading ? renderStatsSkeleton() : campaign.statistics?.recipients || campaign.stats?.recipients || 0) : campaign.stats?.recipients || 0}</td>
-
-                            {/* Open Rate */}
+                            <td className="recipients-col">{campaign.stats?.recipients || campaign.statistics?.recipients || 0}</td>
                             <td className="openrate-col">
-                                {needsStats(campaign) ? (
-                                    campaign.statsLoading ? (
-                                        renderStatsSkeleton()
-                                    ) : (
-                                        <div className="stats-value">
-                                            <PieChart
-                                                size={14}
-                                                className="stats-icon"
-                                            />
-                                            {campaign.statistics?.openRate || '0'}%
-                                        </div>
-                                    )
-                                ) : (
-                                    <div
-                                        className="stats-value"
-                                        style={{ color: '#999' }}
-                                    >
-                                        —
-                                    </div>
-                                )}
+                                <div className="stats-value">
+                                    <PieChart
+                                        size={14}
+                                        className="stats-icon"
+                                    />
+                                    {campaign.statistics?.openRate || campaign.openRate || '0'}%
+                                </div>
                             </td>
-
-                            {/* Unsubscribed */}
                             <td className="unsub-col">
-                                {needsStats(campaign) ? (
-                                    campaign.statsLoading ? (
-                                        renderStatsSkeleton()
-                                    ) : (
-                                        <div className="stats-value">
-                                            <UserMinus01
-                                                size={14}
-                                                className="stats-icon"
-                                            />
-                                            {campaign.statistics?.unsubscribedCount || campaign.statistics?.unsubscribed?.total || campaign.stats?.unsubscribes || 0}
-                                        </div>
-                                    )
-                                ) : (
-                                    <div
-                                        className="stats-value"
-                                        style={{ color: '#999' }}
-                                    >
-                                        —
-                                    </div>
-                                )}
+                                <div className="stats-value">
+                                    <UserMinus01
+                                        size={14}
+                                        className="stats-icon"
+                                    />
+                                    {campaign.statistics?.unsubscribedCount || campaign.stats?.unsubscribes || campaign.statistics?.unsubscribed?.total || 0}
+                                </div>
                             </td>
-
-                            {/* Bounced */}
                             <td className="bounce-col">
-                                {needsStats(campaign) ? (
-                                    campaign.statsLoading ? (
-                                        renderStatsSkeleton()
-                                    ) : (
-                                        <div className="stats-value">
-                                            <ArrowBounce28Filled
-                                                size={14}
-                                                className="stats-icon"
-                                            />
-                                            {campaign.statistics?.bouncedCount || campaign.statistics?.bounce?.total || 0}
-                                        </div>
-                                    )
-                                ) : (
-                                    <div
-                                        className="stats-value"
-                                        style={{ color: '#999' }}
-                                    >
-                                        —
-                                    </div>
-                                )}
+                                <div className="stats-value">
+                                    <ArrowBounce28Filled
+                                        size={14}
+                                        className="stats-icon"
+                                    />
+                                    {campaign.statistics?.bouncedCount || 0}
+                                </div>
                             </td>
-
                             <td className="created-col">{formatDate(campaign.createdAt)}</td>
                             <td className="actions-col">
                                 <div className="action-buttons">
@@ -215,7 +155,6 @@ const CampaignList = ({ campaigns, brandId }) => {
                                     <div
                                         className="action-btn duplicate-btn"
                                         onClick={() => handleDuplicate(campaign._id, campaign.name)}
-                                        title="Duplicate Campaign"
                                     >
                                         <Copy01 size={16} />
                                     </div>
@@ -234,33 +173,6 @@ const CampaignList = ({ campaigns, brandId }) => {
                     ))}
                 </tbody>
             </table>
-
-            <style jsx>{`
-                .stats-skeleton {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-
-                .skeleton-bar {
-                    animation: pulse 1.5s ease-in-out infinite;
-                }
-
-                @keyframes pulse {
-                    0%,
-                    100% {
-                        opacity: 1;
-                    }
-                    50% {
-                        opacity: 0.5;
-                    }
-                }
-
-                .status-badge.warmup {
-                    background-color: #dbeafe;
-                    color: #1e40af;
-                }
-            `}</style>
         </div>
     );
 };

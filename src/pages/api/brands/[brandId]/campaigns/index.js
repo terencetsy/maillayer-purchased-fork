@@ -5,6 +5,7 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getCampaignsByBrandId, getCampaignsCount, createCampaign } from '@/services/campaignService';
 import { getBrandById } from '@/services/brandService';
+import { getCampaignStats } from '@/services/trackingService';
 
 export default async function handler(req, res) {
     try {
@@ -32,26 +33,69 @@ export default async function handler(req, res) {
             return res.status(403).json({ message: 'Not authorized to access this brand' });
         }
 
-        // GET request - get campaigns for a brand with pagination (NO STATS)
+        // GET request - get campaigns for a brand with pagination
         if (req.method === 'GET') {
             try {
                 // Parse pagination params
                 const page = parseInt(req.query.page) || 1;
-                const limit = parseInt(req.query.limit) || 10;
+                const limit = parseInt(req.query.limit) || 8;
                 const skip = (page - 1) * limit;
 
-                // Fetch campaigns with pagination - WITHOUT stats
-                const [campaigns, totalCount] = await Promise.all([getCampaignsByBrandId(brandId, userId, { skip, limit }), getCampaignsCount(brandId, userId)]);
+                // Validate limit (only allow 8, 15, or 30)
+                const validLimits = [8, 15, 30];
+                const actualLimit = validLimits.includes(limit) ? limit : 8;
 
-                // Return paginated response without fetching live stats
+                // Fetch campaigns with pagination
+                const [campaigns, totalCount] = await Promise.all([getCampaignsByBrandId(brandId, userId, { skip, limit: actualLimit }), getCampaignsCount(brandId, userId)]);
+
+                // Only fetch stats for non-draft campaigns
+                // Process in batches to avoid overwhelming the system
+                const CONCURRENT_STATS_LIMIT = 5;
+                const campaignsWithStats = [];
+
+                for (let i = 0; i < campaigns.length; i += CONCURRENT_STATS_LIMIT) {
+                    const batch = campaigns.slice(i, i + CONCURRENT_STATS_LIMIT);
+
+                    const batchResults = await Promise.all(
+                        batch.map(async (campaign) => {
+                            if (campaign.status !== 'draft' && campaign.status !== 'scheduled') {
+                                try {
+                                    const stats = await getCampaignStats(campaign._id);
+
+                                    const openRate = stats.recipients > 0 ? (((stats.open?.unique || 0) / stats.recipients) * 100).toFixed(1) : 0;
+
+                                    const campaignObj = campaign && typeof campaign.toObject === 'function' ? campaign.toObject() : JSON.parse(JSON.stringify(campaign));
+
+                                    return {
+                                        ...campaignObj,
+                                        statistics: {
+                                            ...stats,
+                                            openRate,
+                                            unsubscribedCount: stats.unsubscribed?.total || 0,
+                                            bouncedCount: stats.bounce?.total || 0,
+                                        },
+                                    };
+                                } catch (error) {
+                                    console.warn(`Error fetching stats for campaign ${campaign._id}:`, error);
+                                    return campaign;
+                                }
+                            }
+                            return campaign;
+                        })
+                    );
+
+                    campaignsWithStats.push(...batchResults);
+                }
+
+                // Return paginated response
                 return res.status(200).json({
-                    campaigns,
+                    campaigns: campaignsWithStats,
                     pagination: {
                         page,
-                        limit,
+                        limit: actualLimit,
                         total: totalCount,
-                        totalPages: Math.ceil(totalCount / limit),
-                        hasMore: page * limit < totalCount,
+                        totalPages: Math.ceil(totalCount / actualLimit),
+                        hasMore: page * actualLimit < totalCount,
                     },
                 });
             } catch (error) {

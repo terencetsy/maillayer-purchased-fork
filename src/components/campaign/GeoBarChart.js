@@ -162,12 +162,12 @@ export default function GeoBarChart({ data = [], title = 'Data', totalLabel = 'T
                         <div
                             key={index}
                             style={{
+                                flex: 1,
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 gap: '8px',
-                                minWidth: '55px',
-                                flexShrink: 0,
+                                minWidth: 0,
                             }}
                             onMouseEnter={() => setHoveredIndex(index)}
                             onMouseLeave={() => setHoveredIndex(null)}

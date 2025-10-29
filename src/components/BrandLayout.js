@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Head from 'next/head';
 import { useSession } from 'next-auth/react';
 import { Code, ContactBook, DatabaseSync, Home03, Mail02, Setting07, Shield02 } from '@/lib/icons';
+import { Zap } from 'lucide-react';
 
 export default function BrandLayout({ children, brand }) {
     const router = useRouter();
@@ -163,6 +164,13 @@ export default function BrandLayout({ children, brand }) {
                             >
                                 <DatabaseSync size={18} />
                                 Integrations
+                            </Link>
+                            <Link
+                                href={`/brands/${brand._id}/sequences`}
+                                className={router.pathname.includes('/sequences') ? 'active' : ''}
+                            >
+                                <Zap size={20} />
+                                <span>Sequences</span>
                             </Link>
                             <Link
                                 href={`/brands/${brand._id}/settings`}

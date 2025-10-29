@@ -25,6 +25,11 @@ const ContactListSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        lastCheckedAt: {
+            type: Date,
+            default: null,
+            index: true,
+        },
         webhookSecret: {
             type: String,
             trim: true,

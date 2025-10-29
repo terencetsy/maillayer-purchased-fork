@@ -112,5 +112,21 @@ module.exports = {
             exec_mode: 'fork',
             watch: process.env.NODE_ENV !== 'production' ? ['workers/google-sheets-sync-worker.js'] : false,
         },
+        {
+            name: 'contact-list-monitor',
+            script: 'workers/contact-list-monitor.js',
+            env: {
+                NODE_ENV: process.env.NODE_ENV || 'development',
+                WORKER_DEBUG: process.env.NODE_ENV !== 'production' ? 'true' : 'false',
+            },
+            restart_delay: 3000,
+            max_restarts: 10,
+            log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+            error_file: 'logs/contact-list-monitor-error.log',
+            out_file: 'logs/contact-list-monitor-out.log',
+            merge_logs: true,
+            exec_mode: 'fork',
+            watch: process.env.NODE_ENV !== 'production' ? ['workers/contact-list-monitor.js'] : false,
+        },
     ],
 };

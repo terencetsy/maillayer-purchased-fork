@@ -1,0 +1,53 @@
+// src/pages/api/brands/[brandId]/email-sequences/[sequenceId]/enrollments.js
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import connectToDatabase from '@/lib/mongodb';
+import { getBrandById } from '@/services/brandService';
+import { getSequenceEnrollments } from '@/services/emailSequenceService';
+
+export default async function handler(req, res) {
+    try {
+        await connectToDatabase();
+
+        const session = await getServerSession(req, res, authOptions);
+
+        if (!session || !session.user) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const userId = session.user.id;
+        const { brandId, sequenceId } = req.query;
+
+        if (!brandId || !sequenceId) {
+            return res.status(400).json({ message: 'Missing required parameters' });
+        }
+
+        const brand = await getBrandById(brandId);
+        if (!brand) {
+            return res.status(404).json({ message: 'Brand not found' });
+        }
+
+        if (brand.userId.toString() !== userId) {
+            return res.status(403).json({ message: 'Not authorized to access this brand' });
+        }
+
+        if (req.method === 'GET') {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 50;
+            const status = req.query.status || '';
+
+            const result = await getSequenceEnrollments(sequenceId, {
+                page,
+                limit,
+                status,
+            });
+
+            return res.status(200).json(result);
+        }
+
+        return res.status(405).json({ message: 'Method not allowed' });
+    } catch (error) {
+        console.error('Error fetching enrollments:', error);
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+}

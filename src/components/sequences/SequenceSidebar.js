@@ -5,6 +5,7 @@ import Link from 'next/link';
 import TriggerConfig from './sidebar/TriggerConfig';
 import EmailConfig from './sidebar/EmailConfig';
 import SequenceSettings from './sidebar/SequenceSettings';
+import { Edit01 } from '@/lib/icons';
 
 export default function SequenceSidebar({ sequence, onUpdate, selectedStep, setSelectedStep, onSave, onToggleActive, saving, hasUnsavedChanges }) {
     const [activationError, setActivationError] = useState('');
@@ -85,75 +86,56 @@ export default function SequenceSidebar({ sequence, onUpdate, selectedStep, setS
         <div className="sequence-sidebar">
             {/* Compact Header */}
             <div className="sidebar-header">
-                <Link
-                    href={`/brands/${sequence.brandId}/sequences`}
-                    className="back-link"
-                >
-                    <ArrowLeft size={14} />
-                    Back
-                </Link>
-
                 <div className="sequence-info">
-                    <h1>{sequence.name}</h1>
-                    <div className="sequence-meta">
+                    <Link
+                        href={`/brands/${sequence.brandId}/sequences`}
+                        className="back-link"
+                    >
+                        <ArrowLeft size={14} />
+                        Back
+                    </Link>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <span className={`status-badge status-${sequence.status}`}>{sequence.status === 'active' ? 'Active' : sequence.status === 'paused' ? 'Paused' : 'Draft'}</span>
+                        <h1>{sequence.name}</h1>
+                    </div>
+                </div>
+                <div className="sidebar-actions">
+                    <div className="sequence-meta">
                         <span className="email-count">{sequence.emails?.length || 0} emails</span>
                     </div>
-                </div>
-            </div>
-
-            {/* Compact Email Configuration Section */}
-            <div className="sidebar-section">
-                <div className="section-header">
-                    <h3>Email Config</h3>
+                    <div onClick={() => setSelectedStep('settings')}>
+                        <Edit01 />
+                    </div>
                     <button
-                        className="text-button"
-                        onClick={() => setSelectedStep('settings')}
+                        className="button button--secondary"
+                        onClick={onSave}
+                        disabled={saving || !hasUnsavedChanges}
                     >
-                        Edit
+                        <Save size={15} />
+                        {hasUnsavedChanges ? 'Save' : 'Saved'}
                     </button>
-                </div>
-                <div className="email-config-display">
-                    <div className="config-row">
-                        <span className="config-label">From</span>
-                        <span className="config-value">{sequence.emailConfig?.fromEmail || 'Not set'}</span>
-                    </div>
-                    <div className="config-row">
-                        <span className="config-label">Reply-To</span>
-                        <span className="config-value">{sequence.emailConfig?.replyToEmail || 'Not set'}</span>
-                    </div>
+                    <button
+                        className={`button ${sequence.status === 'active' ? 'button--secondary' : 'button--primary'}`}
+                        onClick={handleToggleClick}
+                        disabled={sequence.status !== 'active' && !canActivate}
+                        title={sequence.status !== 'active' && !canActivate ? validateForActivation() : ''}
+                    >
+                        {sequence.status === 'active' ? (
+                            <>
+                                <Pause size={15} />
+                                Pause
+                            </>
+                        ) : (
+                            <>
+                                <Play size={15} />
+                                Activate
+                            </>
+                        )}
+                    </button>
                 </div>
             </div>
 
             {/* Compact Action Buttons */}
-            <div className="sidebar-actions">
-                <button
-                    className="button button--secondary"
-                    onClick={onSave}
-                    disabled={saving || !hasUnsavedChanges}
-                >
-                    <Save size={15} />
-                    {hasUnsavedChanges ? 'Save' : 'Saved'}
-                </button>
-                <button
-                    className={`button ${sequence.status === 'active' ? 'button--secondary' : 'button--primary'}`}
-                    onClick={handleToggleClick}
-                    disabled={sequence.status !== 'active' && !canActivate}
-                    title={sequence.status !== 'active' && !canActivate ? validateForActivation() : ''}
-                >
-                    {sequence.status === 'active' ? (
-                        <>
-                            <Pause size={15} />
-                            Pause
-                        </>
-                    ) : (
-                        <>
-                            <Play size={15} />
-                            Activate
-                        </>
-                    )}
-                </button>
-            </div>
 
             {/* Activation Error */}
             {activationError && (

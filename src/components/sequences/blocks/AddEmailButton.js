@@ -3,14 +3,16 @@ import { Plus } from 'lucide-react';
 
 export default function AddEmailButton({ onClick }) {
     return (
-        <button
-            className="add-email-button"
+        <div
+            className="add-email-block"
             onClick={onClick}
         >
-            <div className="add-email-icon">
-                <Plus size={20} />
+            <div className="add-email-content">
+                <div className="add-icon">
+                    <Plus size={20} />
+                </div>
+                <span>Add Email</span>
             </div>
-            <span>Add Email</span>
-        </button>
+        </div>
     );
 }

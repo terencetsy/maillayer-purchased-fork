@@ -87,7 +87,7 @@ export default function SequenceDesign() {
     }
 
     return (
-        <div style={{ display: 'flex', height: '100vh' }}>
+        <div style={{ display: 'grid', height: '100vh', gridTemplateColumns: '50% 50%', backgroundColor: '#f6f6f6' }}>
             <SequenceCanvas
                 sequence={sequence}
                 onUpdate={handleUpdate}

@@ -5,11 +5,11 @@ export default function TriggerBlock({ sequence, isSelected, onClick }) {
     const getTriggerIcon = () => {
         switch (sequence.triggerType) {
             case 'contact_list':
-                return <List size={22} />;
+                return <List size={20} />;
             case 'integration':
-                return <Zap size={22} />;
+                return <Zap size={20} />;
             default:
-                return <List size={22} />;
+                return <List size={20} />;
         }
     };
 
@@ -31,18 +31,18 @@ export default function TriggerBlock({ sequence, isSelected, onClick }) {
             className={`trigger-block ${isSelected ? 'selected' : ''}`}
             onClick={onClick}
         >
-            <div className="trigger-block-header">
-                <div className="trigger-block-icon">{getTriggerIcon()}</div>
-                <div className="trigger-block-content">
-                    <div className="trigger-block-title">Trigger</div>
-                    <div className="trigger-block-subtitle">{getTriggerLabel()}</div>
+            <div className="trigger-header">
+                <div className="trigger-icon">{getTriggerIcon()}</div>
+                <div className="trigger-content">
+                    <div className="trigger-label">Trigger</div>
+                    <h3 className="trigger-title">{getTriggerLabel()}</h3>
                 </div>
             </div>
 
             {!isConfigured && (
-                <div className="trigger-block-warning">
-                    <AlertTriangle size={16} />
-                    <span>Setup required</span>
+                <div className="trigger-warning">
+                    <AlertTriangle size={14} />
+                    <span>Configure trigger to activate sequence</span>
                 </div>
             )}
         </div>

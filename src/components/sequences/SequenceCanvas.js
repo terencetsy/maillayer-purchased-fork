@@ -1,6 +1,6 @@
 // src/components/sequences/SequenceCanvas.js
 import { useRef } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Zap } from 'lucide-react';
 import TriggerBlock from './blocks/TriggerBlock';
 import EmailBlock from './blocks/EmailBlock';
 import AddEmailButton from './blocks/AddEmailButton';
@@ -17,10 +17,6 @@ export default function SequenceCanvas({ sequence, onUpdate, selectedStep, setSe
             content: '',
             delayAmount: 1,
             delayUnit: 'days',
-            position: {
-                x: 0,
-                y: (sequence.emails?.length || 0) * 200 + 300,
-            },
         };
 
         onUpdate({
@@ -36,37 +32,27 @@ export default function SequenceCanvas({ sequence, onUpdate, selectedStep, setSe
             ref={canvasRef}
         >
             <div className="canvas-content">
-                {/* Trigger Block */}
-                <div
-                    className="canvas-block-wrapper"
-                    style={{ top: 0, left: '50%', transform: 'translateX(-50%)' }}
-                >
+                <div className="canvas-flow">
+                    {/* Trigger Block */}
                     <TriggerBlock
                         sequence={sequence}
                         isSelected={selectedStep === 'trigger'}
                         onClick={() => setSelectedStep('trigger')}
                     />
-                </div>
 
-                {/* Connection Line */}
-                {sequence.emails && sequence.emails.length > 0 && (
-                    <div
-                        className="canvas-connection-line"
-                        style={{ top: 100, left: '50%', height: 60 }}
-                    />
-                )}
+                    {/* Email Blocks with Connectors */}
+                    {sequence.emails?.map((email, index) => (
+                        <div key={email.id}>
+                            {/* Connector */}
+                            <div className="flow-connector">
+                                <div className="connector-line" />
+                                <div className="connector-time">
+                                    {email.delayAmount} {email.delayUnit}
+                                    {index > 0 ? ' after previous' : ' after trigger'}
+                                </div>
+                            </div>
 
-                {/* Email Blocks */}
-                {sequence.emails?.map((email, index) => (
-                    <div key={email.id}>
-                        <div
-                            className="canvas-block-wrapper"
-                            style={{
-                                top: 160 + index * 180,
-                                left: '50%',
-                                transform: 'translateX(-50%)',
-                            }}
-                        >
+                            {/* Email Block */}
                             <EmailBlock
                                 email={email}
                                 index={index}
@@ -75,30 +61,16 @@ export default function SequenceCanvas({ sequence, onUpdate, selectedStep, setSe
                                 totalEmails={sequence.emails.length}
                             />
                         </div>
+                    ))}
 
-                        {/* Connection Line to next email */}
-                        {index < sequence.emails.length - 1 && (
-                            <div
-                                className="canvas-connection-line"
-                                style={{
-                                    top: 160 + index * 180 + 80,
-                                    left: '50%',
-                                    height: 100,
-                                }}
-                            />
-                        )}
-                    </div>
-                ))}
+                    {/* Connector before Add Button */}
+                    {sequence.emails?.length > 0 && (
+                        <div className="flow-connector">
+                            <div className="connector-line" />
+                        </div>
+                    )}
 
-                {/* Add Email Button */}
-                <div
-                    className="canvas-block-wrapper"
-                    style={{
-                        top: 160 + (sequence.emails?.length || 0) * 180,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                    }}
-                >
+                    {/* Add Email Button */}
                     <AddEmailButton onClick={handleAddEmail} />
                 </div>
             </div>

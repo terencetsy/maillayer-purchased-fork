@@ -6,33 +6,32 @@ export default function EmailBlock({ email, index, isSelected, onClick, totalEma
 
     return (
         <div
-            className={`email-block ${isSelected ? 'selected' : ''} ${isConfigured ? 'configured' : 'unconfigured'}`}
+            className={`email-block ${isSelected ? 'selected' : ''} ${isConfigured ? '' : 'unconfigured'}`}
             onClick={onClick}
         >
-            <div className="email-block-header">
-                <div className="email-block-icon">
+            <div className="email-step-number">{index + 1}</div>
+
+            <div className="email-header">
+                <div className="email-icon">
                     <Mail size={20} />
                 </div>
-                <div className="email-block-content">
-                    <div className="email-block-title">{email.subject || `Email ${index + 1}`}</div>
-                    {isConfigured && (
-                        <div className="email-block-badge">
-                            <CheckCircle size={13} />
-                            <span>Configured</span>
-                        </div>
-                    )}
+                <div className="email-content">
+                    <div className="email-label">Email {index + 1}</div>
+                    {email.subject ? <h3 className="email-subject">{email.subject}</h3> : <div className="email-placeholder">Untitled Email</div>}
                 </div>
-                <div className="email-block-status">
-                    <div className="status-indicator">{index + 1}</div>
-                </div>
+                {isConfigured && (
+                    <div className="email-status">
+                        <CheckCircle size={12} />
+                        Ready
+                    </div>
+                )}
             </div>
 
-            <div className="email-block-delay">
-                <Clock size={15} />
-                <span>
+            <div className="email-meta">
+                <div className="meta-item">
+                    <Clock size={14} />
                     {email.delayAmount} {email.delayUnit}
-                    {index > 0 ? ' after previous' : ' after trigger'}
-                </span>
+                </div>
             </div>
         </div>
     );

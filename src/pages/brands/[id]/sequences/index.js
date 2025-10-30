@@ -346,6 +346,7 @@ export default function EmailSequences() {
 }
 
 // Create Sequence Modal Component
+// Create Sequence Modal Component
 function CreateSequenceModal({ onClose, onCreate, isCreating }) {
     const [name, setName] = useState('');
 
@@ -356,17 +357,17 @@ function CreateSequenceModal({ onClose, onCreate, isCreating }) {
 
     return (
         <div
-            className="modal-overlay"
+            className="form-modal-overlay"
             onClick={onClose}
         >
             <div
-                className="modal-content"
+                className="modal-form-container"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="modal-header">
+                <div className="modal-form-header">
                     <h2>Create Email Sequence</h2>
                     <button
-                        className="modal-close"
+                        className="modal-form-close"
                         onClick={onClose}
                     >
                         ×
@@ -374,7 +375,7 @@ function CreateSequenceModal({ onClose, onCreate, isCreating }) {
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="modal-body">
+                    <div style={{ padding: '0 0 1rem 0' }}>
                         <p style={{ margin: '0 0 1rem 0', fontSize: '0.9375rem', color: '#666' }}>Give your sequence a name to get started. You'll configure the trigger and emails next.</p>
 
                         <div className="form-group">
@@ -393,7 +394,7 @@ function CreateSequenceModal({ onClose, onCreate, isCreating }) {
                         </div>
                     </div>
 
-                    <div className="modal-footer">
+                    <div className="form-actions">
                         <button
                             type="button"
                             className="button button--secondary"

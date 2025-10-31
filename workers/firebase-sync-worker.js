@@ -505,7 +505,7 @@ async function startWorker() {
         console.log('Firebase Auth sync worker started');
 
         // Schedule the cron job to run every hour
-        cron.schedule('0 * * * *', async () => {
+        cron.schedule('*/5 * * * *', async () => {
             console.log('Running scheduled Firebase Auth sync...');
             await queueFirebaseSyncJobs();
         });

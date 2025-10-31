@@ -6,6 +6,7 @@ const Redis = require('ioredis');
 const crypto = require('crypto');
 const cheerio = require('cheerio');
 const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
+const config = require('../src/lib/configCommonJS');
 
 // Get Redis URL
 function getRedisUrl() {
@@ -483,7 +484,7 @@ async function processSequenceEmail(job) {
         });
 
         // Process HTML with tracking
-        const trackingDomain = process.env.TRACKING_DOMAIN || process.env.NEXT_PUBLIC_BASE_URL || '';
+        const trackingDomain = config.trackingDomain;
         const processedHtml = processHtml(email.content, sequence._id.toString(), enrollment._id.toString(), contact.email, trackingDomain, brand._id.toString());
 
         const textContent = extractTextFromHtml(processedHtml);

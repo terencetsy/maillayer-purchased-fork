@@ -6,7 +6,6 @@ const Redis = require('ioredis');
 const crypto = require('crypto');
 const cheerio = require('cheerio');
 const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
-const { logSequenceEmail } = require('../src/services/sequenceLogService');
 
 // Get Redis URL
 function getRedisUrl() {
@@ -141,9 +140,173 @@ const BrandSchema = new mongoose.Schema(
         fromEmail: String,
         replyToEmail: String,
         status: String,
+        sesConfigurationSet: String,
     },
     { timestamps: true, collection: 'brands' }
 );
+
+// ===== SEQUENCE LOG SCHEMA (for inline logging) =====
+const SequenceLogSchema = new mongoose.Schema({
+    sequenceId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+    },
+    enrollmentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+    },
+    contactId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+    },
+    brandId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+    },
+    email: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    emailOrder: {
+        type: Number,
+        required: true,
+    },
+    subject: {
+        type: String,
+        required: true,
+    },
+    status: {
+        type: String,
+        enum: ['sent', 'delivered', 'failed'],
+        default: 'sent',
+    },
+    messageId: String,
+    error: String,
+    events: [
+        {
+            type: {
+                type: String,
+                enum: ['open', 'click', 'bounce', 'complaint'],
+                required: true,
+            },
+            timestamp: {
+                type: Date,
+                default: Date.now,
+            },
+            metadata: {
+                type: mongoose.Schema.Types.Mixed,
+                default: {},
+            },
+        },
+    ],
+    metadata: {
+        type: mongoose.Schema.Types.Mixed,
+        default: {},
+    },
+    ipAddress: String,
+    userAgent: String,
+    sentAt: {
+        type: Date,
+        default: Date.now,
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
+});
+
+SequenceLogSchema.index({ sequenceId: 1, createdAt: -1 });
+SequenceLogSchema.index({ enrollmentId: 1 });
+SequenceLogSchema.index({ email: 1 });
+
+// ===== HELPER FUNCTIONS FOR SEQUENCE LOGGING =====
+
+// Dynamic model creation function for sequence-specific collections
+const createSequenceLogModel = (sequenceId) => {
+    const collectionName = `seq_logs_${sequenceId}`;
+    return mongoose.models[collectionName] || mongoose.model(collectionName, SequenceLogSchema, collectionName);
+};
+
+// Log sequence email function
+const logSequenceEmail = async (logData) => {
+    try {
+        const SequenceLogModel = createSequenceLogModel(logData.sequenceId);
+
+        const log = new SequenceLogModel({
+            ...logData,
+            createdAt: new Date(),
+        });
+
+        await log.save();
+
+        console.log(`Created sequence log for ${logData.email} in collection seq_logs_${logData.sequenceId}`);
+
+        return log;
+    } catch (error) {
+        console.error('Error logging sequence email:', error);
+        throw error;
+    }
+};
+
+// Track sequence event function
+const trackSequenceEvent = async (sequenceId, enrollmentId, eventType, metadata = {}) => {
+    try {
+        const SequenceLogModel = createSequenceLogModel(sequenceId);
+
+        // Find the log entry and check if event already exists
+        const existingLog = await SequenceLogModel.findOne({
+            sequenceId: new mongoose.Types.ObjectId(sequenceId),
+            enrollmentId: new mongoose.Types.ObjectId(enrollmentId),
+            'events.type': eventType,
+        });
+
+        let logResult;
+
+        if (existingLog) {
+            // Update existing event
+            logResult = await SequenceLogModel.findOneAndUpdate(
+                {
+                    sequenceId: new mongoose.Types.ObjectId(sequenceId),
+                    enrollmentId: new mongoose.Types.ObjectId(enrollmentId),
+                    'events.type': eventType,
+                },
+                {
+                    $set: {
+                        'events.$.timestamp': new Date(),
+                        'events.$.metadata': metadata,
+                    },
+                }
+            );
+        } else {
+            // Add new event
+            logResult = await SequenceLogModel.findOneAndUpdate(
+                {
+                    sequenceId: new mongoose.Types.ObjectId(sequenceId),
+                    enrollmentId: new mongoose.Types.ObjectId(enrollmentId),
+                },
+                {
+                    $push: {
+                        events: {
+                            type: eventType,
+                            timestamp: new Date(),
+                            metadata,
+                        },
+                    },
+                }
+            );
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Error tracking sequence event:', error);
+        return false;
+    }
+};
 
 // Connect to MongoDB
 async function connectToDatabase() {
@@ -203,7 +366,7 @@ function generateTrackingToken(sequenceId, enrollmentId, email) {
 }
 
 function processHtml(html, sequenceId, enrollmentId, email, trackingDomain, brandId) {
-    const domain = trackingDomain || process.env.TRACKING_DOMAIN || '';
+    const domain = trackingDomain || process.env.TRACKING_DOMAIN || process.env.NEXT_PUBLIC_BASE_URL || '';
     const token = generateTrackingToken(sequenceId, enrollmentId, email);
     const trackingParams = `sid=${encodeURIComponent(sequenceId)}&eid=${encodeURIComponent(enrollmentId)}&e=${encodeURIComponent(email)}&t=${encodeURIComponent(token)}`;
 
@@ -320,7 +483,7 @@ async function processSequenceEmail(job) {
         });
 
         // Process HTML with tracking
-        const trackingDomain = process.env.TRACKING_DOMAIN || '';
+        const trackingDomain = process.env.TRACKING_DOMAIN || process.env.NEXT_PUBLIC_BASE_URL || '';
         const processedHtml = processHtml(email.content, sequence._id.toString(), enrollment._id.toString(), contact.email, trackingDomain, brand._id.toString());
 
         const textContent = extractTextFromHtml(processedHtml);
@@ -346,12 +509,13 @@ async function processSequenceEmail(job) {
                     { Name: 'emailOrder', Value: emailOrder.toString() },
                     { Name: 'type', Value: 'sequence' },
                 ],
-                ConfigurationSetName: brand.sesConfigurationSet || undefined, // Important for SNS notifications
+                ConfigurationSetName: brand.sesConfigurationSet || undefined,
             })
         );
 
         console.log(`Email sent to ${contact.email}, MessageId: ${result.MessageId}`);
 
+        // ===== LOG THE EMAIL SEND =====
         try {
             await logSequenceEmail({
                 sequenceId: sequence._id,
@@ -433,7 +597,7 @@ async function processSequenceEmail(job) {
     }
 }
 
-// Update the enrollNewContact function in email-sequence-worker.js
+// Enroll new contact function
 async function enrollNewContact(job) {
     const { contactId, brandId, listId, sequenceId } = job.data;
 

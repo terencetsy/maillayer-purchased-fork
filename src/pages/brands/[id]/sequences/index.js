@@ -384,7 +384,7 @@ function CreateSequenceModal({ onClose, onCreate, isCreating }) {
 
                 <form onSubmit={handleSubmit}>
                     <div style={{ padding: '0 0 1rem 0' }}>
-                        <p style={{ margin: '0 0 1rem 0', fontSize: '0.9375rem', color: '#666' }}>Give your sequence a name to get started. You'll configure the trigger and emails next.</p>
+                        <p style={{ margin: '0 0 1rem 0', fontSize: '0.9375rem', color: '#666' }}>Give your sequence a name to get started. You&apos;ll configure the trigger and emails next.</p>
 
                         <div className="form-group">
                             <label className="form-label">

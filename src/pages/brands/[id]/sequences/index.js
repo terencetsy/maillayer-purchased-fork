@@ -6,6 +6,7 @@ import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
 import { Search, PlusCircle, Zap, Users, CheckCircle, Pause, Trash, Edit, Play, Settings } from 'lucide-react';
 import { getEmailSequences, deleteEmailSequence, createEmailSequence } from '@/services/clientEmailSequenceService';
+import { Shield02 } from '@/lib/icons';
 
 export default function EmailSequences() {
     const { data: session, status } = useSession();
@@ -305,6 +306,13 @@ export default function EmailSequences() {
                                                     <td>{getStatusBadge(sequence.status)}</td>
                                                     <td className="actions-col">
                                                         <div className="action-buttons">
+                                                            <Link
+                                                                href={`/brands/${id}/sequences/${sequence._id}/logs`}
+                                                                className="button button--secondary"
+                                                            >
+                                                                <Shield02 size={16} />
+                                                                <span>View Logs</span>
+                                                            </Link>
                                                             <Link
                                                                 href={`/brands/${id}/sequences/${sequence._id}/design`}
                                                                 className="action-btn"

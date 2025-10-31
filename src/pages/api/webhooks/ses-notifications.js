@@ -5,7 +5,11 @@ import Contact from '@/models/Contact';
 import Campaign from '@/models/Campaign';
 import TransactionalTemplate from '@/models/TransactionalTemplate';
 import TransactionalLog from '@/models/TransactionalLog';
+import SequenceEnrollment from '@/models/SequenceEnrollment';
+import EmailSequence from '@/models/EmailSequence';
 import { trackTransactionalEvent } from '@/services/transactionalService';
+import { trackSequenceEvent, logSequenceEmail } from '@/services/sequenceLogService';
+import { createSequenceLogModel } from '@/models/SequenceLog';
 import mongoose from 'mongoose';
 
 export default async function handler(req, res) {
@@ -51,14 +55,28 @@ export default async function handler(req, res) {
                 return res.status(200).json({ message: 'Notification processed (no mail data)' });
             }
 
-            // Determine if this is a campaign or transactional email
+            // Determine if this is a campaign, transactional, or sequence email
             let emailType = 'unknown';
-            let campaignId, contactId, templateId, email;
+            let campaignId, contactId, templateId, sequenceId, enrollmentId, email;
 
             // Check tags to determine email type
             if (mailData.tags) {
+                // Check if it's a sequence email
+                if (mailData.tags.sequenceId && mailData.tags.sequenceId.length > 0) {
+                    emailType = 'sequence';
+                    sequenceId = mailData.tags.sequenceId[0];
+
+                    if (mailData.tags.enrollmentId && mailData.tags.enrollmentId.length > 0) {
+                        enrollmentId = mailData.tags.enrollmentId[0];
+                    }
+
+                    if (mailData.tags.type && mailData.tags.type[0] === 'sequence') {
+                        // Confirm it's a sequence email
+                        emailType = 'sequence';
+                    }
+                }
                 // Check if it's a campaign email
-                if (mailData.tags.campaignId && mailData.tags.campaignId.length > 0) {
+                else if (mailData.tags.campaignId && mailData.tags.campaignId.length > 0) {
                     emailType = 'campaign';
                     campaignId = mailData.tags.campaignId[0];
 
@@ -82,7 +100,13 @@ export default async function handler(req, res) {
             if (emailType === 'unknown') {
                 // Try to extract from message ID
                 if (mailData.messageId) {
-                    if (mailData.messageId.includes('campaign')) {
+                    if (mailData.messageId.includes('sequence') || mailData.messageId.includes('seq')) {
+                        emailType = 'sequence';
+                        const sequenceMatch = mailData.messageId.match(/seq(?:uence)?[-_]([a-f0-9]+)/i);
+                        if (sequenceMatch && sequenceMatch[1]) {
+                            sequenceId = sequenceMatch[1];
+                        }
+                    } else if (mailData.messageId.includes('campaign')) {
                         emailType = 'campaign';
                         const campaignMatch = mailData.messageId.match(/campaign[-_]([a-f0-9]+)/i);
                         if (campaignMatch && campaignMatch[1]) {
@@ -98,7 +122,7 @@ export default async function handler(req, res) {
                 }
             }
 
-            // Get email address for transactional emails where we don't have a contactId
+            // Get email address
             if (messageContent.eventType === 'Bounce' && messageContent.bounce && messageContent.bounce.bouncedRecipients && messageContent.bounce.bouncedRecipients.length > 0) {
                 email = messageContent.bounce.bouncedRecipients[0].emailAddress;
             } else if (messageContent.eventType === 'Complaint' && messageContent.complaint && messageContent.complaint.complainedRecipients && messageContent.complaint.complainedRecipients.length > 0) {
@@ -122,8 +146,206 @@ export default async function handler(req, res) {
             // Process notification based on email type and notification type
             const notificationType = messageContent.eventType;
 
+            // Handle sequence email notifications
+            if (emailType === 'sequence' && sequenceId && enrollmentId) {
+                console.log(`Processing sequence ${notificationType} for sequence ${sequenceId}, enrollment ${enrollmentId}`);
+
+                if (!email) {
+                    console.warn('Missing email for sequence notification:', {
+                        sequenceId,
+                        enrollmentId,
+                        messageId: mailData.messageId,
+                        notificationType,
+                    });
+                    return res.status(200).json({ message: 'Sequence notification processed (missing email)' });
+                }
+
+                // Handle different notification types for sequences
+                if (notificationType === 'Bounce') {
+                    const bounceInfo = messageContent.bounce;
+                    const recipients = bounceInfo.bouncedRecipients;
+                    const bounceType = bounceInfo.bounceType; // Permanent or Transient
+                    const subType = bounceInfo.bounceSubType;
+                    const recipient = recipients[0];
+
+                    // Track the bounce event
+                    await trackSequenceEvent(sequenceId, enrollmentId, 'bounce', {
+                        email,
+                        bounceType,
+                        bounceSubType: subType,
+                        diagnosticCode: recipient?.diagnosticCode,
+                        action: recipient?.action,
+                        status: recipient?.status,
+                        messageId: mailData.messageId,
+                        timestamp: new Date(),
+                    });
+
+                    // Update the log entry status to failed
+                    try {
+                        const SequenceLogModel = createSequenceLogModel(sequenceId);
+                        await SequenceLogModel.findOneAndUpdate(
+                            {
+                                sequenceId: new mongoose.Types.ObjectId(sequenceId),
+                                enrollmentId: new mongoose.Types.ObjectId(enrollmentId),
+                                email: email,
+                            },
+                            {
+                                status: 'failed',
+                                error: `Bounce: ${bounceType} - ${subType}`,
+                            },
+                            { sort: { createdAt: -1 } } // Update the most recent log entry
+                        );
+                    } catch (logError) {
+                        console.error('Error updating sequence log:', logError);
+                    }
+
+                    // Update enrollment status if permanent bounce
+                    if (bounceType === 'Permanent') {
+                        try {
+                            const enrollment = await SequenceEnrollment.findById(enrollmentId);
+                            if (enrollment && enrollment.status === 'active') {
+                                await SequenceEnrollment.updateOne(
+                                    { _id: enrollmentId },
+                                    {
+                                        $set: {
+                                            status: 'bounced',
+                                            completedAt: new Date(),
+                                        },
+                                    }
+                                );
+
+                                // Update sequence stats
+                                await EmailSequence.updateOne(
+                                    { _id: sequenceId },
+                                    {
+                                        $inc: {
+                                            'stats.totalActive': -1,
+                                            'stats.totalCompleted': 1,
+                                        },
+                                    }
+                                );
+
+                                console.log(`Updated enrollment ${enrollmentId} status to bounced`);
+                            }
+                        } catch (enrollmentError) {
+                            console.error('Error updating enrollment:', enrollmentError);
+                        }
+
+                        // Also update the contact status
+                        try {
+                            const enrollment = await SequenceEnrollment.findById(enrollmentId);
+                            if (enrollment && enrollment.contactId) {
+                                await Contact.findByIdAndUpdate(enrollment.contactId, {
+                                    status: 'bounced',
+                                    isUnsubscribed: true,
+                                    unsubscribedAt: new Date(),
+                                    bouncedAt: new Date(),
+                                    bounceType: bounceType,
+                                    bounceReason: `${bounceType} - ${subType}`,
+                                });
+                            }
+                        } catch (contactError) {
+                            console.error('Error updating contact:', contactError);
+                        }
+                    }
+
+                    console.log(`Processed sequence bounce for enrollment ${enrollmentId}`);
+                } else if (notificationType === 'Complaint') {
+                    const complaintInfo = messageContent.complaint;
+                    const recipients = complaintInfo.complainedRecipients;
+                    const complaintType = complaintInfo.complaintFeedbackType || 'unknown';
+
+                    // Track the complaint event
+                    await trackSequenceEvent(sequenceId, enrollmentId, 'complaint', {
+                        email,
+                        complaintFeedbackType: complaintType,
+                        userAgent: complaintInfo.userAgent,
+                        arrivalDate: complaintInfo.arrivalDate,
+                        messageId: mailData.messageId,
+                        timestamp: new Date(),
+                    });
+
+                    // Update enrollment status on complaint
+                    try {
+                        const enrollment = await SequenceEnrollment.findById(enrollmentId);
+                        if (enrollment && enrollment.status === 'active') {
+                            await SequenceEnrollment.updateOne(
+                                { _id: enrollmentId },
+                                {
+                                    $set: {
+                                        status: 'unsubscribed',
+                                        completedAt: new Date(),
+                                    },
+                                }
+                            );
+
+                            // Update sequence stats
+                            await EmailSequence.updateOne(
+                                { _id: sequenceId },
+                                {
+                                    $inc: {
+                                        'stats.totalActive': -1,
+                                        'stats.totalCompleted': 1,
+                                    },
+                                }
+                            );
+
+                            console.log(`Updated enrollment ${enrollmentId} status to unsubscribed (complaint)`);
+                        }
+                    } catch (enrollmentError) {
+                        console.error('Error updating enrollment:', enrollmentError);
+                    }
+
+                    // Update the contact status
+                    try {
+                        const enrollment = await SequenceEnrollment.findById(enrollmentId);
+                        if (enrollment && enrollment.contactId) {
+                            await Contact.findByIdAndUpdate(enrollment.contactId, {
+                                status: 'complained',
+                                isUnsubscribed: true,
+                                unsubscribedAt: new Date(),
+                                complainedAt: new Date(),
+                                complaintReason: complaintType,
+                            });
+                        }
+                    } catch (contactError) {
+                        console.error('Error updating contact:', contactError);
+                    }
+
+                    console.log(`Processed sequence complaint for enrollment ${enrollmentId}`);
+                } else if (notificationType === 'Delivery') {
+                    const deliveryInfo = messageContent.delivery;
+
+                    // Update the log entry status to delivered
+                    try {
+                        const SequenceLogModel = createSequenceLogModel(sequenceId);
+                        await SequenceLogModel.findOneAndUpdate(
+                            {
+                                sequenceId: new mongoose.Types.ObjectId(sequenceId),
+                                enrollmentId: new mongoose.Types.ObjectId(enrollmentId),
+                                email: email,
+                            },
+                            {
+                                status: 'delivered',
+                                metadata: {
+                                    smtpResponse: deliveryInfo.smtpResponse,
+                                    reportingMTA: deliveryInfo.reportingMTA,
+                                    deliveredAt: new Date(),
+                                },
+                            },
+                            { sort: { createdAt: -1 } } // Update the most recent log entry
+                        );
+
+                        console.log(`Updated sequence log to delivered for enrollment ${enrollmentId}`);
+                    } catch (logError) {
+                        console.error('Error updating sequence log:', logError);
+                    }
+                }
+
+                return res.status(200).json({ message: 'Sequence notification processed' });
+            }
             // Handle campaign notifications
-            if (emailType === 'campaign' && campaignId) {
+            else if (emailType === 'campaign' && campaignId) {
                 // We need both campaignId and contactId for campaign tracking
                 if (!contactId) {
                     console.warn('Missing contactId for campaign notification:', {
@@ -140,9 +362,6 @@ export default async function handler(req, res) {
                     const recipients = bounceInfo.bouncedRecipients;
                     const bounceType = bounceInfo.bounceType; // Permanent or Transient
                     const subType = bounceInfo.bounceSubType;
-
-                    // Only mark as unsubscribed for permanent bounces
-                    // const isPermanent = bounceType === 'Permanent';
 
                     await Contact.findByIdAndUpdate(contactId, {
                         status: 'bounced',
@@ -313,6 +532,8 @@ export default async function handler(req, res) {
                     emailType,
                     campaignId: campaignId || 'missing',
                     templateId: templateId || 'missing',
+                    sequenceId: sequenceId || 'missing',
+                    enrollmentId: enrollmentId || 'missing',
                     messageId: mailData.messageId,
                     notificationType,
                 });

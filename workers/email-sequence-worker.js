@@ -6,6 +6,7 @@ const Redis = require('ioredis');
 const crypto = require('crypto');
 const cheerio = require('cheerio');
 const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
+const { logSequenceEmail } = require('@/services/sequenceLogService');
 
 // Get Redis URL
 function getRedisUrl() {
@@ -343,11 +344,34 @@ async function processSequenceEmail(job) {
                     { Name: 'sequenceId', Value: sequence._id.toString() },
                     { Name: 'enrollmentId', Value: enrollment._id.toString() },
                     { Name: 'emailOrder', Value: emailOrder.toString() },
+                    { Name: 'type', Value: 'sequence' },
                 ],
+                ConfigurationSetName: brand.sesConfigurationSet || undefined, // Important for SNS notifications
             })
         );
 
         console.log(`Email sent to ${contact.email}, MessageId: ${result.MessageId}`);
+
+        try {
+            await logSequenceEmail({
+                sequenceId: sequence._id,
+                enrollmentId: enrollment._id,
+                contactId: contact._id,
+                brandId: brand._id,
+                userId: sequence.userId,
+                email: contact.email,
+                emailOrder: emailOrder,
+                subject: email.subject,
+                status: 'sent',
+                messageId: result.MessageId,
+                metadata: {},
+                sentAt: new Date(),
+            });
+            console.log(`Logged sequence email send for ${contact.email}`);
+        } catch (logError) {
+            console.error('Error logging sequence email:', logError);
+            // Don't throw - we don't want to fail the job if logging fails
+        }
 
         // Update enrollment
         enrollment.emailsSent.push({

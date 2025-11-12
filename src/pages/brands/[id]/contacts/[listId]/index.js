@@ -6,6 +6,8 @@ import BrandLayout from '@/components/BrandLayout';
 import { ArrowLeft, Search, PlusCircle, Upload, Trash, DownloadCloud, ChevronDown, X, Users, RefreshCw, Check, UserCheck, UserX, AlertOctagon } from 'lucide-react';
 import ImportContactsModal from '@/components/contact/ImportContactsModal';
 import DailyContactsChart from '@/components/contact/DailyContactsChart';
+import ContactListApiSettings from '@/components/contact/ContactListApiSettings';
+import { Code } from 'lucide-react';
 
 export default function ContactListDetails() {
     const { data: session, status } = useSession();
@@ -41,6 +43,8 @@ export default function ContactListDetails() {
     const [showStatusUpdateModal, setShowStatusUpdateModal] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState('');
     const [statusUpdateReason, setStatusUpdateReason] = useState('');
+
+    const [activeTab, setActiveTab] = useState('contacts'); // 'contacts' or 'api'
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -735,185 +739,235 @@ export default function ContactListDetails() {
                     </div>
                 </div>
 
+                <div style={{ borderBottom: '1px solid #f0f0f0', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                        <button
+                            onClick={() => setActiveTab('contacts')}
+                            style={{
+                                padding: '0.75rem 1rem',
+                                background: 'none',
+                                border: 'none',
+                                borderBottom: activeTab === 'contacts' ? '2px solid #1a1a1a' : '2px solid transparent',
+                                cursor: 'pointer',
+                                fontWeight: activeTab === 'contacts' ? '500' : '400',
+                                color: activeTab === 'contacts' ? '#1a1a1a' : '#666',
+                            }}
+                        >
+                            <Users
+                                size={16}
+                                style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}
+                            />
+                            Contacts
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('api')}
+                            style={{
+                                padding: '0.75rem 1rem',
+                                background: 'none',
+                                border: 'none',
+                                borderBottom: activeTab === 'api' ? '2px solid #1a1a1a' : '2px solid transparent',
+                                cursor: 'pointer',
+                                fontWeight: activeTab === 'api' ? '500' : '400',
+                                color: activeTab === 'api' ? '#1a1a1a' : '#666',
+                            }}
+                        >
+                            <Code
+                                size={16}
+                                style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}
+                            />
+                            API Access
+                        </button>
+                    </div>
+                </div>
+
                 {/* Contacts Table */}
-                <div style={{ marginTop: '1rem' }}>
-                    {isLoading ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', gap: '1rem' }}>
-                            <div style={{ width: '2rem', height: '2rem', border: '3px solid #f0f0f0', borderTopColor: '#1a1a1a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
-                            <p style={{ margin: 0, fontSize: '0.9375rem', color: '#666' }}>Loading contacts...</p>
-                        </div>
-                    ) : (
-                        <>
-                            {contacts.length === 0 ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', textAlign: 'center' }}>
-                                    <div style={{ width: '4rem', height: '4rem', borderRadius: '1rem', background: 'linear-gradient(145deg, #f5f5f5 0%, #e8e8e8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', marginBottom: '1.5rem' }}>
-                                        <Users size={32} />
+                {activeTab === 'contacts' && (
+                    <div style={{ marginTop: '1rem' }}>
+                        {isLoading ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', gap: '1rem' }}>
+                                <div style={{ width: '2rem', height: '2rem', border: '3px solid #f0f0f0', borderTopColor: '#1a1a1a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+                                <p style={{ margin: 0, fontSize: '0.9375rem', color: '#666' }}>Loading contacts...</p>
+                            </div>
+                        ) : (
+                            <>
+                                {contacts.length === 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', textAlign: 'center' }}>
+                                        <div style={{ width: '4rem', height: '4rem', borderRadius: '1rem', background: 'linear-gradient(145deg, #f5f5f5 0%, #e8e8e8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', marginBottom: '1.5rem' }}>
+                                            <Users size={32} />
+                                        </div>
+                                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: '500', color: '#1a1a1a' }}>No contacts found</h3>
+                                        <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.9375rem', color: '#666', maxWidth: '400px' }}>{searchQuery || statusFilter !== 'all' ? 'No contacts match your search criteria. Try a different search term or clear your filters.' : "This list doesn't have any contacts yet. Import contacts to get started."}</p>
+                                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                            {searchQuery || statusFilter !== 'all' ? (
+                                                <button
+                                                    className="button button--secondary"
+                                                    onClick={() => {
+                                                        clearSearch();
+                                                        setStatusFilter('all');
+                                                    }}
+                                                >
+                                                    Clear Filters
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    className="button button--primary"
+                                                    onClick={() => handleImportContacts('csv')}
+                                                >
+                                                    <Upload size={16} />
+                                                    Import Contacts
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
-                                    <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: '500', color: '#1a1a1a' }}>No contacts found</h3>
-                                    <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.9375rem', color: '#666', maxWidth: '400px' }}>{searchQuery || statusFilter !== 'all' ? 'No contacts match your search criteria. Try a different search term or clear your filters.' : "This list doesn't have any contacts yet. Import contacts to get started."}</p>
-                                    <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                        {searchQuery || statusFilter !== 'all' ? (
-                                            <button
-                                                className="button button--secondary"
-                                                onClick={() => {
-                                                    clearSearch();
-                                                    setStatusFilter('all');
-                                                }}
-                                            >
-                                                Clear Filters
-                                            </button>
-                                        ) : (
-                                            <button
-                                                className="button button--primary"
-                                                onClick={() => handleImportContacts('csv')}
-                                            >
-                                                <Upload size={16} />
-                                                Import Contacts
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            ) : (
-                                <>
-                                    <table className="campaigns-table">
-                                        <thead>
-                                            <tr>
-                                                <th style={{ width: '40px' }}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedContacts.length === contacts.length && contacts.length > 0}
-                                                        onChange={handleSelectAll}
-                                                        style={{ cursor: 'pointer' }}
-                                                    />
-                                                </th>
-                                                <th
-                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                                                    onClick={() => handleSort('email')}
-                                                >
-                                                    Email {sortField === 'email' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
-                                                </th>
-                                                <th
-                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                                                    onClick={() => handleSort('firstName')}
-                                                >
-                                                    First Name {sortField === 'firstName' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
-                                                </th>
-                                                <th
-                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                                                    onClick={() => handleSort('lastName')}
-                                                >
-                                                    Last Name {sortField === 'lastName' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
-                                                </th>
-                                                <th
-                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                                                    onClick={() => handleSort('status')}
-                                                >
-                                                    Status {sortField === 'status' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
-                                                </th>
-                                                <th>Phone</th>
-                                                <th
-                                                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                                                    onClick={() => handleSort('createdAt')}
-                                                >
-                                                    Added {sortField === 'createdAt' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
-                                                </th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {contacts.map((contact) => (
-                                                <tr key={contact._id}>
-                                                    <td>
+                                ) : (
+                                    <>
+                                        <table className="campaigns-table">
+                                            <thead>
+                                                <tr>
+                                                    <th style={{ width: '40px' }}>
                                                         <input
                                                             type="checkbox"
-                                                            checked={selectedContacts.includes(contact._id)}
-                                                            onChange={() => handleContactSelect(contact._id)}
+                                                            checked={selectedContacts.length === contacts.length && contacts.length > 0}
+                                                            onChange={handleSelectAll}
                                                             style={{ cursor: 'pointer' }}
                                                         />
-                                                    </td>
-                                                    <td>{contact.email}</td>
-                                                    <td>{contact.firstName || '-'}</td>
-                                                    <td>{contact.lastName || '-'}</td>
-                                                    <td>
-                                                        <span style={getStatusBadgeStyle(contact.status || 'active')}>
-                                                            {getStatusIcon(contact.status || 'active')}
-                                                            <span>{contact.status || 'active'}</span>
-                                                        </span>
-                                                    </td>
-                                                    <td>{contact.phone || '-'}</td>
-                                                    <td>{new Date(contact.createdAt).toLocaleDateString()}</td>
-                                                    <td className="actions-col">
-                                                        <div className="action-buttons">
-                                                            {contact.status !== 'active' && (
-                                                                <button
-                                                                    className="action-btn"
-                                                                    onClick={() => handleUpdateContactStatus(contact._id, 'active')}
-                                                                    title="Set as Active"
-                                                                >
-                                                                    <UserCheck
-                                                                        size={14}
-                                                                        style={{ color: '#2e7d32' }}
-                                                                    />
-                                                                </button>
-                                                            )}
-                                                            {contact.status !== 'unsubscribed' && (
-                                                                <button
-                                                                    className="action-btn"
-                                                                    onClick={() => handleUpdateContactStatus(contact._id, 'unsubscribed')}
-                                                                    title="Unsubscribe"
-                                                                >
-                                                                    <UserX
-                                                                        size={14}
-                                                                        style={{ color: '#f57c00' }}
-                                                                    />
-                                                                </button>
-                                                            )}
-                                                            <button
-                                                                className="action-btn delete-btn"
-                                                                onClick={() => {
-                                                                    if (window.confirm('Are you sure you want to delete this contact?')) {
-                                                                        setSelectedContacts([contact._id]);
-                                                                        handleDeleteSelected();
-                                                                    }
-                                                                }}
-                                                                title="Delete"
-                                                            >
-                                                                <Trash size={14} />
-                                                            </button>
-                                                        </div>
-                                                    </td>
+                                                    </th>
+                                                    <th
+                                                        style={{ cursor: 'pointer', userSelect: 'none' }}
+                                                        onClick={() => handleSort('email')}
+                                                    >
+                                                        Email {sortField === 'email' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                    </th>
+                                                    <th
+                                                        style={{ cursor: 'pointer', userSelect: 'none' }}
+                                                        onClick={() => handleSort('firstName')}
+                                                    >
+                                                        First Name {sortField === 'firstName' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                    </th>
+                                                    <th
+                                                        style={{ cursor: 'pointer', userSelect: 'none' }}
+                                                        onClick={() => handleSort('lastName')}
+                                                    >
+                                                        Last Name {sortField === 'lastName' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                    </th>
+                                                    <th
+                                                        style={{ cursor: 'pointer', userSelect: 'none' }}
+                                                        onClick={() => handleSort('status')}
+                                                    >
+                                                        Status {sortField === 'status' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                    </th>
+                                                    <th>Phone</th>
+                                                    <th
+                                                        style={{ cursor: 'pointer', userSelect: 'none' }}
+                                                        onClick={() => handleSort('createdAt')}
+                                                    >
+                                                        Added {sortField === 'createdAt' && <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                    </th>
+                                                    <th>Actions</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {contacts.map((contact) => (
+                                                    <tr key={contact._id}>
+                                                        <td>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedContacts.includes(contact._id)}
+                                                                onChange={() => handleContactSelect(contact._id)}
+                                                                style={{ cursor: 'pointer' }}
+                                                            />
+                                                        </td>
+                                                        <td>{contact.email}</td>
+                                                        <td>{contact.firstName || '-'}</td>
+                                                        <td>{contact.lastName || '-'}</td>
+                                                        <td>
+                                                            <span style={getStatusBadgeStyle(contact.status || 'active')}>
+                                                                {getStatusIcon(contact.status || 'active')}
+                                                                <span>{contact.status || 'active'}</span>
+                                                            </span>
+                                                        </td>
+                                                        <td>{contact.phone || '-'}</td>
+                                                        <td>{new Date(contact.createdAt).toLocaleDateString()}</td>
+                                                        <td className="actions-col">
+                                                            <div className="action-buttons">
+                                                                {contact.status !== 'active' && (
+                                                                    <button
+                                                                        className="action-btn"
+                                                                        onClick={() => handleUpdateContactStatus(contact._id, 'active')}
+                                                                        title="Set as Active"
+                                                                    >
+                                                                        <UserCheck
+                                                                            size={14}
+                                                                            style={{ color: '#2e7d32' }}
+                                                                        />
+                                                                    </button>
+                                                                )}
+                                                                {contact.status !== 'unsubscribed' && (
+                                                                    <button
+                                                                        className="action-btn"
+                                                                        onClick={() => handleUpdateContactStatus(contact._id, 'unsubscribed')}
+                                                                        title="Unsubscribe"
+                                                                    >
+                                                                        <UserX
+                                                                            size={14}
+                                                                            style={{ color: '#f57c00' }}
+                                                                        />
+                                                                    </button>
+                                                                )}
+                                                                <button
+                                                                    className="action-btn delete-btn"
+                                                                    onClick={() => {
+                                                                        if (window.confirm('Are you sure you want to delete this contact?')) {
+                                                                            setSelectedContacts([contact._id]);
+                                                                            handleDeleteSelected();
+                                                                        }
+                                                                    }}
+                                                                    title="Delete"
+                                                                >
+                                                                    <Trash size={14} />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
 
-                                    {/* Pagination */}
-                                    {totalPages > 1 && (
-                                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.5rem', padding: '1rem' }}>
-                                            <button
-                                                className="button button--secondary button--small"
-                                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                                                disabled={currentPage === 1}
-                                            >
-                                                Previous
-                                            </button>
-                                            <span style={{ fontSize: '0.875rem', color: '#666' }}>
-                                                Page {currentPage} of {totalPages}
-                                            </span>
-                                            <button
-                                                className="button button--secondary button--small"
-                                                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                                                disabled={currentPage === totalPages}
-                                            >
-                                                Next
-                                            </button>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </>
-                    )}
-                </div>
+                                        {/* Pagination */}
+                                        {totalPages > 1 && (
+                                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.5rem', padding: '1rem' }}>
+                                                <button
+                                                    className="button button--secondary button--small"
+                                                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                                    disabled={currentPage === 1}
+                                                >
+                                                    Previous
+                                                </button>
+                                                <span style={{ fontSize: '0.875rem', color: '#666' }}>
+                                                    Page {currentPage} of {totalPages}
+                                                </span>
+                                                <button
+                                                    className="button button--secondary button--small"
+                                                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                                                    disabled={currentPage === totalPages}
+                                                >
+                                                    Next
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'api' && (
+                    <ContactListApiSettings
+                        brandId={id}
+                        listId={listId}
+                    />
+                )}
             </div>
 
             {/* Import Modal */}

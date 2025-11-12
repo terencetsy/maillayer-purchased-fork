@@ -38,6 +38,36 @@ const ContactListSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        apiKey: {
+            type: String,
+            unique: true,
+            sparse: true, // Allows multiple null values
+            trim: true,
+        },
+        apiEnabled: {
+            type: Boolean,
+            default: false,
+        },
+        allowedDomains: [
+            {
+                type: String,
+                trim: true,
+            },
+        ],
+        apiSettings: {
+            requireDoubleOptIn: {
+                type: Boolean,
+                default: false,
+            },
+            allowDuplicates: {
+                type: Boolean,
+                default: false,
+            },
+            redirectUrl: {
+                type: String,
+                trim: true,
+            },
+        },
         createdAt: {
             type: Date,
             default: Date.now,

@@ -109,7 +109,7 @@ MailLayer requires Redis and MongoDB databases:
     - `NODE_ENV`: `production`
     - `BASE_URL`: `https://mail.yourdomain.com` (your MailLayer domain)
     - `TRACKING_SECRET`: Choose a secure random string
-    - `MONGODB_URL`: Paste the MongoDB URL you saved earlier
+    - `MONGODB_URI`: Paste the MongoDB URL you saved earlier
     - `REDIS_URL`: Paste the Redis URL you saved earlier
     - `NEXTAUTH_SECRET`: Choose another secure random string
     - `NEXTAUTH_URL`: Same as your BASE_URL

@@ -35,6 +35,10 @@ const ContactSchema = new mongoose.Schema(
             ref: 'User',
             required: true,
         },
+        customFields: {
+            type: mongoose.Schema.Types.Mixed,
+            default: {},
+        },
         // New status field to replace isUnsubscribed
         status: {
             type: String,

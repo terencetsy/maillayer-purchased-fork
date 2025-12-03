@@ -45,16 +45,41 @@ function buildSegmentQuery(segment, brandId) {
     };
 }
 
+function escapeRegex(string) {
+    if (!string) return '';
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function buildRuleQuery(rule) {
-    const { field, operator, value } = rule;
+    const { field, operator, value, customFieldName } = rule;
+
+    // Determine the actual field path
+    let fieldPath = field;
+    if (field === 'customField' && customFieldName) {
+        fieldPath = `customFields.${customFieldName}`;
+    }
 
     switch (operator) {
         case 'equals':
-            return { [field]: value };
+            if (value === 'true') return { [fieldPath]: { $in: [true, 'true'] } };
+            if (value === 'false') return { [fieldPath]: { $in: [false, 'false'] } };
+            return { [fieldPath]: value };
         case 'not_equals':
-            return { [field]: { $ne: value } };
+            if (value === 'true') return { [fieldPath]: { $nin: [true, 'true'] } };
+            if (value === 'false') return { [fieldPath]: { $nin: [false, 'false'] } };
+            return { [fieldPath]: { $ne: value } };
         case 'contains':
-            return { [field]: { $regex: value, $options: 'i' } };
+            return { [fieldPath]: { $regex: value, $options: 'i' } };
+        case 'not_contains':
+            return { [fieldPath]: { $not: { $regex: value, $options: 'i' } } };
+        case 'starts_with':
+            return { [fieldPath]: { $regex: `^${escapeRegex(value)}`, $options: 'i' } };
+        case 'ends_with':
+            return { [fieldPath]: { $regex: `${escapeRegex(value)}$`, $options: 'i' } };
+        case 'greater_than':
+            return { [fieldPath]: { $gt: parseFloat(value) || value } };
+        case 'less_than':
+            return { [fieldPath]: { $lt: parseFloat(value) || value } };
         case 'has_tag':
             return { tags: value };
         case 'missing_tag':
@@ -63,6 +88,16 @@ function buildRuleQuery(rule) {
             return { tags: { $in: Array.isArray(value) ? value : [value] } };
         case 'has_all_tags':
             return { tags: { $all: Array.isArray(value) ? value : [value] } };
+        case 'before':
+            return { [fieldPath]: { $lt: new Date(value) } };
+        case 'after':
+            return { [fieldPath]: { $gt: new Date(value) } };
+        case 'is_empty':
+            return {
+                $or: [{ [fieldPath]: { $exists: false } }, { [fieldPath]: null }, { [fieldPath]: '' }, { [fieldPath]: [] }],
+            };
+        case 'is_not_empty':
+            return { [fieldPath]: { $exists: true, $ne: null, $ne: '' } };
         default:
             return {};
     }

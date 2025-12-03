@@ -7,7 +7,6 @@ import Segment from '@/models/Segment';
 import Contact from '@/models/Contact';
 import mongoose from 'mongoose';
 
-// Build segment query (same as in the campaign API)
 function buildSegmentQuery(segment, brandId) {
     const baseQuery = {
         brandId: new mongoose.Types.ObjectId(brandId),
@@ -45,18 +44,43 @@ function buildSegmentQuery(segment, brandId) {
     };
 }
 
+// Helper function to escape regex special characters
+function escapeRegex(string) {
+    if (!string) return '';
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function buildRuleQuery(rule) {
-    const { field, operator, value } = rule;
+    const { field, operator, value, customFieldName } = rule;
+
+    // Determine the actual field path - THIS WAS THE MISSING PART!
+    let fieldPath = field;
+    if (field === 'customField' && customFieldName) {
+        fieldPath = `customFields.${customFieldName}`;
+    }
 
     switch (operator) {
         case 'equals':
-            return { [field]: value };
+            // Handle boolean string conversion
+            if (value === 'true') return { [fieldPath]: { $in: [true, 'true'] } };
+            if (value === 'false') return { [fieldPath]: { $in: [false, 'false'] } };
+            return { [fieldPath]: value };
         case 'not_equals':
-            return { [field]: { $ne: value } };
+            if (value === 'true') return { [fieldPath]: { $nin: [true, 'true'] } };
+            if (value === 'false') return { [fieldPath]: { $nin: [false, 'false'] } };
+            return { [fieldPath]: { $ne: value } };
         case 'contains':
-            return { [field]: { $regex: value, $options: 'i' } };
+            return { [fieldPath]: { $regex: value, $options: 'i' } };
         case 'not_contains':
-            return { [field]: { $not: { $regex: value, $options: 'i' } } };
+            return { [fieldPath]: { $not: { $regex: value, $options: 'i' } } };
+        case 'starts_with':
+            return { [fieldPath]: { $regex: `^${escapeRegex(value)}`, $options: 'i' } };
+        case 'ends_with':
+            return { [fieldPath]: { $regex: `${escapeRegex(value)}$`, $options: 'i' } };
+        case 'greater_than':
+            return { [fieldPath]: { $gt: parseFloat(value) || value } };
+        case 'less_than':
+            return { [fieldPath]: { $lt: parseFloat(value) || value } };
         case 'has_tag':
             return { tags: value };
         case 'missing_tag':
@@ -65,20 +89,16 @@ function buildRuleQuery(rule) {
             return { tags: { $in: Array.isArray(value) ? value : [value] } };
         case 'has_all_tags':
             return { tags: { $all: Array.isArray(value) ? value : [value] } };
-        case 'greater_than':
-            return { [field]: { $gt: value } };
-        case 'less_than':
-            return { [field]: { $lt: value } };
         case 'before':
-            return { [field]: { $lt: new Date(value) } };
+            return { [fieldPath]: { $lt: new Date(value) } };
         case 'after':
-            return { [field]: { $gt: new Date(value) } };
+            return { [fieldPath]: { $gt: new Date(value) } };
         case 'is_empty':
             return {
-                $or: [{ [field]: { $exists: false } }, { [field]: null }, { [field]: '' }, { [field]: [] }],
+                $or: [{ [fieldPath]: { $exists: false } }, { [fieldPath]: null }, { [fieldPath]: '' }, { [fieldPath]: [] }],
             };
         case 'is_not_empty':
-            return { [field]: { $exists: true, $ne: null, $ne: '' } };
+            return { [fieldPath]: { $exists: true, $ne: null, $ne: '' } };
         default:
             return {};
     }

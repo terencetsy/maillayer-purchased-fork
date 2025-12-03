@@ -1,9 +1,10 @@
+// src/pages/brands/[id]/campaigns/[campaignId]/send.js
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
-import { ArrowLeft, Send, Calendar, Clock, CheckCircle, Users, Mail, AlertCircle, X, Info, Droplet } from 'lucide-react';
+import { ArrowLeft, Send, Calendar, Clock, CheckCircle, Users, Mail, AlertCircle, X, Info, Droplet, Filter, Tag, Plus } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -20,8 +21,10 @@ export default function SendCampaign() {
     const [brand, setBrand] = useState(null);
     const [campaign, setCampaign] = useState(null);
     const [contactLists, setContactLists] = useState([]);
+    const [segments, setSegments] = useState([]); // NEW: Segments state
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingLists, setIsLoadingLists] = useState(true);
+    const [isLoadingSegments, setIsLoadingSegments] = useState(true); // NEW
     const [isSending, setIsSending] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -29,6 +32,7 @@ export default function SendCampaign() {
 
     // Send parameters
     const [selectedLists, setSelectedLists] = useState([]);
+    const [selectedSegments, setSelectedSegments] = useState([]); // NEW: Selected segments
     const [scheduleType, setScheduleType] = useState('send_now');
     const [scheduledDate, setScheduledDate] = useState(new Date());
     const [scheduledTime, setScheduledTime] = useState(new Date());
@@ -61,6 +65,7 @@ export default function SendCampaign() {
             fetchBrandDetails();
             fetchCampaignDetails();
             fetchContactLists();
+            fetchSegments(); // NEW: Fetch segments
         }
     }, [status, id, campaignId, router]);
 
@@ -71,44 +76,53 @@ export default function SendCampaign() {
         }
     }, [session]);
 
-    // Calculate total active contacts when selected lists change
+    // Calculate total active contacts when selected lists or segments change
     useEffect(() => {
-        const fetchActiveContactCounts = async () => {
-            if (selectedLists.length === 0) {
+        const calculateTotalContacts = async () => {
+            if (selectedLists.length === 0 && selectedSegments.length === 0) {
                 setTotalContacts(0);
                 return;
             }
 
             try {
-                const res = await fetch(`/api/brands/${id}/contact-lists/active-counts?listIds=${selectedLists.join(',')}`, {
+                // Build query params
+                const params = new URLSearchParams();
+                if (selectedLists.length > 0) {
+                    params.append('listIds', selectedLists.join(','));
+                }
+                if (selectedSegments.length > 0) {
+                    params.append('segmentIds', selectedSegments.join(','));
+                }
+
+                const res = await fetch(`/api/brands/${id}/contacts/count?${params.toString()}`, {
                     credentials: 'same-origin',
                 });
 
                 if (!res.ok) {
-                    throw new Error('Failed to fetch active contact counts');
+                    throw new Error('Failed to fetch contact count');
                 }
 
-                const counts = await res.json();
-                let total = 0;
-
-                for (const listId of selectedLists) {
-                    total += counts[listId] || 0;
-                }
-
-                setTotalContacts(total);
+                const data = await res.json();
+                setTotalContacts(data.count || 0);
             } catch (error) {
-                console.error('Error fetching active contact counts:', error);
-                // Fallback to using the cached active counts
+                console.error('Error fetching contact count:', error);
+                // Fallback to simple calculation
                 let total = 0;
                 selectedLists.forEach((listId) => {
                     total += activeContactCounts[listId] || 0;
+                });
+                selectedSegments.forEach((segmentId) => {
+                    const segment = segments.find((s) => s._id === segmentId);
+                    if (segment) {
+                        total += segment.cachedCount || 0;
+                    }
                 });
                 setTotalContacts(total);
             }
         };
 
-        fetchActiveContactCounts();
-    }, [selectedLists, id, activeContactCounts]);
+        calculateTotalContacts();
+    }, [selectedLists, selectedSegments, id, activeContactCounts, segments]);
 
     // Calculate warmup stages and duration when warmup parameters change
     useEffect(() => {
@@ -128,7 +142,6 @@ export default function SendCampaign() {
         const intervalInDays = incrementInterval / 24;
 
         while (totalSent < totalContacts) {
-            // Make sure we don't exceed total contacts in the final batch
             const stageBatchSize = Math.min(currentBatchSize, totalContacts - totalSent);
 
             stages.push({
@@ -143,16 +156,12 @@ export default function SendCampaign() {
             stageCount++;
             cumulativeDays += intervalInDays;
 
-            // Calculate next batch size according to warmup formula
             currentBatchSize = Math.min(Math.floor(initialBatchSize * Math.pow(incrementFactor, stageCount)), maxBatchSize);
 
-            // If we're already at max batch size and still have more to send,
-            // we can predict how many more batches at max size
             if (currentBatchSize === maxBatchSize && totalSent < totalContacts) {
                 const remainingContacts = totalContacts - totalSent;
                 const fullBatchesRemaining = Math.floor(remainingContacts / maxBatchSize);
 
-                // Add full batches
                 for (let i = 0; i < fullBatchesRemaining; i++) {
                     totalSent += maxBatchSize;
                     stageCount++;
@@ -167,7 +176,6 @@ export default function SendCampaign() {
                     });
                 }
 
-                // Add final partial batch if needed
                 const finalBatchSize = remainingContacts % maxBatchSize;
                 if (finalBatchSize > 0) {
                     stageCount++;
@@ -183,7 +191,6 @@ export default function SendCampaign() {
                     });
                 }
 
-                // Break since we've calculated all stages
                 break;
             }
         }
@@ -234,7 +241,6 @@ export default function SendCampaign() {
             const data = await res.json();
             setCampaign(data);
 
-            // Verify this is a draft campaign
             if (data.status !== 'draft') {
                 setError('This campaign has already been sent or scheduled.');
             }
@@ -258,11 +264,9 @@ export default function SendCampaign() {
             }
 
             const data = await res.json();
-            // Only show lists with contacts
             const listsWithContacts = data.filter((list) => list.contactCount > 0);
             setContactLists(listsWithContacts);
 
-            // Fetch active contact counts for all lists
             if (listsWithContacts.length > 0) {
                 await fetchActiveContactCounts(listsWithContacts);
             }
@@ -274,7 +278,34 @@ export default function SendCampaign() {
         }
     };
 
-    // Fetch active contact counts for all lists
+    // NEW: Fetch segments
+    const fetchSegments = async () => {
+        try {
+            setIsLoadingSegments(true);
+            const res = await fetch(`/api/brands/${id}/segments?refreshCounts=true`, {
+                credentials: 'same-origin',
+            });
+
+            if (!res.ok) {
+                // If 404, segments feature might not be set up yet
+                if (res.status === 404) {
+                    setSegments([]);
+                    return;
+                }
+                throw new Error('Failed to fetch segments');
+            }
+
+            const data = await res.json();
+            setSegments(data);
+        } catch (error) {
+            console.error('Error fetching segments:', error);
+            // Don't show error for segments, just set empty
+            setSegments([]);
+        } finally {
+            setIsLoadingSegments(false);
+        }
+    };
+
     const fetchActiveContactCounts = async (lists) => {
         if (!lists || lists.length === 0) return;
 
@@ -299,6 +330,15 @@ export default function SendCampaign() {
             setSelectedLists(selectedLists.filter((id) => id !== listId));
         } else {
             setSelectedLists([...selectedLists, listId]);
+        }
+    };
+
+    // NEW: Handle segment toggle
+    const handleToggleSegment = (segmentId) => {
+        if (selectedSegments.includes(segmentId)) {
+            setSelectedSegments(selectedSegments.filter((id) => id !== segmentId));
+        } else {
+            setSelectedSegments([...selectedSegments, segmentId]);
         }
     };
 
@@ -343,9 +383,9 @@ export default function SendCampaign() {
     };
 
     const handleSendButtonClick = () => {
-        // First validate the form
-        if (selectedLists.length === 0) {
-            setError('Please select at least one contact list');
+        // Validate: need at least one list OR one segment
+        if (selectedLists.length === 0 && selectedSegments.length === 0) {
+            setError('Please select at least one contact list or segment');
             return;
         }
 
@@ -358,13 +398,11 @@ export default function SendCampaign() {
             return;
         }
 
-        // Check if there are active contacts
         if (totalContacts === 0) {
-            setError('Selected lists have no active contacts to send to');
+            setError('Selected lists/segments have no active contacts to send to');
             return;
         }
 
-        // Show confirmation modal
         setShowConfirmModal(true);
     };
 
@@ -375,25 +413,21 @@ export default function SendCampaign() {
         setSuccess('');
 
         try {
-            // Prepare scheduled datetime if needed
             let scheduledAt = null;
             if (scheduleType === 'schedule') {
-                // Combine date and time
                 const combinedDate = new Date(scheduledDate);
                 combinedDate.setHours(scheduledTime.getHours());
                 combinedDate.setMinutes(scheduledTime.getMinutes());
                 scheduledAt = combinedDate.toISOString();
             }
 
-            // Prepare warmup config if needed
-            let warmupConfig = null;
+            let warmupConfigData = null;
             if (scheduleType === 'warmup') {
-                // Combine date and time for warmup start
                 const warmupStartDateTime = new Date(warmupStartDate);
                 warmupStartDateTime.setHours(warmupStartTime.getHours());
                 warmupStartDateTime.setMinutes(warmupStartTime.getMinutes());
 
-                warmupConfig = {
+                warmupConfigData = {
                     initialBatchSize,
                     incrementFactor,
                     incrementInterval,
@@ -408,12 +442,12 @@ export default function SendCampaign() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    // Include all necessary campaign data
                     status: scheduleType === 'schedule' ? 'scheduled' : scheduleType === 'warmup' ? null : 'sending',
                     scheduleType,
                     scheduledAt,
-                    warmupConfig,
+                    warmupConfig: warmupConfigData,
                     contactListIds: selectedLists,
+                    segmentIds: selectedSegments, // NEW: Include segments
                     fromName: brand.fromName,
                     fromEmail: brand.fromEmail,
                     replyTo: brand.replyToEmail,
@@ -430,7 +464,6 @@ export default function SendCampaign() {
 
             setSuccess(successMessage);
 
-            // Redirect back to campaign after short delay
             setTimeout(() => {
                 router.push(`/brands/${id}/campaigns/${campaignId}`);
             }, 2000);
@@ -443,12 +476,9 @@ export default function SendCampaign() {
     };
 
     const isValidScheduledDateTime = () => {
-        // Combine date and time
         const combinedDate = new Date(scheduledDate);
         combinedDate.setHours(scheduledTime.getHours());
         combinedDate.setMinutes(scheduledTime.getMinutes());
-
-        // Compare with current time
         return combinedDate > new Date();
     };
 
@@ -491,18 +521,50 @@ export default function SendCampaign() {
         return !(brand.status === 'pending_setup' || brand.status === 'pending_verification');
     };
 
-    // Format number for display in confirmation modal
     const formatNumber = (num) => {
         return new Intl.NumberFormat().format(num);
     };
 
-    // Format date for display
     const formatDate = (date) => {
         return date.toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
         });
+    };
+
+    // Helper to get segment type badge
+    const getSegmentTypeBadge = (type) => {
+        if (type === 'static') {
+            return (
+                <span
+                    style={{
+                        fontSize: '0.625rem',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        backgroundColor: '#e3f2fd',
+                        color: '#1976d2',
+                        marginLeft: '0.5rem',
+                    }}
+                >
+                    Static
+                </span>
+            );
+        }
+        return (
+            <span
+                style={{
+                    fontSize: '0.625rem',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    backgroundColor: '#f3e5f5',
+                    color: '#7b1fa2',
+                    marginLeft: '0.5rem',
+                }}
+            >
+                Dynamic
+            </span>
+        );
     };
 
     if (isLoading || !brand || !campaign) {
@@ -534,6 +596,12 @@ export default function SendCampaign() {
                     <div className="sc-alert sc-alert-error">
                         <AlertCircle size={16} />
                         <span>{error}</span>
+                        <button
+                            onClick={() => setError('')}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto' }}
+                        >
+                            <X size={16} />
+                        </button>
                     </div>
                 )}
 
@@ -659,7 +727,7 @@ export default function SendCampaign() {
                         <div className="sc-card sc-card-compact">
                             <div className="sc-card-header">
                                 <Users size={16} />
-                                <h2>Recipients</h2>
+                                <h2>Contact Lists</h2>
                             </div>
                             <div className="sc-card-content">
                                 {isLoadingLists ? (
@@ -703,22 +771,147 @@ export default function SendCampaign() {
                                                         </label>
                                                     ))}
                                                 </div>
-
-                                                {selectedLists.length > 0 && (
-                                                    <div className="sc-summary">
-                                                        <Users size={14} />
-                                                        <span>
-                                                            <strong>{totalContacts}</strong> active contacts in {selectedLists.length} list
-                                                            {selectedLists.length !== 1 ? 's' : ''}
-                                                        </span>
-                                                    </div>
-                                                )}
                                             </>
                                         )}
                                     </>
                                 )}
                             </div>
                         </div>
+
+                        {/* NEW: Segments Card */}
+                        <div className="sc-card sc-card-compact">
+                            <div className="sc-card-header">
+                                <Filter size={16} />
+                                <h2>Segments</h2>
+                                <span
+                                    style={{
+                                        fontSize: '0.75rem',
+                                        color: '#666',
+                                        marginLeft: '0.5rem',
+                                        fontWeight: 'normal',
+                                    }}
+                                >
+                                    (Optional)
+                                </span>
+                            </div>
+                            <div className="sc-card-content">
+                                {isLoadingSegments ? (
+                                    <div className="sc-loading">
+                                        <div className="sc-spinner"></div>
+                                        <p>Loading segments...</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {segments.length === 0 ? (
+                                            <div
+                                                className="sc-empty"
+                                                style={{ padding: '1.5rem', textAlign: 'center' }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        width: '3rem',
+                                                        height: '3rem',
+                                                        borderRadius: '0.75rem',
+                                                        background: 'linear-gradient(145deg, #f5f5f5 0%, #e8e8e8 100%)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        margin: '0 auto 1rem',
+                                                        color: '#666',
+                                                    }}
+                                                >
+                                                    <Tag size={20} />
+                                                </div>
+                                                <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', color: '#666' }}>No segments created yet</p>
+                                                <p style={{ margin: '0 0 1rem 0', fontSize: '0.75rem', color: '#999' }}>Segments allow you to target specific groups based on tags, custom fields, or other criteria.</p>
+                                                <Link
+                                                    href={`/brands/${id}/segments`}
+                                                    className="button button--secondary button--small"
+                                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
+                                                >
+                                                    <Plus size={14} />
+                                                    Create Segment
+                                                </Link>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="sc-lists">
+                                                    {segments.map((segment) => (
+                                                        <label
+                                                            key={segment._id}
+                                                            className={`sc-list-item ${selectedSegments.includes(segment._id) ? 'sc-selected' : ''}`}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedSegments.includes(segment._id)}
+                                                                onChange={() => handleToggleSegment(segment._id)}
+                                                                className="form-checkbox"
+                                                            />
+                                                            <div className="sc-list-info">
+                                                                <span className="sc-list-name">
+                                                                    {segment.name}
+                                                                    {getSegmentTypeBadge(segment.type)}
+                                                                </span>
+                                                                <span className="sc-list-count">~{segment.cachedCount || 0} contacts</span>
+                                                            </div>
+                                                        </label>
+                                                    ))}
+                                                </div>
+
+                                                <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #f0f0f0' }}>
+                                                    <Link
+                                                        href={`/brands/${id}/segments`}
+                                                        style={{
+                                                            fontSize: '0.75rem',
+                                                            color: '#666',
+                                                            textDecoration: 'none',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.25rem',
+                                                        }}
+                                                    >
+                                                        <Plus size={12} />
+                                                        Manage Segments
+                                                    </Link>
+                                                </div>
+                                            </>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Total Recipients Summary */}
+                        {(selectedLists.length > 0 || selectedSegments.length > 0) && (
+                            <div
+                                className="sc-summary"
+                                style={{
+                                    padding: '1rem',
+                                    background: '#f8fafc',
+                                    borderRadius: '0.5rem',
+                                    marginBottom: '1rem',
+                                    border: '1px solid #e2e8f0',
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <Users size={16} />
+                                    <strong>{formatNumber(totalContacts)} total contacts</strong>
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#666' }}>
+                                    {selectedLists.length > 0 && (
+                                        <span>
+                                            {selectedLists.length} list{selectedLists.length !== 1 ? 's' : ''}
+                                        </span>
+                                    )}
+                                    {selectedLists.length > 0 && selectedSegments.length > 0 && <span> + </span>}
+                                    {selectedSegments.length > 0 && (
+                                        <span>
+                                            {selectedSegments.length} segment{selectedSegments.length !== 1 ? 's' : ''}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Send Options Card */}
                         <div className="sc-card sc-card-compact">
@@ -958,7 +1151,7 @@ export default function SendCampaign() {
                             <button
                                 className="sc-btn sc-btn-send"
                                 onClick={handleSendButtonClick}
-                                disabled={isSending || selectedLists.length === 0 || totalContacts === 0 || !isBrandReadyToSend()}
+                                disabled={isSending || (selectedLists.length === 0 && selectedSegments.length === 0) || totalContacts === 0 || !isBrandReadyToSend()}
                             >
                                 {isSending ? (
                                     <>
@@ -1017,6 +1210,22 @@ export default function SendCampaign() {
                                         <span className="sc-summary-label">Subject:</span>
                                         <span className="sc-summary-value">{campaign.subject}</span>
                                     </div>
+
+                                    {/* Show selected lists */}
+                                    {selectedLists.length > 0 && (
+                                        <div className="sc-summary-item">
+                                            <span className="sc-summary-label">Contact Lists:</span>
+                                            <span className="sc-summary-value">{selectedLists.map((listId) => contactLists.find((l) => l._id === listId)?.name).join(', ')}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Show selected segments */}
+                                    {selectedSegments.length > 0 && (
+                                        <div className="sc-summary-item">
+                                            <span className="sc-summary-label">Segments:</span>
+                                            <span className="sc-summary-value">{selectedSegments.map((segId) => segments.find((s) => s._id === segId)?.name).join(', ')}</span>
+                                        </div>
+                                    )}
 
                                     {scheduleType === 'schedule' && (
                                         <div className="sc-summary-item">

@@ -1,3 +1,4 @@
+// src/models/Contact.js - Updated with tags
 import mongoose from 'mongoose';
 
 const ContactSchema = new mongoose.Schema(
@@ -39,13 +40,19 @@ const ContactSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.Mixed,
             default: {},
         },
-        // New status field to replace isUnsubscribed
+        // NEW: Tags for segmentation
+        tags: [
+            {
+                type: String,
+                trim: true,
+                lowercase: true,
+            },
+        ],
         status: {
             type: String,
             enum: ['active', 'unsubscribed', 'bounced', 'complained'],
             default: 'active',
         },
-        // Keep these fields for historical reference
         isUnsubscribed: {
             type: Boolean,
             default: false,
@@ -63,7 +70,6 @@ const ContactSchema = new mongoose.Schema(
             type: String,
             default: null,
         },
-        // Add these fields for bounce tracking
         bouncedAt: {
             type: Date,
             default: null,
@@ -76,7 +82,6 @@ const ContactSchema = new mongoose.Schema(
             type: String,
             default: null,
         },
-        // For complaints
         complainedAt: {
             type: Date,
             default: null,
@@ -99,16 +104,17 @@ const ContactSchema = new mongoose.Schema(
     }
 );
 
-// Create a compound unique index on email and listId to prevent duplicates
+// Indexes
 ContactSchema.index({ email: 1, listId: 1 }, { unique: true });
+ContactSchema.index({ tags: 1 }); // NEW: Index for tags
+ContactSchema.index({ brandId: 1, tags: 1 }); // NEW: Compound index for brand + tags
+ContactSchema.index({ brandId: 1, status: 1 });
 
-// Update the 'updatedAt' field on save
 ContactSchema.pre('save', function (next) {
     this.updatedAt = Date.now();
     next();
 });
 
-// For backward compatibility - ensure isUnsubscribed stays in sync with status
 ContactSchema.pre('save', function (next) {
     if (this.status === 'unsubscribed' && !this.isUnsubscribed) {
         this.isUnsubscribed = true;

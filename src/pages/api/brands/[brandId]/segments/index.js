@@ -1,0 +1,179 @@
+// src/pages/api/brands/[brandId]/segments/index.js
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import connectToDatabase from '@/lib/mongodb';
+import { getBrandById } from '@/services/brandService';
+import Segment from '@/models/Segment';
+import Contact from '@/models/Contact';
+import mongoose from 'mongoose';
+
+// Build segment query (same as in the campaign API)
+function buildSegmentQuery(segment, brandId) {
+    const baseQuery = {
+        brandId: new mongoose.Types.ObjectId(brandId),
+        status: 'active',
+    };
+
+    if (segment.contactListIds && segment.contactListIds.length > 0) {
+        baseQuery.listId = {
+            $in: segment.contactListIds.map((id) => new mongoose.Types.ObjectId(id)),
+        };
+    }
+
+    if (segment.type === 'static') {
+        return {
+            ...baseQuery,
+            _id: { $in: segment.staticContactIds || [] },
+        };
+    }
+
+    if (!segment.conditions || !segment.conditions.rules || segment.conditions.rules.length === 0) {
+        return baseQuery;
+    }
+
+    const conditions = segment.conditions.rules.map((rule) => buildRuleQuery(rule)).filter((c) => Object.keys(c).length > 0);
+
+    if (conditions.length === 0) {
+        return baseQuery;
+    }
+
+    const matchOperator = segment.conditions.matchType === 'any' ? '$or' : '$and';
+
+    return {
+        ...baseQuery,
+        [matchOperator]: conditions,
+    };
+}
+
+function buildRuleQuery(rule) {
+    const { field, operator, value } = rule;
+
+    switch (operator) {
+        case 'equals':
+            return { [field]: value };
+        case 'not_equals':
+            return { [field]: { $ne: value } };
+        case 'contains':
+            return { [field]: { $regex: value, $options: 'i' } };
+        case 'not_contains':
+            return { [field]: { $not: { $regex: value, $options: 'i' } } };
+        case 'has_tag':
+            return { tags: value };
+        case 'missing_tag':
+            return { tags: { $ne: value } };
+        case 'has_any_tag':
+            return { tags: { $in: Array.isArray(value) ? value : [value] } };
+        case 'has_all_tags':
+            return { tags: { $all: Array.isArray(value) ? value : [value] } };
+        case 'greater_than':
+            return { [field]: { $gt: value } };
+        case 'less_than':
+            return { [field]: { $lt: value } };
+        case 'before':
+            return { [field]: { $lt: new Date(value) } };
+        case 'after':
+            return { [field]: { $gt: new Date(value) } };
+        case 'is_empty':
+            return {
+                $or: [{ [field]: { $exists: false } }, { [field]: null }, { [field]: '' }, { [field]: [] }],
+            };
+        case 'is_not_empty':
+            return { [field]: { $exists: true, $ne: null, $ne: '' } };
+        default:
+            return {};
+    }
+}
+
+async function updateSegmentCount(segment) {
+    const query = buildSegmentQuery(segment, segment.brandId);
+    const count = await Contact.countDocuments(query);
+
+    await Segment.updateOne(
+        { _id: segment._id },
+        {
+            cachedCount: count,
+            lastCountUpdated: new Date(),
+        }
+    );
+
+    return count;
+}
+
+export default async function handler(req, res) {
+    try {
+        await connectToDatabase();
+
+        const session = await getServerSession(req, res, authOptions);
+        if (!session || !session.user) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const userId = session.user.id;
+        const { brandId } = req.query;
+
+        const brand = await getBrandById(brandId);
+        if (!brand || brand.userId.toString() !== userId) {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+
+        // GET: List all segments
+        if (req.method === 'GET') {
+            const segments = await Segment.find({
+                brandId: new mongoose.Types.ObjectId(brandId),
+                userId: new mongoose.Types.ObjectId(userId),
+                status: 'active',
+            }).sort({ createdAt: -1 });
+
+            // Optionally refresh counts
+            const refreshCounts = req.query.refreshCounts === 'true';
+            if (refreshCounts) {
+                for (const segment of segments) {
+                    await updateSegmentCount(segment);
+                }
+                // Re-fetch to get updated counts
+                const updatedSegments = await Segment.find({
+                    brandId: new mongoose.Types.ObjectId(brandId),
+                    userId: new mongoose.Types.ObjectId(userId),
+                    status: 'active',
+                }).sort({ createdAt: -1 });
+
+                return res.status(200).json(updatedSegments);
+            }
+
+            return res.status(200).json(segments);
+        }
+
+        // POST: Create a new segment
+        if (req.method === 'POST') {
+            const { name, description, type, conditions, contactListIds } = req.body;
+
+            if (!name) {
+                return res.status(400).json({ message: 'Segment name is required' });
+            }
+
+            const segment = new Segment({
+                name,
+                description,
+                brandId: new mongoose.Types.ObjectId(brandId),
+                userId: new mongoose.Types.ObjectId(userId),
+                type: type || 'dynamic',
+                conditions: conditions || { matchType: 'all', rules: [] },
+                contactListIds: contactListIds || [],
+            });
+
+            await segment.save();
+
+            // Calculate initial count
+            await updateSegmentCount(segment);
+
+            const updatedSegment = await Segment.findById(segment._id);
+
+            return res.status(201).json(updatedSegment);
+        }
+
+        return res.status(405).json({ message: 'Method not allowed' });
+    } catch (error) {
+        console.error('Error handling segments:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+}

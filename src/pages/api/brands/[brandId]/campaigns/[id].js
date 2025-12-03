@@ -1,10 +1,234 @@
+// src/pages/api/brands/[brandId]/campaigns/[id].js
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getCampaignById, updateCampaign, deleteCampaign } from '@/services/campaignService';
 import { getBrandById } from '@/services/brandService';
-import mongoose from 'mongoose'; // Make sure this import is present
+import mongoose from 'mongoose';
 import { emailCampaignQueue, schedulerQueue } from '@/lib/queue';
+import Segment from '@/models/Segment';
+import Contact from '@/models/Contact';
+
+// Build MongoDB query from segment conditions
+function buildSegmentQuery(segment, brandId, additionalFilters = {}) {
+    const baseQuery = {
+        brandId: new mongoose.Types.ObjectId(brandId),
+        status: 'active',
+        ...additionalFilters,
+    };
+
+    // If segment has specific contact lists, add that filter
+    if (segment.contactListIds && segment.contactListIds.length > 0) {
+        baseQuery.listId = {
+            $in: segment.contactListIds.map((id) => new mongoose.Types.ObjectId(id)),
+        };
+    }
+
+    // If static segment, just return contacts in the list
+    if (segment.type === 'static') {
+        return {
+            ...baseQuery,
+            _id: { $in: segment.staticContactIds || [] },
+        };
+    }
+
+    // Build dynamic conditions
+    if (!segment.conditions || !segment.conditions.rules || segment.conditions.rules.length === 0) {
+        return baseQuery;
+    }
+
+    const conditions = segment.conditions.rules.map((rule) => buildRuleQuery(rule)).filter((c) => Object.keys(c).length > 0);
+
+    if (conditions.length === 0) {
+        return baseQuery;
+    }
+
+    const matchOperator = segment.conditions.matchType === 'any' ? '$or' : '$and';
+
+    return {
+        ...baseQuery,
+        [matchOperator]: conditions,
+    };
+}
+
+// Convert a single rule to MongoDB query
+function buildRuleQuery(rule) {
+    const { field, operator, value } = rule;
+
+    // Handle different field types
+    const fieldPath = field;
+
+    switch (operator) {
+        case 'equals':
+            return { [fieldPath]: value };
+
+        case 'not_equals':
+            return { [fieldPath]: { $ne: value } };
+
+        case 'contains':
+            return { [fieldPath]: { $regex: value, $options: 'i' } };
+
+        case 'not_contains':
+            return { [fieldPath]: { $not: { $regex: value, $options: 'i' } } };
+
+        case 'starts_with':
+            return { [fieldPath]: { $regex: `^${escapeRegex(value)}`, $options: 'i' } };
+
+        case 'ends_with':
+            return { [fieldPath]: { $regex: `${escapeRegex(value)}$`, $options: 'i' } };
+
+        case 'greater_than':
+            return { [fieldPath]: { $gt: value } };
+
+        case 'less_than':
+            return { [fieldPath]: { $lt: value } };
+
+        case 'in':
+            return { [fieldPath]: { $in: Array.isArray(value) ? value : [value] } };
+
+        case 'not_in':
+            return { [fieldPath]: { $nin: Array.isArray(value) ? value : [value] } };
+
+        case 'has_tag':
+            return { tags: value };
+
+        case 'missing_tag':
+            return { tags: { $ne: value } };
+
+        case 'has_any_tag':
+            return { tags: { $in: Array.isArray(value) ? value : [value] } };
+
+        case 'has_all_tags':
+            return { tags: { $all: Array.isArray(value) ? value : [value] } };
+
+        case 'is_empty':
+            return {
+                $or: [{ [fieldPath]: { $exists: false } }, { [fieldPath]: null }, { [fieldPath]: '' }, { [fieldPath]: [] }],
+            };
+
+        case 'is_not_empty':
+            return {
+                [fieldPath]: { $exists: true, $ne: null, $ne: '' },
+            };
+
+        case 'before':
+            return { [fieldPath]: { $lt: new Date(value) } };
+
+        case 'after':
+            return { [fieldPath]: { $gt: new Date(value) } };
+
+        default:
+            return {};
+    }
+}
+
+// Escape special regex characters
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Helper function to get total recipients count (supports both lists and segments)
+async function getActiveRecipientsCount(brandId, contactListIds = [], segmentIds = []) {
+    const hasLists = contactListIds && contactListIds.length > 0;
+    const hasSegments = segmentIds && segmentIds.length > 0;
+
+    if (!hasLists && !hasSegments) return 0;
+
+    // Build the combined query
+    const orConditions = [];
+
+    // Add contact list conditions
+    if (hasLists) {
+        orConditions.push({
+            listId: { $in: contactListIds.map((id) => new mongoose.Types.ObjectId(id)) },
+            brandId: new mongoose.Types.ObjectId(brandId),
+            status: 'active',
+        });
+    }
+
+    // Add segment conditions
+    if (hasSegments) {
+        const segments = await Segment.find({
+            _id: { $in: segmentIds.map((id) => new mongoose.Types.ObjectId(id)) },
+            brandId: new mongoose.Types.ObjectId(brandId),
+        });
+
+        for (const segment of segments) {
+            const segmentQuery = buildSegmentQuery(segment, brandId);
+            orConditions.push(segmentQuery);
+        }
+    }
+
+    // If we have multiple conditions, use $or; otherwise use the single condition
+    let finalQuery;
+    if (orConditions.length === 1) {
+        finalQuery = orConditions[0];
+    } else if (orConditions.length > 1) {
+        finalQuery = { $or: orConditions };
+    } else {
+        return 0;
+    }
+
+    // Use aggregation to get unique contacts (avoid counting duplicates)
+    const result = await Contact.aggregate([
+        { $match: finalQuery },
+        { $group: { _id: '$email' } }, // Group by email to get unique contacts
+        { $count: 'total' },
+    ]);
+
+    return result.length > 0 ? result[0].total : 0;
+}
+
+// Build the contact query for sending (used by worker)
+async function buildContactQuery(brandId, contactListIds = [], segmentIds = []) {
+    const hasLists = contactListIds && contactListIds.length > 0;
+    const hasSegments = segmentIds && segmentIds.length > 0;
+
+    if (!hasLists && !hasSegments) {
+        return null;
+    }
+
+    const orConditions = [];
+
+    // Add contact list conditions
+    if (hasLists) {
+        orConditions.push({
+            listId: { $in: contactListIds.map((id) => new mongoose.Types.ObjectId(id)) },
+        });
+    }
+
+    // Add segment conditions
+    if (hasSegments) {
+        const segments = await Segment.find({
+            _id: { $in: segmentIds.map((id) => new mongoose.Types.ObjectId(id)) },
+            brandId: new mongoose.Types.ObjectId(brandId),
+        });
+
+        for (const segment of segments) {
+            // Remove the brandId from segment query since we'll add it at the top level
+            const segmentQuery = buildSegmentQuery(segment, brandId);
+            // Extract only the segment-specific conditions
+            const { brandId: _, status: __, ...segmentConditions } = segmentQuery;
+            if (Object.keys(segmentConditions).length > 0) {
+                orConditions.push(segmentConditions);
+            }
+        }
+    }
+
+    // Build final query
+    const baseQuery = {
+        brandId: new mongoose.Types.ObjectId(brandId),
+        status: 'active',
+    };
+
+    if (orConditions.length === 1) {
+        return { ...baseQuery, ...orConditions[0] };
+    } else if (orConditions.length > 1) {
+        return { ...baseQuery, $or: orConditions };
+    }
+
+    return baseQuery;
+}
 
 export default async function handler(req, res) {
     try {
@@ -24,6 +248,7 @@ export default async function handler(req, res) {
         if (!brandId || !id) {
             return res.status(400).json({ message: 'Missing required parameters' });
         }
+
         // Check if the brand belongs to the user
         const brand = await getBrandById(brandId);
         if (!brand) {
@@ -57,7 +282,20 @@ export default async function handler(req, res) {
         // PUT request - update a campaign
         if (req.method === 'PUT') {
             try {
-                const { name, subject, content, fromName, fromEmail, replyTo, status, scheduleType, scheduledAt, contactListIds, warmupConfig } = req.body;
+                const {
+                    name,
+                    subject,
+                    content,
+                    fromName,
+                    fromEmail,
+                    replyTo,
+                    status,
+                    scheduleType,
+                    scheduledAt,
+                    contactListIds,
+                    segmentIds, // NEW: Support for segments
+                    warmupConfig,
+                } = req.body;
 
                 const campaign = await getCampaignById(id, userId);
 
@@ -78,11 +316,22 @@ export default async function handler(req, res) {
                 if (fromEmail) updateData.fromEmail = fromEmail;
                 if (replyTo) updateData.replyTo = replyTo;
                 if (contactListIds) updateData.contactListIds = contactListIds;
+                if (segmentIds !== undefined) updateData.segmentIds = segmentIds; // NEW
+
                 // Sending or scheduling functionality
                 if (status === 'sending' || status === 'scheduled' || scheduleType === 'warmup') {
                     // Check if SES details exist in the brand
                     if (brand.status !== 'active') {
                         return res.status(400).json({ message: 'AWS SES credentials not configured for this brand' });
+                    }
+
+                    // Get the effective list and segment IDs
+                    const effectiveListIds = contactListIds || campaign.contactListIds || [];
+                    const effectiveSegmentIds = segmentIds !== undefined ? segmentIds : campaign.segmentIds || [];
+
+                    // Validate that we have at least one list or segment
+                    if (effectiveListIds.length === 0 && effectiveSegmentIds.length === 0) {
+                        return res.status(400).json({ message: 'Please select at least one contact list or segment' });
                     }
 
                     // Handle scheduled campaigns
@@ -91,6 +340,7 @@ export default async function handler(req, res) {
                         updateData.status = 'scheduled';
                         updateData.scheduleType = scheduleType;
                         updateData.scheduledAt = new Date(scheduledAt);
+                        updateData.segmentIds = effectiveSegmentIds;
 
                         // Create a delay until the scheduled time
                         const now = new Date();
@@ -104,7 +354,8 @@ export default async function handler(req, res) {
                                 campaignId: campaign._id.toString(),
                                 brandId: brandId.toString(),
                                 userId: userId,
-                                contactListIds: contactListIds || campaign.contactListIds,
+                                contactListIds: effectiveListIds.map((id) => id.toString()),
+                                segmentIds: effectiveSegmentIds.map((id) => id.toString()), // NEW
                                 fromName: fromName || campaign.fromName || brand.fromName,
                                 fromEmail: fromEmail || campaign.fromEmail || brand.fromEmail,
                                 replyTo: replyTo || campaign.replyTo || campaign.fromEmail,
@@ -125,9 +376,14 @@ export default async function handler(req, res) {
                         // Set the campaign status to warmup
                         updateData.status = 'warmup';
                         updateData.scheduleType = 'warmup';
+                        updateData.segmentIds = effectiveSegmentIds;
 
                         // Calculate total stages based on recipient count and configs
-                        const totalRecipients = await getActiveRecipientsCount(brandId, contactListIds || campaign.contactListIds);
+                        const totalRecipients = await getActiveRecipientsCount(brandId, effectiveListIds, effectiveSegmentIds);
+
+                        if (totalRecipients === 0) {
+                            return res.status(400).json({ message: 'No active contacts found in selected lists/segments' });
+                        }
 
                         // Prepare warmup configuration
                         const initialBatchSize = warmupConfig.initialBatchSize || 50;
@@ -176,7 +432,8 @@ export default async function handler(req, res) {
                                 campaignId: campaign._id.toString(),
                                 brandId: brandId.toString(),
                                 userId: userId,
-                                contactListIds: (contactListIds || campaign.contactListIds).map((id) => id.toString()),
+                                contactListIds: effectiveListIds.map((id) => id.toString()),
+                                segmentIds: effectiveSegmentIds.map((id) => id.toString()), // NEW
                                 fromName: fromName || campaign.fromName || brand.fromName,
                                 fromEmail: fromEmail || campaign.fromEmail || brand.fromEmail,
                                 replyTo: replyTo || campaign.replyTo || campaign.fromEmail,
@@ -185,7 +442,7 @@ export default async function handler(req, res) {
                                 warmupStage: 0,
                             },
                             {
-                                delay: warmupStartDate.getTime() - Date.now(), // Delay until start date
+                                delay: warmupStartDate.getTime() - Date.now(),
                                 jobId: `warmup-campaign-${campaign._id}-batch-0-${Date.now()}`,
                                 attempts: 3,
                                 backoff: {
@@ -206,12 +463,20 @@ export default async function handler(req, res) {
                             processed: 0,
                         };
                     }
-
                     // Handle immediate sending
                     else if (status === 'sending') {
+                        // Calculate total recipients
+                        const totalRecipients = await getActiveRecipientsCount(brandId, effectiveListIds, effectiveSegmentIds);
+
+                        if (totalRecipients === 0) {
+                            return res.status(400).json({ message: 'No active contacts found in selected lists/segments' });
+                        }
+
                         // Update status to queued
                         updateData.status = 'queued';
                         updateData.sentAt = new Date();
+                        updateData.segmentIds = effectiveSegmentIds;
+                        updateData.totalRecipients = totalRecipients;
 
                         // Add to processing queue with comprehensive data
                         await emailCampaignQueue.add(
@@ -220,7 +485,8 @@ export default async function handler(req, res) {
                                 campaignId: campaign._id.toString(),
                                 brandId: brandId.toString(),
                                 userId: userId,
-                                contactListIds: (contactListIds || campaign.contactListIds).map((id) => id.toString()),
+                                contactListIds: effectiveListIds.map((id) => id.toString()),
+                                segmentIds: effectiveSegmentIds.map((id) => id.toString()), // NEW
                                 fromName: fromName || campaign.fromName || brand.fromName,
                                 fromEmail: fromEmail || campaign.fromEmail || brand.fromEmail,
                                 replyTo: replyTo || campaign.replyTo || campaign.fromEmail,
@@ -236,10 +502,11 @@ export default async function handler(req, res) {
                                 removeOnComplete: false,
                             }
                         );
-                        updateData.totalRecipients = await getActiveRecipientsCount(brandId, contactListIds || campaign.contactListIds);
+
                         // Update stats with recipient count
                         updateData.stats = {
                             ...campaign.stats,
+                            recipients: totalRecipients,
                         };
                     }
                 } else if (status) {
@@ -258,22 +525,6 @@ export default async function handler(req, res) {
                 console.error('Error updating campaign:', error);
                 return res.status(500).json({ message: 'Error updating campaign' });
             }
-        }
-
-        // Helper function to get total recipients count
-        async function getActiveRecipientsCount(brandId, contactListIds) {
-            if (!contactListIds || contactListIds.length === 0) return 0;
-
-            const Contact = mongoose.models.Contact;
-
-            // Count only active contacts across all selected lists
-            const activeCount = await Contact.countDocuments({
-                listId: { $in: contactListIds.map((id) => new mongoose.Types.ObjectId(id)) },
-                brandId: new mongoose.Types.ObjectId(brandId),
-                status: 'active', // Only count active contacts
-            });
-
-            return activeCount;
         }
 
         // DELETE request - delete a campaign

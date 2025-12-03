@@ -50,6 +50,12 @@ const CampaignSchema = new mongoose.Schema({
             ref: 'ContactList',
         },
     ],
+    segmentIds: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Segment',
+        },
+    ],
     scheduleType: {
         type: String,
         enum: ['send_now', 'schedule', 'warmup'],

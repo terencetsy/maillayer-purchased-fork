@@ -1,6 +1,7 @@
 // src/models/Segment.js
 import mongoose from 'mongoose';
 
+// src/models/Segment.js - Update the SegmentRuleSchema
 const SegmentRuleSchema = new mongoose.Schema({
     field: {
         type: String,
@@ -13,6 +14,11 @@ const SegmentRuleSchema = new mongoose.Schema({
     },
     value: {
         type: mongoose.Schema.Types.Mixed,
+    },
+    // NEW: For custom field rules
+    customFieldName: {
+        type: String,
+        trim: true,
     },
 });
 

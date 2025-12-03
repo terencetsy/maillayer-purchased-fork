@@ -825,7 +825,7 @@ export default function SendCampaign() {
                                                 <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', color: '#666' }}>No segments created yet</p>
                                                 <p style={{ margin: '0 0 1rem 0', fontSize: '0.75rem', color: '#999' }}>Segments allow you to target specific groups based on tags, custom fields, or other criteria.</p>
                                                 <Link
-                                                    href={`/brands/${id}/segments`}
+                                                    href={`/brands/${id}/contacts`}
                                                     className="button button--secondary button--small"
                                                     style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
                                                 >
@@ -860,7 +860,7 @@ export default function SendCampaign() {
 
                                                 <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #f0f0f0' }}>
                                                     <Link
-                                                        href={`/brands/${id}/segments`}
+                                                        href={`/brands/${id}/contacts`}
                                                         style={{
                                                             fontSize: '0.75rem',
                                                             color: '#666',

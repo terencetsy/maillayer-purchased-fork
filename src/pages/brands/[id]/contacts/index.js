@@ -557,7 +557,14 @@ export default function BrandContacts() {
                                                                 <td className="campaign-col">
                                                                     <div className="campaign-info">
                                                                         <div>
-                                                                            <div style={{ fontWeight: '500' }}>{list.name}</div>
+                                                                            <div style={{ fontWeight: '500' }}>
+                                                                                <Link
+                                                                                    style={{ color: '#000' }}
+                                                                                    href={`/brands/${id}/contacts/${list._id}`}
+                                                                                >
+                                                                                    {list.name}
+                                                                                </Link>
+                                                                            </div>
                                                                             {list.description && <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '2px' }}>{list.description}</div>}
                                                                         </div>
                                                                     </div>

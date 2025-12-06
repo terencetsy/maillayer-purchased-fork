@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
 import { Settings, ArrowLeft, Save, Globe, Mail, Shield, Trash, AlertCircle, CheckCircle, Loader, Palette, Sliders } from 'lucide-react';
+import { AWS_SES_REGIONS } from '@/constants/awsRegions';
 
 export default function BrandSettings() {
     const { data: session, status } = useSession();
@@ -399,12 +400,14 @@ export default function BrandSettings() {
                                 disabled={isSaving}
                             >
                                 <option value="">Select region</option>
-                                <option value="us-east-1">US East (N. Virginia)</option>
-                                <option value="us-west-2">US West (Oregon)</option>
-                                <option value="eu-west-1">EU (Ireland)</option>
-                                <option value="eu-central-1">EU (Frankfurt)</option>
-                                <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
-                                <option value="ap-northeast-1">Asia Pacific (Tokyo)</option>
+                                {AWS_SES_REGIONS.map((region) => (
+                                    <option
+                                        key={region.value}
+                                        value={region.value}
+                                    >
+                                        {region.label} ({region.value})
+                                    </option>
+                                ))}
                             </select>
                         </div>
 

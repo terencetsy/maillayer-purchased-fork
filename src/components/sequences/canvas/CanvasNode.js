@@ -127,7 +127,7 @@ export default function CanvasNode({ type, data, index, isSelected, onClick, onD
 
                     .node-title {
                         font-size: 0.875rem;
-                        font-weight: 500;
+                        font-weight: 400;
                         color: #1a1a1a;
                         overflow: hidden;
                         text-overflow: ellipsis;
@@ -272,7 +272,7 @@ export default function CanvasNode({ type, data, index, isSelected, onClick, onD
 
                     .node-title {
                         font-size: 0.875rem;
-                        font-weight: 500;
+                        font-weight: 400;
                         color: #1a1a1a;
                         overflow: hidden;
                         text-overflow: ellipsis;

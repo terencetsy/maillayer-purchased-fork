@@ -39,8 +39,8 @@ export const CustomButton = Node.create({
 
     renderHTML({ HTMLAttributes }) {
         const buttonStyles = {
-            primary: 'display: inline-block; padding: 8px 16px; margin: 8px 0; border-radius: 4px; text-decoration: none; font-weight: 500; text-align: center; transition: all 0.2s ease; background-color: #3b82f6; color: white;',
-            secondary: 'display: inline-block; padding: 8px 16px; margin: 8px 0; border-radius: 4px; text-decoration: none; font-weight: 500; text-align: center; transition: all 0.2s ease; background-color: #6b7280; color: white;',
+            primary: 'display: inline-block; padding: 8px 16px; margin: 8px 0; border-radius: 4px; text-decoration: none; font-weight: 400; text-align: center; transition: all 0.2s ease; background-color: #3b82f6; color: white;',
+            secondary: 'display: inline-block; padding: 8px 16px; margin: 8px 0; border-radius: 4px; text-decoration: none; font-weight: 400; text-align: center; transition: all 0.2s ease; background-color: #6b7280; color: white;',
             // Add more button styles as needed
         };
 

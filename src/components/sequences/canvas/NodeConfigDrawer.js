@@ -110,7 +110,7 @@ export default function NodeConfigDrawer({ isOpen, nodeId, sequence, onUpdate, o
                 .drawer-header h2 {
                     margin: 0;
                     font-size: 1.25rem;
-                    font-weight: 500;
+                    font-weight: 400;
                 }
 
                 .drawer-close {
@@ -303,7 +303,7 @@ function TriggerConfig({ sequence, onUpdate, brandId }) {
 
                 .form-label {
                     font-size: 0.875rem;
-                    font-weight: 500;
+                    font-weight: 400;
                     color: #1a1a1a;
                 }
 
@@ -344,7 +344,7 @@ function TriggerConfig({ sequence, onUpdate, brandId }) {
 
                 .trigger-option span {
                     font-size: 0.875rem;
-                    font-weight: 500;
+                    font-weight: 400;
                 }
 
                 .check-icon {
@@ -394,7 +394,7 @@ function TriggerConfig({ sequence, onUpdate, brandId }) {
 
                 .list-option-name {
                     font-size: 0.875rem;
-                    font-weight: 500;
+                    font-weight: 400;
                     color: #1a1a1a;
                 }
 
@@ -554,7 +554,7 @@ function EmailConfig({ sequence, email, onUpdate }) {
                     gap: 0.5rem;
                     margin-bottom: 0.75rem;
                     font-size: 0.875rem;
-                    font-weight: 500;
+                    font-weight: 400;
                     color: #666;
                 }
 
@@ -578,7 +578,7 @@ function EmailConfig({ sequence, email, onUpdate }) {
 
                 .form-label {
                     font-size: 0.875rem;
-                    font-weight: 500;
+                    font-weight: 400;
                     color: #1a1a1a;
                 }
 

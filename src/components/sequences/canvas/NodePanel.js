@@ -85,7 +85,7 @@ export default function NodePanel({ isOpen, onClose, onAddNode }) {
                 .panel-header h3 {
                     margin: 0;
                     font-size: 1rem;
-                    font-weight: 500;
+                    font-weight: 400;
                 }
 
                 .close-btn {
@@ -147,7 +147,7 @@ export default function NodePanel({ isOpen, onClose, onAddNode }) {
 
                 .node-type-label {
                     font-size: 0.875rem;
-                    font-weight: 500;
+                    font-weight: 400;
                     color: #1a1a1a;
                     margin-bottom: 4px;
                 }

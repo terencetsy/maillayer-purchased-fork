@@ -1,101 +1,80 @@
 // src/components/sequences/canvas/CanvasNode.js
-import { Alert02, CheckmarkCircle02, Delete02, LeftToRightListTriangle, Mail02, Zap } from '@/lib/icons';
 import { useRef } from 'react';
+import { Users, Mail, Clock, Trash2, AlertCircle, Check } from 'lucide-react';
 
 export default function CanvasNode({ type, data, index, isSelected, onClick, onDelete, onDragStart, position, isDragging }) {
     const nodeRef = useRef(null);
 
     const handleMouseDown = (e) => {
-        if (e.button !== 0) return; // Only left click
+        if (e.button !== 0) return;
         if (onDragStart && nodeRef.current) {
             onDragStart(e, nodeRef.current);
         }
     };
 
     if (type === 'trigger') {
-        const getTriggerIcon = () => {
-            switch (data.triggerType) {
-                case 'contact_list':
-                    return <LeftToRightListTriangle size={20} />;
-                case 'integration':
-                    return <Zap size={20} />;
-                default:
-                    return <LeftToRightListTriangle size={20} />;
-            }
-        };
-
-        const getTriggerLabel = () => {
-            if (data.triggerType === 'contact_list' && data.triggerConfig?.contactListIds?.length > 0) {
-                const count = data.triggerConfig.contactListIds.length;
-                return `${count} List${count > 1 ? 's' : ''} Selected`;
-            }
-            if (data.triggerType === 'integration') {
-                return data.triggerConfig?.integrationEvent || 'Integration Event';
-            }
-            return 'Click to Configure';
-        };
-
-        const isConfigured = data.triggerType === 'contact_list' ? data.triggerConfig?.contactListIds?.length > 0 : false;
+        const isConfigured = data.triggerConfig?.contactListIds?.length > 0;
+        const listCount = data.triggerConfig?.contactListIds?.length || 0;
 
         return (
             <div
                 ref={nodeRef}
-                className={`canvas-node trigger-node ${isSelected ? 'selected' : ''} ${!isConfigured ? 'warning' : ''} ${isDragging ? 'dragging' : ''}`}
+                className={`node ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''}`}
                 onClick={onClick}
                 onMouseDown={handleMouseDown}
                 style={{
                     position: 'absolute',
                     left: `${position.x}px`,
                     top: `${position.y}px`,
-                    cursor: isDragging ? 'grabbing' : 'grab',
                 }}
             >
-                <div className="node-icon trigger-icon">{getTriggerIcon()}</div>
-                <div className="node-content">
-                    <div className="node-label">Trigger</div>
-                    <div className="node-title">{getTriggerLabel()}</div>
+                <div className="node-icon trigger">
+                    <Users size={16} />
                 </div>
-                {!isConfigured && (
-                    <div className="node-badge warning">
-                        <Alert02 size={12} />
-                    </div>
-                )}
+                <div className="node-body">
+                    <span className="node-label">Trigger</span>
+                    <span className="node-title">
+                        {isConfigured ? `${listCount} Contact List${listCount > 1 ? 's' : ''}` : 'Select lists'}
+                    </span>
+                </div>
+                <div className={`node-status ${isConfigured ? 'success' : 'warning'}`}>
+                    {isConfigured ? <Check size={12} /> : <AlertCircle size={12} />}
+                </div>
+
                 <style jsx>{`
-                    .canvas-node {
-                        background: #fff;
-                        border: 1px solid #8b8b8b;
+                    .node {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        padding: 10px 12px;
+                        background: #111;
+                        border: 1px solid rgba(255,255,255,0.08);
                         border-radius: 10px;
-                        box-shadow: rgb(220, 224, 224) 0px 1px 3px 0px;
-                        padding: 1rem;
-                        width: 300px;
-                        transition: all 0.2s;
+                        width: 260px;
+                        cursor: grab;
+                        transition: all 0.15s;
                         user-select: none;
                     }
 
-                    .canvas-node:hover {
-                        border-color: #ccc;
-                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+                    .node:hover {
+                        border-color: rgba(255,255,255,0.15);
+                        background: #141414;
                     }
 
-                    .canvas-node.selected {
-                        border-color: #1a1a1a;
-                        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+                    .node.selected {
+                        border-color: rgba(255,255,255,0.3);
+                        background: #171717;
                     }
 
-                    .canvas-node.dragging {
-                        opacity: 0.8;
-                        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-                    }
-
-                    .trigger-node {
-                        display: flex;
-                        align-items: center;
-                        gap: 0.75rem;
+                    .node.dragging {
+                        cursor: grabbing;
+                        opacity: 0.9;
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
                     }
 
                     .node-icon {
-                        width: 40px;
-                        height: 40px;
+                        width: 32px;
+                        height: 32px;
                         border-radius: 8px;
                         display: flex;
                         align-items: center;
@@ -103,57 +82,54 @@ export default function CanvasNode({ type, data, index, isSelected, onClick, onD
                         flex-shrink: 0;
                     }
 
-                    .trigger-icon {
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        color: #fff;
+                    .node-icon.trigger {
+                        background: rgba(99, 102, 241, 0.15);
+                        color: #818cf8;
                     }
 
-                    .trigger-icon svg path {
-                        stroke: #fff !important;
-                    }
-
-                    .node-content {
+                    .node-body {
                         flex: 1;
                         min-width: 0;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 2px;
                     }
 
                     .node-label {
-                        font-size: 0.75rem;
-                        color: #999;
+                        font-size: 10px;
+                        color: #52525b;
                         text-transform: uppercase;
                         letter-spacing: 0.05em;
-                        margin-bottom: 4px;
+                        font-weight: 500;
                     }
 
                     .node-title {
-                        font-size: 0.875rem;
-                        font-weight: 400;
-                        color: #1a1a1a;
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: #fafafa;
                         overflow: hidden;
                         text-overflow: ellipsis;
                         white-space: nowrap;
                     }
 
-                    .node-icon svg path {
-                        color: #fff;
-                    }
-
-                    .node-badge {
-                        position: absolute;
-                        top: -8px;
-                        right: -8px;
-                        width: 24px;
-                        height: 24px;
+                    .node-status {
+                        width: 22px;
+                        height: 22px;
                         border-radius: 50%;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                        flex-shrink: 0;
                     }
 
-                    .node-badge.warning {
-                        background: #f57c00;
-                        color: #fff;
+                    .node-status.success {
+                        background: rgba(34, 197, 94, 0.15);
+                        color: #22c55e;
+                    }
+
+                    .node-status.warning {
+                        background: rgba(245, 158, 11, 0.15);
+                        color: #f59e0b;
                     }
                 `}</style>
             </div>
@@ -162,85 +138,85 @@ export default function CanvasNode({ type, data, index, isSelected, onClick, onD
 
     if (type === 'email') {
         const isConfigured = data.subject && data.content;
+        const delayText = `${data.delayAmount || 1} ${data.delayUnit || 'days'}`;
 
         return (
             <div
                 ref={nodeRef}
-                className={`canvas-node email-node ${isSelected ? 'selected' : ''} ${!isConfigured ? 'warning' : ''} ${isDragging ? 'dragging' : ''}`}
+                className={`node ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''}`}
                 onClick={onClick}
                 onMouseDown={handleMouseDown}
                 style={{
                     position: 'absolute',
                     left: `${position.x}px`,
                     top: `${position.y}px`,
-                    cursor: isDragging ? 'grabbing' : 'grab',
                 }}
             >
-                <div className="node-header">
-                    <div className="node-icon email-icon">
-                        <Mail02 size={20} />
-                    </div>
-                    <div className="node-content">
-                        <div className="node-label">Email {index + 1}</div>
-                        <div className="node-title">{data.subject || 'Untitled Email'}</div>
-                    </div>
-                    {isConfigured && (
-                        <div className="node-badge success">
-                            <CheckmarkCircle02 size={12} />
-                        </div>
-                    )}
+                <div className="node-icon email">
+                    <Mail size={16} />
                 </div>
+                <div className="node-body">
+                    <div className="node-header">
+                        <span className="node-label">Email {index + 1}</span>
+                        <span className="delay-badge">
+                            <Clock size={10} />
+                            {delayText}
+                        </span>
+                    </div>
+                    <span className="node-title">{data.subject || 'No subject'}</span>
+                </div>
+                <div className={`node-status ${isConfigured ? 'success' : 'warning'}`}>
+                    {isConfigured ? <Check size={12} /> : <AlertCircle size={12} />}
+                </div>
+
                 {onDelete && (
                     <button
-                        className="delete-node-btn"
+                        className="delete-btn"
                         onClick={(e) => {
                             e.stopPropagation();
                             onDelete();
                         }}
                         onMouseDown={(e) => e.stopPropagation()}
                     >
-                        <Delete02 size={14} />
+                        <Trash2 size={12} />
                     </button>
                 )}
+
                 <style jsx>{`
-                    .canvas-node {
-                        background: #fff;
-
-                        border: 1px solid #8b8b8b;
+                    .node {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        padding: 10px 12px;
+                        background: #111;
+                        border: 1px solid rgba(255,255,255,0.08);
                         border-radius: 10px;
-                        box-shadow: rgb(220, 224, 224) 0px 1px 3px 0px;
-
-                        padding: 1rem;
-                        width: 300px;
-                        transition: all 0.2s;
+                        width: 260px;
+                        cursor: grab;
+                        transition: all 0.15s;
                         position: relative;
                         user-select: none;
                     }
 
-                    .canvas-node:hover {
-                        border-color: #ccc;
-                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+                    .node:hover {
+                        border-color: rgba(255,255,255,0.15);
+                        background: #141414;
                     }
 
-                    .canvas-node.selected {
-                        border-color: #1a1a1a;
-                        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+                    .node.selected {
+                        border-color: rgba(255,255,255,0.3);
+                        background: #171717;
                     }
 
-                    .canvas-node.dragging {
-                        opacity: 0.8;
-                        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-                    }
-
-                    .node-header {
-                        display: flex;
-                        align-items: center;
-                        gap: 0.75rem;
+                    .node.dragging {
+                        cursor: grabbing;
+                        opacity: 0.9;
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
                     }
 
                     .node-icon {
-                        width: 40px;
-                        height: 40px;
+                        width: 32px;
+                        height: 32px;
                         border-radius: 8px;
                         display: flex;
                         align-items: center;
@@ -248,80 +224,98 @@ export default function CanvasNode({ type, data, index, isSelected, onClick, onD
                         flex-shrink: 0;
                     }
 
-                    .email-icon {
-                        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-                        color: #fff;
+                    .node-icon.email {
+                        background: rgba(236, 72, 153, 0.15);
+                        color: #f472b6;
                     }
 
-                    .trigger-icon svg path {
-                        color: #fff;
-                    }
-
-                    .node-content {
+                    .node-body {
                         flex: 1;
                         min-width: 0;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 2px;
+                    }
+
+                    .node-header {
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
                     }
 
                     .node-label {
-                        font-size: 0.75rem;
-                        color: #999;
+                        font-size: 10px;
+                        color: #52525b;
                         text-transform: uppercase;
                         letter-spacing: 0.05em;
-                        margin-bottom: 4px;
+                        font-weight: 500;
+                    }
+
+                    .delay-badge {
+                        display: flex;
+                        align-items: center;
+                        gap: 3px;
+                        font-size: 10px;
+                        color: #71717a;
+                        background: rgba(255,255,255,0.05);
+                        padding: 2px 6px;
+                        border-radius: 4px;
                     }
 
                     .node-title {
-                        font-size: 0.875rem;
-                        font-weight: 400;
-                        color: #1a1a1a;
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: #fafafa;
                         overflow: hidden;
                         text-overflow: ellipsis;
                         white-space: nowrap;
                     }
 
-                    .node-badge {
-                        position: absolute;
-                        top: -8px;
-                        right: -8px;
-                        width: 24px;
-                        height: 24px;
+                    .node-status {
+                        width: 22px;
+                        height: 22px;
                         border-radius: 50%;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                        flex-shrink: 0;
                     }
 
-                    .node-badge.success {
-                        background: #2e7d32;
-                        color: #fff;
+                    .node-status.success {
+                        background: rgba(34, 197, 94, 0.15);
+                        color: #22c55e;
                     }
 
-                    .delete-node-btn {
+                    .node-status.warning {
+                        background: rgba(245, 158, 11, 0.15);
+                        color: #f59e0b;
+                    }
+
+                    .delete-btn {
                         position: absolute;
-                        top: -10px;
-                        left: -10px;
-                        width: 28px;
-                        height: 28px;
+                        top: -8px;
+                        right: -8px;
+                        width: 20px;
+                        height: 20px;
                         border-radius: 50%;
-                        background: #dc2626;
-                        color: #fff;
-                        border: 2px solid #fff;
+                        background: #1c1c1c;
+                        border: 1px solid rgba(255,255,255,0.1);
+                        color: #71717a;
                         display: none;
                         align-items: center;
                         justify-content: center;
                         cursor: pointer;
-                        transition: all 0.2s;
-                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                        transition: all 0.15s;
                     }
 
-                    .canvas-node:hover .delete-node-btn {
+                    .node:hover .delete-btn {
                         display: flex;
                     }
 
-                    .delete-node-btn:hover {
-                        background: #b91c1c;
-                        transform: scale(1.1);
+                    .delete-btn:hover {
+                        background: rgba(239, 68, 68, 0.2);
+                        border-color: rgba(239, 68, 68, 0.3);
+                        color: #ef4444;
                     }
                 `}</style>
             </div>

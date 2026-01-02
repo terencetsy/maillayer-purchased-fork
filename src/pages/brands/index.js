@@ -5,7 +5,6 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { Plus, LogOut, Mail } from 'lucide-react';
 import BrandForm from '@/components/BrandForm';
-import { MailOutgoing } from '@/lib/icons';
 
 export default function Dashboard() {
     const { data: session, status } = useSession();
@@ -121,8 +120,7 @@ export default function Dashboard() {
                             href="/brands"
                             className="brand-logo"
                         >
-                            <MailOutgoing size={24} />
-                            <span>Maillayer</span>
+                            <img src="https://c1.tablecdn.com/maillayer/logo.png" alt="Maillayer" height={24} />
                         </Link>
 
                         <div className="header-right">

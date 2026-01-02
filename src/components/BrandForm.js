@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Loader, AlertCircle } from 'lucide-react';
+import { Loader, AlertCircle } from 'lucide-react';
 
 export default function BrandForm({ onCancel, onSuccess }) {
     const [formData, setFormData] = useState({
@@ -62,96 +62,67 @@ export default function BrandForm({ onCancel, onSuccess }) {
     };
 
     return (
-        <div
-            className="modal-overlay"
-            onClick={onCancel}
-        >
-            <div
-                className="modal-container"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="modal-header">
-                    <h3>Create Brand</h3>
+        <div className="brand-form-container">
+            <div className="brand-form-header">
+                <h3>Create your first brand</h3>
+                <p>Set up your brand to start sending emails</p>
+            </div>
+
+            {error && (
+                <div className="alert alert-error">
+                    <AlertCircle size={16} />
+                    <span>{error}</span>
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                    <label className="form-label" htmlFor="name">Brand Name</label>
+                    <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        value={formData.name}
+                        onChange={handleChange}
+                        placeholder="My Company"
+                        disabled={isLoading}
+                        required
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label className="form-label" htmlFor="website">Website</label>
+                    <input
+                        id="website"
+                        name="website"
+                        type="text"
+                        value={formData.website}
+                        onChange={handleChange}
+                        placeholder="example.com"
+                        disabled={isLoading}
+                        required
+                    />
+                    <p className="form-hint">Enter domain without http:// or https://</p>
+                </div>
+
+                <div className="form-actions">
                     <button
-                        className="close-btn"
+                        type="button"
+                        className="button button--secondary"
                         onClick={onCancel}
                         disabled={isLoading}
                     >
-                        <X size={18} />
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        className={`button button--primary ${isLoading ? 'btn-loading' : ''}`}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? 'Creating...' : 'Create Brand'}
                     </button>
                 </div>
-
-                <div className="modal-content">
-                    {error && (
-                        <div className="alert alert-error">
-                            <AlertCircle size={16} />
-                            <span>{error}</span>
-                        </div>
-                    )}
-
-                    <form
-                        onSubmit={handleSubmit}
-                        className="modal-form"
-                    >
-                        <div className="form-group">
-                            <label htmlFor="name">Brand Name</label>
-                            <input
-                                id="name"
-                                name="name"
-                                type="text"
-                                value={formData.name}
-                                onChange={handleChange}
-                                placeholder="My Company"
-                                disabled={isLoading}
-                                required
-                            />
-                        </div>
-                        <br />
-                        <div className="form-group">
-                            <label htmlFor="website">Website</label>
-                            <input
-                                id="website"
-                                name="website"
-                                type="text"
-                                value={formData.website}
-                                onChange={handleChange}
-                                placeholder="example.com"
-                                disabled={isLoading}
-                                required
-                            />
-                            <p className="hint-text">Enter domain without http:// or https://</p>
-                        </div>
-
-                        <div className="modal-actions">
-                            <button
-                                type="button"
-                                className="button button--secondary"
-                                onClick={onCancel}
-                                disabled={isLoading}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className="button button--primary"
-                                disabled={isLoading}
-                            >
-                                {isLoading ? (
-                                    <>
-                                        <Loader
-                                            size={16}
-                                            className="spinner"
-                                        />
-                                        <span>Creating...</span>
-                                    </>
-                                ) : (
-                                    <span>Create Brand</span>
-                                )}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+            </form>
         </div>
     );
 }

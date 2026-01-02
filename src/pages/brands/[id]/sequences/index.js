@@ -4,9 +4,8 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
-import { Search, PlusCircle, Zap, Users, CheckCircle, Pause, Trash, Edit, Play, Settings } from 'lucide-react';
+import { Search, PlusCircle, Zap, Users, CheckCircle, Pause, Trash, Edit, Play, Settings, X, FileText } from 'lucide-react';
 import { getEmailSequences, deleteEmailSequence, createEmailSequence } from '@/services/clientEmailSequenceService';
-import { Shield02 } from '@/lib/icons';
 
 export default function EmailSequences() {
     const { data: session, status } = useSession();
@@ -119,30 +118,17 @@ export default function EmailSequences() {
     };
 
     const getStatusBadge = (status) => {
-        const styles = {
-            active: { bg: '#e8f5e9', color: '#2e7d32', icon: Play },
-            paused: { bg: '#fff3e0', color: '#f57c00', icon: Pause },
-            draft: { bg: '#f5f5f5', color: '#666', icon: Edit },
-            archived: { bg: '#f5f5f5', color: '#666', icon: CheckCircle },
+        const icons = {
+            active: Play,
+            paused: Pause,
+            draft: Edit,
+            archived: CheckCircle,
         };
 
-        const style = styles[status] || styles.draft;
-        const Icon = style.icon;
+        const Icon = icons[status] || icons.draft;
 
         return (
-            <span
-                style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontSize: '0.75rem',
-                    fontWeight: '500',
-                    backgroundColor: style.bg,
-                    color: style.color,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                }}
-            >
+            <span className={`status-badge ${status}`}>
                 <Icon size={12} />
                 {status.charAt(0).toUpperCase() + status.slice(1)}
             </span>
@@ -188,50 +174,38 @@ export default function EmailSequences() {
 
                 {/* Alerts */}
                 {error && (
-                    <div
-                        className="alert alert--error"
-                        style={{ marginBottom: '1rem' }}
-                    >
+                    <div className="alert alert-error">
                         <span>{error}</span>
-                        <button
-                            onClick={() => setError('')}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                        >
-                            ×
+                        <button onClick={() => setError('')} className="close-alert">
+                            <X size={14} />
                         </button>
                     </div>
                 )}
 
                 {success && (
-                    <div
-                        className="alert alert--success"
-                        style={{ marginBottom: '1rem' }}
-                    >
+                    <div className="alert alert-success">
                         <span>{success}</span>
-                        <button
-                            onClick={() => setSuccess('')}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                        >
-                            ×
+                        <button onClick={() => setSuccess('')} className="close-alert">
+                            <X size={14} />
                         </button>
                     </div>
                 )}
 
                 {/* Sequences Table or Empty State */}
                 {isLoading ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 2rem', gap: '1rem' }}>
-                        <div style={{ width: '2rem', height: '2rem', border: '3px solid #f0f0f0', borderTopColor: '#1a1a1a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
-                        <p style={{ margin: 0, fontSize: '0.9375rem', color: '#666' }}>Loading sequences...</p>
+                    <div className="loading-state">
+                        <div className="spinner"></div>
+                        <p>Loading sequences...</p>
                     </div>
                 ) : (
                     <>
                         {sequences.length === 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 2rem', textAlign: 'center' }}>
-                                <div style={{ width: '4rem', height: '4rem', borderRadius: '1rem', background: 'linear-gradient(145deg, #f5f5f5 0%, #e8e8e8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', marginBottom: '1.5rem' }}>
+                            <div className="empty-state">
+                                <div className="icon-wrapper">
                                     <Zap size={32} />
                                 </div>
-                                <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: 500, color: '#1a1a1a' }}>No email sequences yet</h2>
-                                <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.9375rem', color: '#666', maxWidth: '400px' }}>Create your first automated email sequence to engage contacts when they join your lists</p>
+                                <h2>No email sequences yet</h2>
+                                <p>Create your first automated email sequence to engage contacts when they join your lists</p>
                                 <button
                                     className="button button--primary"
                                     onClick={() => setShowCreateModal(true)}
@@ -243,9 +217,9 @@ export default function EmailSequences() {
                         ) : (
                             <>
                                 {filteredSequences.length === 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 2rem', textAlign: 'center' }}>
-                                        <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: 500, color: '#1a1a1a' }}>No matching sequences</h2>
-                                        <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.9375rem', color: '#666' }}>No sequences match your search criteria</p>
+                                    <div className="empty-state search-empty">
+                                        <h2>No matching sequences</h2>
+                                        <p>No sequences match your search criteria</p>
                                         <button
                                             className="button button--secondary"
                                             onClick={() => setSearchQuery('')}
@@ -269,38 +243,30 @@ export default function EmailSequences() {
                                         <tbody>
                                             {filteredSequences.map((sequence) => (
                                                 <tr key={sequence._id}>
-                                                    <td className="campaign-col">
-                                                        <div className="campaign-info">
-                                                            <div>
-                                                                <div style={{ fontWeight: '500' }}>{sequence.name}</div>
-                                                                {sequence.description && <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '2px' }}>{sequence.description}</div>}
-                                                            </div>
+                                                    <td className="sequence-name-col">
+                                                        <div className="sequence-info">
+                                                            <span className="sequence-name">{sequence.name}</span>
+                                                            {sequence.description && <span className="sequence-description">{sequence.description}</span>}
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <span style={{ fontWeight: '500' }}>{sequence.emails?.length || 0}</span> emails
+                                                        <span className="stat-value">{sequence.emails?.length || 0}</span> emails
                                                     </td>
                                                     <td>
                                                         {sequence.triggerType === 'contact_list' && <span>{sequence.triggerConfig?.contactListIds?.length || 0} lists</span>}
                                                         {sequence.triggerType === 'integration' && <span>Integration</span>}
-                                                        {!sequence.triggerType && <span style={{ color: '#f57c00' }}>Not configured</span>}
+                                                        {!sequence.triggerType && <span className="text-warning">Not configured</span>}
                                                     </td>
                                                     <td>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                            <Users
-                                                                size={14}
-                                                                style={{ color: '#666' }}
-                                                            />
-                                                            <span style={{ fontWeight: '500' }}>{sequence.stats?.totalEnrolled || 0}</span>
+                                                        <div className="stat-cell">
+                                                            <Users size={14} className="stat-icon" />
+                                                            <span className="stat-value">{sequence.stats?.totalEnrolled || 0}</span>
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                            <CheckCircle
-                                                                size={14}
-                                                                style={{ color: '#2e7d32' }}
-                                                            />
-                                                            <span style={{ fontWeight: '500' }}>{sequence.stats?.totalCompleted || 0}</span>
+                                                        <div className="stat-cell">
+                                                            <CheckCircle size={14} className="stat-icon stat-icon--success" />
+                                                            <span className="stat-value">{sequence.stats?.totalCompleted || 0}</span>
                                                         </div>
                                                     </td>
                                                     <td>{getStatusBadge(sequence.status)}</td>
@@ -308,18 +274,17 @@ export default function EmailSequences() {
                                                         <div className="action-buttons">
                                                             <Link
                                                                 href={`/brands/${id}/sequences/${sequence._id}/logs`}
-                                                                className="button button--secondary"
+                                                                className="action-btn"
+                                                                title="View Logs"
                                                             >
-                                                                <Shield02 size={16} />
-                                                                <span>View Logs</span>
+                                                                <FileText size={16} />
                                                             </Link>
                                                             <Link
                                                                 href={`/brands/${id}/sequences/${sequence._id}/design`}
-                                                                className="action-btn"
+                                                                className="action-btn edit-btn"
                                                                 title="Edit Sequence"
                                                             >
                                                                 <Settings size={16} />
-                                                                Edit
                                                             </Link>
                                                             <button
                                                                 className="action-btn delete-btn"
@@ -383,8 +348,8 @@ function CreateSequenceModal({ onClose, onCreate, isCreating }) {
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div style={{ padding: '0 0 1rem 0' }}>
-                        <p style={{ margin: '0 0 1rem 0', fontSize: '0.9375rem', color: '#666' }}>Give your sequence a name to get started. You&apos;ll configure the trigger and emails next.</p>
+                    <div className="modal-form-body">
+                        <p className="modal-form-description">Give your sequence a name to get started. You&apos;ll configure the trigger and emails next.</p>
 
                         <div className="form-group">
                             <label className="form-label">

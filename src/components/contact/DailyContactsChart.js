@@ -45,39 +45,39 @@ const DailyContactsChart = ({ brandId, listId, days = 30, status = 'all' }) => {
 
     if (isLoading) {
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', gap: '1rem' }}>
-                <div style={{ width: '2rem', height: '2rem', border: '3px solid #f0f0f0', borderTopColor: '#1a1a1a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
-                <p style={{ margin: 0, fontSize: '0.9375rem', color: '#666' }}>Loading chart data...</p>
+            <div className="chart-loading">
+                <div className="spinner"></div>
+                <p>Loading chart data...</p>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div style={{ padding: '2rem', textAlign: 'center' }}>
-                <p style={{ color: '#dc2626', fontSize: '0.875rem' }}>Failed to load chart data: {error}</p>
+            <div className="chart-error">
+                <p>Failed to load chart data: {error}</p>
             </div>
         );
     }
 
     return (
-        <div style={{ marginBottom: '1.5rem' }}>
+        <div className="chart-wrapper">
             {/* Time Range Selector */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '1rem' }}>
+            <div className="chart-time-selector">
                 <button
-                    className={`button button--small ${timeRange === 7 ? 'button--primary' : 'button--secondary'}`}
+                    className={`chart-time-btn ${timeRange === 7 ? 'active' : ''}`}
                     onClick={() => handleTimeRangeChange(7)}
                 >
                     7 Days
                 </button>
                 <button
-                    className={`button button--small ${timeRange === 30 ? 'button--primary' : 'button--secondary'}`}
+                    className={`chart-time-btn ${timeRange === 30 ? 'active' : ''}`}
                     onClick={() => handleTimeRangeChange(30)}
                 >
                     30 Days
                 </button>
                 <button
-                    className={`button button--small ${timeRange === 90 ? 'button--primary' : 'button--secondary'}`}
+                    className={`chart-time-btn ${timeRange === 90 ? 'active' : ''}`}
                     onClick={() => handleTimeRangeChange(90)}
                 >
                     90 Days

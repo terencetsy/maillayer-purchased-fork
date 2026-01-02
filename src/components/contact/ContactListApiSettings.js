@@ -207,9 +207,9 @@ fetch('${apiEndpoint}', {
 <script>
 document.getElementById('subscribeForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const formData = new FormData(e.target);
-    
+
     const response = await fetch('${apiEndpoint}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -219,9 +219,9 @@ document.getElementById('subscribeForm').addEventListener('submit', async (e) =>
             lastName: formData.get('lastName')
         })
     });
-    
+
     const data = await response.json();
-    
+
     if (data.success) {
         alert('Successfully subscribed!');
         e.target.reset();
@@ -246,9 +246,9 @@ document.getElementById('subscribeForm').addEventListener('submit', async (e) =>
 <script>
 document.getElementById('leadForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const formData = new FormData(e.target);
-    
+
     // All extra fields go to customFields
     const response = await fetch('${apiEndpoint}', {
         method: 'POST',
@@ -265,7 +265,7 @@ document.getElementById('leadForm').addEventListener('submit', async (e) => {
             }
         })
     });
-    
+
     const data = await response.json();
     if (data.success && data.redirectUrl) {
         window.location.href = data.redirectUrl;
@@ -330,7 +330,7 @@ function SubscribeForm() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        
+
         try {
             const response = await fetch('${apiEndpoint}', {
                 method: 'POST',
@@ -345,12 +345,12 @@ function SubscribeForm() {
                     }
                 })
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
-                setMessage(data.duplicate 
-                    ? 'You\\'re already subscribed!' 
+                setMessage(data.duplicate
+                    ? 'You\\'re already subscribed!'
                     : 'Successfully subscribed!');
                 setEmail('');
                 setFirstName('');
@@ -424,9 +424,9 @@ export default async function handler(req, res) {
         const data = await response.json();
         return res.status(response.status).json(data);
     } catch (error) {
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Failed to subscribe' 
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to subscribe'
         });
     }
 }`,
@@ -434,96 +434,66 @@ export default async function handler(req, res) {
 
     if (isLoading) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-                <div style={{ width: '2rem', height: '2rem', border: '3px solid #f0f0f0', borderTopColor: '#1a1a1a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+            <div className="chart-loading">
+                <div className="spinner"></div>
             </div>
         );
     }
 
     return (
-        <div style={{ maxWidth: '900px' }}>
+        <div className="api-settings">
             {error && (
-                <div
-                    className="alert alert--error"
-                    style={{ marginBottom: '1rem' }}
-                >
+                <div className="cld-alert cld-alert--error">
                     <span>{error}</span>
-                    <button
-                        onClick={() => setError('')}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                    >
+                    <button className="cld-alert-close" onClick={() => setError('')}>
                         <X size={16} />
                     </button>
                 </div>
             )}
 
             {success && (
-                <div
-                    className="alert alert--success"
-                    style={{ marginBottom: '1rem' }}
-                >
+                <div className="cld-alert cld-alert--success">
                     <span>{success}</span>
-                    <button
-                        onClick={() => setSuccess('')}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                    >
+                    <button className="cld-alert-close" onClick={() => setSuccess('')}>
                         <X size={16} />
                     </button>
                 </div>
             )}
 
             {/* Enable API Toggle */}
-            <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: '0.5rem', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div className="api-card">
+                <div className="api-card-header">
                     <div>
-                        <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1rem', fontWeight: '500' }}>API Access</h3>
-                        <p style={{ margin: 0, fontSize: '0.875rem', color: '#666' }}>Allow external forms and applications to add contacts to this list</p>
+                        <h3 className="api-card-title">API Access</h3>
+                        <p className="api-card-desc">Allow external forms and applications to add contacts to this list</p>
                     </div>
-                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <label className="checkbox-label">
                         <input
                             type="checkbox"
+                            className="dark-checkbox"
                             checked={settings.apiEnabled}
                             onChange={(e) => setSettings((prev) => ({ ...prev, apiEnabled: e.target.checked }))}
-                            style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
                         />
-                        <span style={{ marginLeft: '0.5rem', fontSize: '0.875rem', fontWeight: '500' }}>{settings.apiEnabled ? 'Enabled' : 'Disabled'}</span>
+                        <span className="api-toggle-label">{settings.apiEnabled ? 'Enabled' : 'Disabled'}</span>
                     </label>
                 </div>
 
                 {settings.apiEnabled && (
                     <>
                         {/* API Key */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>API Key</label>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <div style={{ flex: 1, position: 'relative' }}>
+                        <div className="api-key-section">
+                            <label className="api-key-label">API Key</label>
+                            <div className="api-key-input-wrapper">
+                                <div className="api-key-field">
                                     <input
                                         type="text"
+                                        className="api-key-input"
                                         value={settings.apiKey || 'No API key generated'}
                                         readOnly
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.625rem 2.5rem 0.625rem 0.75rem',
-                                            border: '1px solid #e0e0e0',
-                                            borderRadius: '0.375rem',
-                                            fontSize: '0.875rem',
-                                            fontFamily: 'monospace',
-                                            background: '#f9f9f9',
-                                        }}
                                     />
                                     <button
+                                        className={`api-key-copy ${copied ? 'copied' : ''}`}
                                         onClick={() => copyToClipboard(settings.apiKey)}
-                                        style={{
-                                            position: 'absolute',
-                                            right: '0.5rem',
-                                            top: '50%',
-                                            transform: 'translateY(-50%)',
-                                            background: 'none',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            padding: '0.25rem',
-                                            color: copied ? '#2e7d32' : '#666',
-                                        }}
                                         title="Copy API key"
                                     >
                                         {copied ? <Check size={16} /> : <Copy size={16} />}
@@ -541,48 +511,29 @@ export default async function handler(req, res) {
                         </div>
 
                         {/* API Endpoint */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>API Endpoint</label>
-                            <div
-                                style={{
-                                    padding: '0.625rem 0.75rem',
-                                    background: '#f0f7ff',
-                                    border: '1px solid #cce0ff',
-                                    borderRadius: '0.375rem',
-                                    fontSize: '0.875rem',
-                                    fontFamily: 'monospace',
-                                    wordBreak: 'break-all',
-                                }}
-                            >
+                        <div className="api-key-section">
+                            <label className="api-key-label">API Endpoint</label>
+                            <div className="api-endpoint">
                                 POST {apiEndpoint}
                             </div>
                         </div>
 
                         {/* Allowed Domains */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>
-                                <Globe
-                                    size={14}
-                                    style={{ verticalAlign: 'middle', marginRight: '0.25rem' }}
-                                />
+                        <div className="api-domains-section">
+                            <label className="api-domains-label">
+                                <Globe size={14} />
                                 Allowed Domains
                             </label>
-                            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.8125rem', color: '#666' }}>Restrict API access to specific domains. Leave empty to allow all domains.</p>
+                            <p className="api-domains-desc">Restrict API access to specific domains. Leave empty to allow all domains.</p>
 
-                            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <div className="api-domains-input-wrapper">
                                 <input
                                     type="text"
+                                    className="api-domains-input"
                                     value={newDomain}
                                     onChange={(e) => setNewDomain(e.target.value)}
                                     placeholder="example.com"
                                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addDomain())}
-                                    style={{
-                                        flex: 1,
-                                        padding: '0.5rem 0.75rem',
-                                        border: '1px solid #e0e0e0',
-                                        borderRadius: '0.375rem',
-                                        fontSize: '0.875rem',
-                                    }}
                                 />
                                 <button
                                     className="button button--secondary"
@@ -594,25 +545,13 @@ export default async function handler(req, res) {
                             </div>
 
                             {settings.allowedDomains.length > 0 && (
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                <div className="api-domains-list">
                                     {settings.allowedDomains.map((domain) => (
-                                        <span
-                                            key={domain}
-                                            style={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: '0.25rem',
-                                                padding: '0.25rem 0.5rem',
-                                                background: '#f5f5f5',
-                                                border: '1px solid #e0e0e0',
-                                                borderRadius: '0.25rem',
-                                                fontSize: '0.8125rem',
-                                            }}
-                                        >
+                                        <span key={domain} className="api-domain-tag">
                                             {domain}
                                             <button
+                                                className="api-domain-remove"
                                                 onClick={() => removeDomain(domain)}
-                                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0', color: '#666', display: 'flex' }}
                                             >
                                                 <X size={14} />
                                             </button>
@@ -623,10 +562,11 @@ export default async function handler(req, res) {
                         </div>
 
                         {/* Additional Settings */}
-                        <div style={{ marginBottom: '1rem' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '0.75rem' }}>
+                        <div className="api-settings-option">
+                            <label className="checkbox-label">
                                 <input
                                     type="checkbox"
+                                    className="dark-checkbox"
                                     checked={settings.apiSettings?.allowDuplicates || false}
                                     onChange={(e) =>
                                         setSettings((prev) => ({
@@ -634,42 +574,36 @@ export default async function handler(req, res) {
                                             apiSettings: { ...prev.apiSettings, allowDuplicates: e.target.checked },
                                         }))
                                     }
-                                    style={{ width: '1rem', height: '1rem' }}
                                 />
-                                <span style={{ fontSize: '0.875rem' }}>
+                                <span>
                                     <strong>Allow duplicate submissions</strong>
-                                    <span style={{ color: '#666', marginLeft: '0.25rem' }}>- If disabled, duplicate emails will update custom fields only</span>
+                                    <span> - If disabled, duplicate emails will update custom fields only</span>
                                 </span>
                             </label>
+                        </div>
 
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>Redirect URL (optional)</label>
-                                <input
-                                    type="url"
-                                    value={settings.apiSettings?.redirectUrl || ''}
-                                    onChange={(e) =>
-                                        setSettings((prev) => ({
-                                            ...prev,
-                                            apiSettings: { ...prev.apiSettings, redirectUrl: e.target.value },
-                                        }))
-                                    }
-                                    placeholder="https://example.com/thank-you"
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.5rem 0.75rem',
-                                        border: '1px solid #e0e0e0',
-                                        borderRadius: '0.375rem',
-                                        fontSize: '0.875rem',
-                                    }}
-                                />
-                                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#666' }}>Returned in API response for client-side redirects</p>
-                            </div>
+                        <div className="api-redirect-section">
+                            <label className="api-redirect-label">Redirect URL (optional)</label>
+                            <input
+                                type="url"
+                                className="api-redirect-input"
+                                value={settings.apiSettings?.redirectUrl || ''}
+                                onChange={(e) =>
+                                    setSettings((prev) => ({
+                                        ...prev,
+                                        apiSettings: { ...prev.apiSettings, redirectUrl: e.target.value },
+                                    }))
+                                }
+                                placeholder="https://example.com/thank-you"
+                            />
+                            <p className="api-redirect-hint">Returned in API response for client-side redirects</p>
                         </div>
 
                         <button
                             className="button button--primary"
                             onClick={saveSettings}
                             disabled={isSaving}
+                            style={{ marginTop: '1rem' }}
                         >
                             {isSaving ? 'Saving...' : 'Save Settings'}
                         </button>
@@ -679,106 +613,83 @@ export default async function handler(req, res) {
 
             {/* API Documentation */}
             {settings.apiEnabled && (
-                <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: '0.5rem', padding: '1.5rem' }}>
-                    <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div className="api-docs">
+                    <h3 className="api-docs-title">
                         <Code size={18} />
                         API Documentation
                     </h3>
 
                     {/* Request/Response Info */}
-                    <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-                        <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.875rem', fontWeight: '600' }}>Request Format</h4>
-                        <table style={{ width: '100%', fontSize: '0.8125rem', borderCollapse: 'collapse' }}>
+                    <div className="api-docs-table">
+                        <h4 className="api-docs-table-title">Request Format</h4>
+                        <table>
                             <thead>
-                                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                    <th style={{ textAlign: 'left', padding: '0.5rem 0', fontWeight: '600' }}>Field</th>
-                                    <th style={{ textAlign: 'left', padding: '0.5rem 0', fontWeight: '600' }}>Type</th>
-                                    <th style={{ textAlign: 'left', padding: '0.5rem 0', fontWeight: '600' }}>Required</th>
-                                    <th style={{ textAlign: 'left', padding: '0.5rem 0', fontWeight: '600' }}>Description</th>
+                                <tr>
+                                    <th>Field</th>
+                                    <th>Type</th>
+                                    <th>Required</th>
+                                    <th>Description</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
-                                    <td style={{ padding: '0.5rem 0' }}>
-                                        <code style={{ background: '#e8f5e9', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>email</code>
-                                    </td>
-                                    <td style={{ padding: '0.5rem 0', color: '#666' }}>string</td>
-                                    <td style={{ padding: '0.5rem 0' }}>
-                                        <span style={{ color: '#dc2626', fontWeight: '500' }}>Yes</span>
-                                    </td>
-                                    <td style={{ padding: '0.5rem 0', color: '#666' }}>Contact&apos;s email address</td>
-                                </tr>
-                                <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
-                                    <td style={{ padding: '0.5rem 0' }}>
-                                        <code style={{ background: '#f5f5f5', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>firstName</code>
-                                    </td>
-                                    <td style={{ padding: '0.5rem 0', color: '#666' }}>string</td>
-                                    <td style={{ padding: '0.5rem 0', color: '#666' }}>No</td>
-                                    <td style={{ padding: '0.5rem 0', color: '#666' }}>Contact&apos;s first name</td>
-                                </tr>
-                                <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
-                                    <td style={{ padding: '0.5rem 0' }}>
-                                        <code style={{ background: '#f5f5f5', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>lastName</code>
-                                    </td>
-                                    <td style={{ padding: '0.5rem 0', color: '#666' }}>string</td>
-                                    <td style={{ padding: '0.5rem 0', color: '#666' }}>No</td>
-                                    <td style={{ padding: '0.5rem 0', color: '#666' }}>Contact&apos;s last name</td>
-                                </tr>
-                                <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
-                                    <td style={{ padding: '0.5rem 0' }}>
-                                        <code style={{ background: '#f5f5f5', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>phone</code>
-                                    </td>
-                                    <td style={{ padding: '0.5rem 0', color: '#666' }}>string</td>
-                                    <td style={{ padding: '0.5rem 0', color: '#666' }}>No</td>
-                                    <td style={{ padding: '0.5rem 0', color: '#666' }}>Contact&apos;s phone number</td>
+                                <tr>
+                                    <td><code className="api-field-code api-field-code--required">email</code></td>
+                                    <td>string</td>
+                                    <td><span className="api-required">Yes</span></td>
+                                    <td>Contact&apos;s email address</td>
                                 </tr>
                                 <tr>
-                                    <td style={{ padding: '0.5rem 0' }}>
-                                        <code style={{ background: '#fff3e0', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>customFields</code>
-                                    </td>
-                                    <td style={{ padding: '0.5rem 0', color: '#666' }}>object</td>
-                                    <td style={{ padding: '0.5rem 0', color: '#666' }}>No</td>
-                                    <td style={{ padding: '0.5rem 0', color: '#666' }}>Any additional data (see below)</td>
+                                    <td><code className="api-field-code">firstName</code></td>
+                                    <td>string</td>
+                                    <td>No</td>
+                                    <td>Contact&apos;s first name</td>
+                                </tr>
+                                <tr>
+                                    <td><code className="api-field-code">lastName</code></td>
+                                    <td>string</td>
+                                    <td>No</td>
+                                    <td>Contact&apos;s last name</td>
+                                </tr>
+                                <tr>
+                                    <td><code className="api-field-code">phone</code></td>
+                                    <td>string</td>
+                                    <td>No</td>
+                                    <td>Contact&apos;s phone number</td>
+                                </tr>
+                                <tr>
+                                    <td><code className="api-field-code api-field-code--optional">customFields</code></td>
+                                    <td>object</td>
+                                    <td>No</td>
+                                    <td>Any additional data (see below)</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
                     {/* Custom Fields Info Box */}
-                    <div
-                        style={{
-                            marginBottom: '1.5rem',
-                            padding: '1rem',
-                            background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
-                            borderRadius: '0.5rem',
-                            border: '1px solid #fed7aa',
-                        }}
-                    >
-                        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Info
-                                size={16}
-                                style={{ color: '#ea580c' }}
-                            />
+                    <div className="api-custom-fields-info">
+                        <h4 className="api-custom-fields-title">
+                            <Info size={16} />
                             Custom Fields
                         </h4>
-                        <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.8125rem', color: '#9a3412' }}>
-                            Store any additional data with your contacts using the <code style={{ background: '#fff', padding: '0.125rem 0.375rem', borderRadius: '0.25rem' }}>customFields</code> object. This is perfect for:
+                        <p className="api-custom-fields-desc">
+                            Store any additional data with your contacts using the <code>customFields</code> object. This is perfect for:
                         </p>
-                        <ul style={{ margin: '0', paddingLeft: '1.25rem', fontSize: '0.8125rem', color: '#9a3412' }}>
+                        <ul className="api-custom-fields-list">
                             <li>Tracking referral sources and UTM parameters</li>
                             <li>Storing company information and job titles</li>
                             <li>Recording signup page URLs and timestamps</li>
                             <li>Segmentation data (interests, preferences, plans)</li>
                             <li>Any metadata your application needs</li>
                         </ul>
-                        <div style={{ marginTop: '0.75rem', padding: '0.5rem 0.75rem', background: '#fff', borderRadius: '0.375rem', fontSize: '0.75rem', color: '#666' }}>
+                        <div className="api-custom-fields-tip">
                             <strong>Pro tip:</strong> Any extra fields you send (besides email, firstName, lastName, phone) are automatically added to customFields!
                         </div>
                     </div>
 
                     {/* Code Examples Tabs */}
-                    <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ display: 'flex', gap: '0.25rem', borderBottom: '1px solid #e0e0e0', marginBottom: '1rem' }}>
+                    <div>
+                        <div className="api-code-tabs">
                             {[
                                 { id: 'javascript', label: 'JavaScript' },
                                 { id: 'html', label: 'HTML Form' },
@@ -788,18 +699,8 @@ export default async function handler(req, res) {
                             ].map((tab) => (
                                 <button
                                     key={tab.id}
+                                    className={`api-code-tab ${activeTab === tab.id ? 'active' : ''}`}
                                     onClick={() => setActiveTab(tab.id)}
-                                    style={{
-                                        padding: '0.5rem 1rem',
-                                        background: 'none',
-                                        border: 'none',
-                                        borderBottom: activeTab === tab.id ? '2px solid #1a1a1a' : '2px solid transparent',
-                                        cursor: 'pointer',
-                                        fontSize: '0.8125rem',
-                                        fontWeight: activeTab === tab.id ? '500' : '400',
-                                        color: activeTab === tab.id ? '#1a1a1a' : '#666',
-                                        marginBottom: '-1px',
-                                    }}
                                 >
                                     {tab.label}
                                 </button>
@@ -807,106 +708,44 @@ export default async function handler(req, res) {
                         </div>
 
                         {/* Code Block */}
-                        <div style={{ position: 'relative' }}>
+                        <div className="api-code-block">
                             <button
+                                className={`api-code-copy ${copiedExample === activeTab ? 'copied' : ''}`}
                                 onClick={() => copyToClipboard(codeExamples[activeTab], activeTab)}
-                                style={{
-                                    position: 'absolute',
-                                    top: '0.5rem',
-                                    right: '0.5rem',
-                                    padding: '0.375rem 0.625rem',
-                                    background: copiedExample === activeTab ? '#e8f5e9' : '#fff',
-                                    border: '1px solid #e0e0e0',
-                                    borderRadius: '0.25rem',
-                                    cursor: 'pointer',
-                                    fontSize: '0.75rem',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.25rem',
-                                    color: copiedExample === activeTab ? '#2e7d32' : '#666',
-                                    zIndex: 10,
-                                }}
                             >
                                 {copiedExample === activeTab ? <Check size={14} /> : <Copy size={14} />}
                                 {copiedExample === activeTab ? 'Copied!' : 'Copy'}
                             </button>
-                            <pre
-                                style={{
-                                    margin: 0,
-                                    padding: '1rem',
-                                    background: '#1e1e1e',
-                                    borderRadius: '0.5rem',
-                                    overflow: 'auto',
-                                    maxHeight: '400px',
-                                    fontSize: '0.8125rem',
-                                    lineHeight: '1.5',
-                                }}
-                            >
-                                <code style={{ color: '#d4d4d4', fontFamily: "'Fira Code', 'Monaco', 'Consolas', monospace" }}>{codeExamples[activeTab]}</code>
+                            <pre className="api-code-pre">
+                                <code>{codeExamples[activeTab]}</code>
                             </pre>
                         </div>
                     </div>
 
                     {/* Shorthand Example */}
                     {activeTab === 'javascript' && (
-                        <div style={{ marginTop: '1rem' }}>
+                        <div>
                             <button
+                                className="api-shorthand-toggle"
                                 onClick={() => setShowAdvanced(!showAdvanced)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    fontSize: '0.875rem',
-                                    fontWeight: '500',
-                                    color: '#1a1a1a',
-                                    padding: '0',
-                                }}
                             >
                                 {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                 Shorthand Syntax
                             </button>
 
                             {showAdvanced && (
-                                <div style={{ marginTop: '0.75rem' }}>
-                                    <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.8125rem', color: '#666' }}>You can also pass custom fields directly in the body - they&apos;ll automatically be stored in customFields:</p>
-                                    <div style={{ position: 'relative' }}>
+                                <div className="api-shorthand-content">
+                                    <p>You can also pass custom fields directly in the body - they&apos;ll automatically be stored in customFields:</p>
+                                    <div className="api-code-block">
                                         <button
+                                            className={`api-code-copy ${copiedExample === 'shorthand' ? 'copied' : ''}`}
                                             onClick={() => copyToClipboard(codeExamples.javascriptShort, 'shorthand')}
-                                            style={{
-                                                position: 'absolute',
-                                                top: '0.5rem',
-                                                right: '0.5rem',
-                                                padding: '0.375rem 0.625rem',
-                                                background: copiedExample === 'shorthand' ? '#e8f5e9' : '#fff',
-                                                border: '1px solid #e0e0e0',
-                                                borderRadius: '0.25rem',
-                                                cursor: 'pointer',
-                                                fontSize: '0.75rem',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.25rem',
-                                                color: copiedExample === 'shorthand' ? '#2e7d32' : '#666',
-                                                zIndex: 10,
-                                            }}
                                         >
                                             {copiedExample === 'shorthand' ? <Check size={14} /> : <Copy size={14} />}
                                             {copiedExample === 'shorthand' ? 'Copied!' : 'Copy'}
                                         </button>
-                                        <pre
-                                            style={{
-                                                margin: 0,
-                                                padding: '1rem',
-                                                background: '#1e1e1e',
-                                                borderRadius: '0.5rem',
-                                                overflow: 'auto',
-                                                fontSize: '0.8125rem',
-                                                lineHeight: '1.5',
-                                            }}
-                                        >
-                                            <code style={{ color: '#d4d4d4', fontFamily: "'Fira Code', 'Monaco', 'Consolas', monospace" }}>{codeExamples.javascriptShort}</code>
+                                        <pre className="api-code-pre">
+                                            <code>{codeExamples.javascriptShort}</code>
                                         </pre>
                                     </div>
                                 </div>
@@ -915,41 +754,39 @@ export default async function handler(req, res) {
                     )}
 
                     {/* Response Format */}
-                    <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-                        <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.875rem', fontWeight: '600' }}>Response Format</h4>
-                        <div style={{ display: 'grid', gap: '0.75rem' }}>
-                            <div>
-                                <span style={{ display: 'inline-block', padding: '0.125rem 0.5rem', background: '#dcfce7', color: '#166534', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: '500', marginBottom: '0.25rem' }}>201 Created</span>
-                                <pre style={{ margin: '0.25rem 0 0 0', padding: '0.5rem', background: '#fff', borderRadius: '0.25rem', fontSize: '0.75rem', overflow: 'auto' }}>
-                                    {`{
+                    <div className="api-response-section">
+                        <h4 className="api-response-title">Response Format</h4>
+                        <div className="api-response-item">
+                            <span className="api-response-badge api-response-badge--success">201 Created</span>
+                            <pre className="api-response-pre">
+                                <code>{`{
   "success": true,
   "message": "Contact added successfully",
   "contactId": "507f1f77bcf86cd799439011",
   "redirectUrl": "${settings.apiSettings?.redirectUrl || 'null'}"
-}`}
-                                </pre>
-                            </div>
-                            <div>
-                                <span style={{ display: 'inline-block', padding: '0.125rem 0.5rem', background: '#fef3c7', color: '#92400e', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: '500', marginBottom: '0.25rem' }}>200 Duplicate</span>
-                                <pre style={{ margin: '0.25rem 0 0 0', padding: '0.5rem', background: '#fff', borderRadius: '0.25rem', fontSize: '0.75rem', overflow: 'auto' }}>
-                                    {`{
+}`}</code>
+                            </pre>
+                        </div>
+                        <div className="api-response-item">
+                            <span className="api-response-badge api-response-badge--warning">200 Duplicate</span>
+                            <pre className="api-response-pre">
+                                <code>{`{
   "success": true,
   "message": "Contact already exists in this list",
   "contactId": "507f1f77bcf86cd799439011",
   "duplicate": true,
   "customFieldsUpdated": true
-}`}
-                                </pre>
-                            </div>
-                            <div>
-                                <span style={{ display: 'inline-block', padding: '0.125rem 0.5rem', background: '#fee2e2', color: '#991b1b', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: '500', marginBottom: '0.25rem' }}>400 Error</span>
-                                <pre style={{ margin: '0.25rem 0 0 0', padding: '0.5rem', background: '#fff', borderRadius: '0.25rem', fontSize: '0.75rem', overflow: 'auto' }}>
-                                    {`{
+}`}</code>
+                            </pre>
+                        </div>
+                        <div className="api-response-item">
+                            <span className="api-response-badge api-response-badge--error">400 Error</span>
+                            <pre className="api-response-pre">
+                                <code>{`{
   "success": false,
   "message": "Email is required"
-}`}
-                                </pre>
-                            </div>
+}`}</code>
+                            </pre>
                         </div>
                     </div>
                 </div>

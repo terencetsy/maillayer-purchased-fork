@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import { MailOutgoing } from '@/lib/icons';
 import { Loader } from 'lucide-react';
 
 export default function ResetPassword() {
@@ -111,8 +110,7 @@ export default function ResetPassword() {
                     <div className="auth-container">
                         <div className="auth-card">
                             <div className="auth-logo">
-                                <MailOutgoing size={32} />
-                                <span>Maillayer</span>
+                                <img src="https://c1.tablecdn.com/maillayer/logo.png" alt="Maillayer" height={32} />
                             </div>
                             <div className="auth-header">
                                 <h1>Reset Password</h1>
@@ -145,8 +143,7 @@ export default function ResetPassword() {
                 <div className="auth-container">
                     <div className="auth-card">
                         <div className="auth-logo">
-                            <MailOutgoing size={32} />
-                            <span>Maillayer</span>
+                            <img src="https://c1.tablecdn.com/maillayer/logo.png" alt="Maillayer" height={32} />
                         </div>
 
                         <div className="auth-header">

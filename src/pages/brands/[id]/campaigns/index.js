@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import BrandLayout from '@/components/BrandLayout';
 import CampaignForm from '@/components/CampaignForm';
 import CampaignList from '@/components/CampaignList';
-import { Mail02, PlusSign, PlusSignCircle, Search01 } from '@/lib/icons';
+import { Mail, Plus, PlusCircle, Search } from 'lucide-react';
 
 export default function BrandCampaigns() {
     const { data: session, status } = useSession();
@@ -210,7 +210,7 @@ export default function BrandCampaigns() {
                 <div className="campaigns-header">
                     <div className="search-container">
                         <div className="search-input-wrapper">
-                            <Search01
+                            <Search
                                 size={18}
                                 className="search-icon"
                             />
@@ -227,7 +227,7 @@ export default function BrandCampaigns() {
                         className="button button--primary"
                         onClick={handleCreateClick}
                     >
-                        <PlusSign size={18} />
+                        <Plus size={18} />
                         Create Campaign
                     </button>
                 </div>
@@ -257,7 +257,7 @@ export default function BrandCampaigns() {
                             {campaigns.length === 0 && pagination.page === 1 ? (
                                 <div className="empty-state">
                                     <div className="icon-wrapper">
-                                        <Mail02 size={36} />
+                                        <Mail size={36} />
                                     </div>
                                     <h2>No campaigns yet</h2>
                                     <p>Create your first email campaign to start engaging with your audience</p>
@@ -265,7 +265,7 @@ export default function BrandCampaigns() {
                                         className="button button--secondary"
                                         onClick={handleCreateClick}
                                     >
-                                        <PlusSignCircle size={18} />
+                                        <PlusCircle size={18} />
                                         Create Campaign
                                     </button>
                                 </div>

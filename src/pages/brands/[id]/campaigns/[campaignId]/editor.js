@@ -127,9 +127,9 @@ export default function CampaignEditor() {
     if (isLoading || !brand || !campaign) {
         return (
             <BrandLayout brand={brand}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', gap: '1rem' }}>
-                    <div style={{ width: '2rem', height: '2rem', border: '3px solid #f0f0f0', borderTopColor: '#1a1a1a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
-                    <p style={{ margin: 0, fontSize: '0.9375rem', color: '#666' }}>Loading campaign editor...</p>
+                <div className="campaign-editor__loading">
+                    <div className="spinner"></div>
+                    <p>Loading campaign editor...</p>
                 </div>
             </BrandLayout>
         );
@@ -137,39 +137,23 @@ export default function CampaignEditor() {
 
     return (
         <BrandLayout brand={brand}>
-            <div className="campaigns-container">
+            <div className="campaign-editor">
                 {/* Top Bar */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                    <Link
-                        href={`/brands/${id}/campaigns`}
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            color: '#666',
-                            textDecoration: 'none',
-                            fontSize: '0.875rem',
-                        }}
-                    >
+                <div className="campaign-editor__topbar">
+                    <Link href={`/brands/${id}/campaigns`} className="back-link">
                         <ArrowLeft size={16} />
                         <span>All campaigns</span>
                     </Link>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div className="campaign-editor__actions">
                         {saveMessage && (
-                            <div
-                                className="alert alert--success"
-                                style={{ marginBottom: 0, padding: '0.5rem 0.75rem', fontSize: '0.8125rem' }}
-                            >
+                            <div className="campaign-editor__alert campaign-editor__alert--success">
                                 <span>{saveMessage}</span>
                             </div>
                         )}
 
                         {error && (
-                            <div
-                                className="alert alert--error"
-                                style={{ marginBottom: 0, padding: '0.5rem 0.75rem', fontSize: '0.8125rem' }}
-                            >
+                            <div className="campaign-editor__alert campaign-editor__alert--error">
                                 <span>{error}</span>
                             </div>
                         )}
@@ -181,12 +165,7 @@ export default function CampaignEditor() {
                         >
                             {isSaving ? (
                                 <>
-                                    <span
-                                        className="spinner-icon"
-                                        style={{ animation: 'spin 0.8s linear infinite' }}
-                                    >
-                                        ⟳
-                                    </span>
+                                    <span className="spinner-icon">⟳</span>
                                     <span>Saving...</span>
                                 </>
                             ) : (
@@ -210,39 +189,22 @@ export default function CampaignEditor() {
                 </div>
 
                 {/* Campaign Header */}
-                <div style={{ marginBottom: '1.5rem' }}>
-                    <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: '500', color: '#1a1a1a' }}>{campaign.name}</h1>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#666' }}>
-                        <span style={{ fontWeight: '500' }}>Subject:</span>
-                        <span>{campaign.subject}</span>
+                <div className="campaign-editor__header">
+                    <h1 className="campaign-editor__title">{campaign.name}</h1>
+                    <div className="campaign-editor__subject">
+                        <span className="campaign-editor__subject-label">Subject:</span>
+                        <span className="campaign-editor__subject-value">{campaign.subject}</span>
                     </div>
                 </div>
 
                 {/* Info Bar */}
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.75rem 1rem',
-                        backgroundColor: '#f0f9ff',
-                        border: '1px solid #bfdbfe',
-                        borderRadius: '0.5rem',
-                        fontSize: '0.8125rem',
-                        color: '#1e40af',
-                        marginBottom: '1rem',
-                    }}
-                >
+                <div className="campaign-editor__info">
                     <Info size={14} />
                     <span>Email preview - Your subscribers will see content as displayed below</span>
                 </div>
 
                 {/* Editor Container */}
-                <div
-                    style={{
-                        minHeight: '500px',
-                    }}
-                >
+                <div className="campaign-editor__container">
                     <UnifiedEditor
                         value={content}
                         onChange={handleContentChange}

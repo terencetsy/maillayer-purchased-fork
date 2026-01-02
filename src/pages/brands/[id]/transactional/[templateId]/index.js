@@ -3,10 +3,9 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
-import { ArrowLeft, Play, MousePointer, BarChart2, MailX } from 'lucide-react';
+import { ArrowLeft, Play, MousePointer, BarChart2, MailX, AlertCircle, CheckCircle, Clock, Code, Copy, Edit, Eye, Mail, MessageSquare, MousePointerClick, Send, Shield } from 'lucide-react';
 import { formatDistance } from 'date-fns';
 import TemplatePreview from '@/components/TemplatePreview';
-import { AlertCircle, CheckmarkCircle02, Clock01, Code, Copy01, Edit01, Eye, Mail02, Message01, MouseLeftClick04, Sent02, Shield02 } from '@/lib/icons';
 
 export default function TransactionalTemplateDetail() {
     const { data: session, status } = useSession();
@@ -240,7 +239,7 @@ export default function TransactionalTemplateDetail() {
                 return {
                     label: 'Open',
                     icon: (
-                        <Mail02
+                        <Mail
                             size={14}
                             className="event-icon event-icon-open"
                         />
@@ -280,7 +279,7 @@ export default function TransactionalTemplateDetail() {
                 return {
                     label: 'Delivery',
                     icon: (
-                        <Mail02
+                        <Mail
                             size={14}
                             className="event-icon event-icon-delivery"
                         />
@@ -348,8 +347,8 @@ export default function TransactionalTemplateDetail() {
                                 </div>
 
                                 <div className={`status-badge ${template.status}`}>
-                                    {template.status === 'active' && <CheckmarkCircle02 size={14} />}
-                                    {template.status === 'draft' && <Clock01 size={14} />}
+                                    {template.status === 'active' && <CheckCircle size={14} />}
+                                    {template.status === 'draft' && <Clock size={14} />}
                                     {template.status === 'inactive' && <AlertCircle size={14} />}
                                     {template.status === 'active' ? 'Active' : template.status === 'draft' ? 'Draft' : 'Inactive'}
                                 </div>
@@ -363,7 +362,7 @@ export default function TransactionalTemplateDetail() {
                                             className="copy-btn"
                                             title="Copy API Key"
                                         >
-                                            {copied ? <CheckmarkCircle02 size={14} /> : <Copy01 size={14} />}
+                                            {copied ? <CheckCircle size={14} /> : <Copy size={14} />}
                                         </button>
                                     </div>
                                 )}
@@ -377,7 +376,7 @@ export default function TransactionalTemplateDetail() {
                         href={`/brands/${id}/transactional/${templateId}/edit`}
                         className="button button--secondary"
                     >
-                        <Edit01 size={16} />
+                        <Edit size={16} />
                         <span>Edit Template</span>
                     </Link>
 
@@ -385,7 +384,7 @@ export default function TransactionalTemplateDetail() {
                         href={`/brands/${id}/transactional/${templateId}/editor`}
                         className="button button--secondary"
                     >
-                        <Edit01 size={16} />
+                        <Edit size={16} />
                         <span>Edit Content</span>
                     </Link>
 
@@ -420,7 +419,7 @@ export default function TransactionalTemplateDetail() {
                 <div className="detail-section template-details-section">
                     <div className="section-header">
                         <h2>
-                            <Message01 size={18} />
+                            <MessageSquare size={18} />
                             <span>Template Details</span>
                         </h2>
                     </div>
@@ -499,7 +498,7 @@ export default function TransactionalTemplateDetail() {
                         <div className="stats-cards">
                             <div className="stat-card">
                                 <div className="stat-icon stat-icon-sent">
-                                    <Sent02 size={18} />
+                                    <Send size={18} />
                                 </div>
                                 <div className="stat-content">
                                     <div className="stat-value">{stats?.sent?.toLocaleString() || 0}</div>
@@ -509,7 +508,7 @@ export default function TransactionalTemplateDetail() {
 
                             <div className="stat-card">
                                 <div className="stat-icon stat-icon-opened">
-                                    <Mail02 size={18} />
+                                    <Mail size={18} />
                                 </div>
                                 <div className="stat-content">
                                     <div className="stat-value">{stats?.opens?.toLocaleString() || 0}</div>
@@ -520,7 +519,7 @@ export default function TransactionalTemplateDetail() {
 
                             <div className="stat-card">
                                 <div className="stat-icon stat-icon-clicked">
-                                    <MouseLeftClick04 size={18} />
+                                    <MousePointerClick size={18} />
                                 </div>
                                 <div className="stat-content">
                                     <div className="stat-value">{stats?.clicks?.toLocaleString() || 0}</div>
@@ -611,7 +610,7 @@ export default function TransactionalTemplateDetail() {
                 <div className="detail-section transaction-logs-section">
                     <div className="section-header logs-header">
                         <h2>
-                            <Shield02 size={18} />
+                            <Shield size={18} />
                             <span>Recent Email Logs</span>
                         </h2>
                         <Link

@@ -375,18 +375,18 @@ export default function ContactListDetails() {
         setCurrentPage(1);
     };
 
-    const getStatusBadgeStyle = (status) => {
+    const getStatusBadgeClass = (status) => {
         switch (status) {
             case 'active':
-                return { padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: '#e8f5e9', color: '#2e7d32', display: 'inline-flex', alignItems: 'center', gap: '4px' };
+                return 'cld-status-badge cld-status-badge--active';
             case 'unsubscribed':
-                return { padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: '#fff3e0', color: '#f57c00', display: 'inline-flex', alignItems: 'center', gap: '4px' };
+                return 'cld-status-badge cld-status-badge--unsubscribed';
             case 'bounced':
-                return { padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: '#ffebee', color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: '4px' };
+                return 'cld-status-badge cld-status-badge--bounced';
             case 'complained':
-                return { padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: '#ffebee', color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: '4px' };
+                return 'cld-status-badge cld-status-badge--complained';
             default:
-                return { padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: '#f5f5f5', color: '#666', display: 'inline-flex', alignItems: 'center', gap: '4px' };
+                return 'cld-status-badge';
         }
     };
 
@@ -408,9 +408,9 @@ export default function ContactListDetails() {
     if (!brand || isLoadingList) {
         return (
             <BrandLayout brand={brand}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', gap: '1rem' }}>
-                    <div style={{ width: '2rem', height: '2rem', border: '3px solid #f0f0f0', borderTopColor: '#1a1a1a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
-                    <p style={{ margin: 0, fontSize: '0.9375rem', color: '#666' }}>Loading contact list...</p>
+                <div className="cld-loading">
+                    <div className="spinner"></div>
+                    <p>Loading contact list...</p>
                 </div>
             </BrandLayout>
         );
@@ -420,18 +420,15 @@ export default function ContactListDetails() {
         <BrandLayout brand={brand}>
             <div className="campaigns-container">
                 {/* Header */}
-                <div style={{ marginBottom: '1.5rem' }}>
-                    <Link
-                        href={`/brands/${id}/contacts`}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#666', textDecoration: 'none', fontSize: '0.875rem', marginBottom: '1rem' }}
-                    >
+                <div className="cld-header">
+                    <Link href={`/brands/${id}/contacts`} className="cld-back-link">
                         <ArrowLeft size={16} />
                         <span>Back to Contact Lists</span>
                     </Link>
                     <div>
-                        <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: '500', color: '#1a1a1a' }}>{contactList.name}</h1>
-                        {contactList.description && <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9375rem', color: '#666' }}>{contactList.description}</p>}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#999' }}>
+                        <h1 className="cld-title">{contactList.name}</h1>
+                        {contactList.description && <p className="cld-description">{contactList.description}</p>}
+                        <div className="cld-meta">
                             <span>{contactList.contactCount || 0} contacts total</span>
                             <span>•</span>
                             <span>Created {new Date(contactList.createdAt).toLocaleDateString()}</span>
@@ -440,131 +437,59 @@ export default function ContactListDetails() {
                 </div>
 
                 {error && (
-                    <div
-                        className="alert alert--error"
-                        style={{ marginBottom: '1rem' }}
-                    >
+                    <div className="cld-alert cld-alert--error">
                         <span>{error}</span>
-                        <button
-                            onClick={() => setError('')}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center' }}
-                        >
+                        <button onClick={() => setError('')} className="cld-alert-close">
                             <X size={16} />
                         </button>
                     </div>
                 )}
 
                 {success && (
-                    <div
-                        className="alert alert--success"
-                        style={{ marginBottom: '1rem' }}
-                    >
+                    <div className="cld-alert cld-alert--success">
                         <span>{success}</span>
-                        <button
-                            onClick={() => setSuccess('')}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center' }}
-                        >
+                        <button onClick={() => setSuccess('')} className="cld-alert-close">
                             <X size={16} />
                         </button>
                     </div>
                 )}
 
                 {/* Status Summary */}
-                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', overflowX: 'auto' }}>
+                <div className="cld-status-filters">
                     <button
                         onClick={() => handleStatusFilterChange('all')}
-                        style={{
-                            padding: '0.75rem 1rem',
-                            border: statusFilter === 'all' ? '2px solid #1a1a1a' : '1px solid #e0e0e0',
-                            borderRadius: '0.5rem',
-                            background: statusFilter === 'all' ? '#fafafa' : '#fff',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            minWidth: '100px',
-                        }}
+                        className={`cld-status-card cld-status-card--all ${statusFilter === 'all' ? 'active' : ''}`}
                     >
-                        <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1a1a1a' }}>{contactList.contactCount || 0}</span>
-                        <span style={{ fontSize: '0.75rem', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' }}>All</span>
+                        <span className="cld-status-count">{contactList.contactCount || 0}</span>
+                        <span className="cld-status-label">All</span>
                     </button>
                     <button
                         onClick={() => handleStatusFilterChange('active')}
-                        style={{
-                            padding: '0.75rem 1rem',
-                            border: statusFilter === 'active' ? '2px solid #2e7d32' : '1px solid #e0e0e0',
-                            borderRadius: '0.5rem',
-                            background: statusFilter === 'active' ? '#e8f5e9' : '#fff',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            minWidth: '100px',
-                        }}
+                        className={`cld-status-card cld-status-card--active ${statusFilter === 'active' ? 'active' : ''}`}
                     >
-                        <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#2e7d32' }}>{contactStatusCounts.active || 0}</span>
-                        <span style={{ fontSize: '0.75rem', color: '#2e7d32', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active</span>
+                        <span className="cld-status-count">{contactStatusCounts.active || 0}</span>
+                        <span className="cld-status-label">Active</span>
                     </button>
                     <button
                         onClick={() => handleStatusFilterChange('unsubscribed')}
-                        style={{
-                            padding: '0.75rem 1rem',
-                            border: statusFilter === 'unsubscribed' ? '2px solid #f57c00' : '1px solid #e0e0e0',
-                            borderRadius: '0.5rem',
-                            background: statusFilter === 'unsubscribed' ? '#fff3e0' : '#fff',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            minWidth: '100px',
-                        }}
+                        className={`cld-status-card cld-status-card--unsubscribed ${statusFilter === 'unsubscribed' ? 'active' : ''}`}
                     >
-                        <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f57c00' }}>{contactStatusCounts.unsubscribed || 0}</span>
-                        <span style={{ fontSize: '0.75rem', color: '#f57c00', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Unsubscribed</span>
+                        <span className="cld-status-count">{contactStatusCounts.unsubscribed || 0}</span>
+                        <span className="cld-status-label">Unsubscribed</span>
                     </button>
                     <button
                         onClick={() => handleStatusFilterChange('bounced')}
-                        style={{
-                            padding: '0.75rem 1rem',
-                            border: statusFilter === 'bounced' ? '2px solid #dc2626' : '1px solid #e0e0e0',
-                            borderRadius: '0.5rem',
-                            background: statusFilter === 'bounced' ? '#ffebee' : '#fff',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            minWidth: '100px',
-                        }}
+                        className={`cld-status-card cld-status-card--bounced ${statusFilter === 'bounced' ? 'active' : ''}`}
                     >
-                        <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#dc2626' }}>{contactStatusCounts.bounced || 0}</span>
-                        <span style={{ fontSize: '0.75rem', color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bounced</span>
+                        <span className="cld-status-count">{contactStatusCounts.bounced || 0}</span>
+                        <span className="cld-status-label">Bounced</span>
                     </button>
                     <button
                         onClick={() => handleStatusFilterChange('complained')}
-                        style={{
-                            padding: '0.75rem 1rem',
-                            border: statusFilter === 'complained' ? '2px solid #dc2626' : '1px solid #e0e0e0',
-                            borderRadius: '0.5rem',
-                            background: statusFilter === 'complained' ? '#ffebee' : '#fff',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            minWidth: '100px',
-                        }}
+                        className={`cld-status-card cld-status-card--complained ${statusFilter === 'complained' ? 'active' : ''}`}
                     >
-                        <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#dc2626' }}>{contactStatusCounts.complained || 0}</span>
-                        <span style={{ fontSize: '0.75rem', color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Complained</span>
+                        <span className="cld-status-count">{contactStatusCounts.complained || 0}</span>
+                        <span className="cld-status-label">Complained</span>
                     </button>
                 </div>
 
@@ -578,22 +503,10 @@ export default function ContactListDetails() {
                 )}
 
                 {/* Actions Bar */}
-                <div
-                    className="campaigns-header"
-                    style={{ marginTop: '1.5rem' }}
-                >
-                    <div
-                        className="search-container"
-                        style={{ display: 'flex', gap: '0.5rem' }}
-                    >
-                        <div
-                            className="search-input-wrapper"
-                            style={{ position: 'relative' }}
-                        >
-                            <Search
-                                size={18}
-                                className="search-icon"
-                            />
+                <div className="campaigns-header" style={{ marginTop: '1.5rem' }}>
+                    <div className="search-container" style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div className="search-input-wrapper" style={{ position: 'relative' }}>
+                            <Search size={18} className="search-icon" />
                             <input
                                 type="text"
                                 placeholder="Search contacts..."
@@ -605,22 +518,7 @@ export default function ContactListDetails() {
                                 className="search-input"
                             />
                             {searchQuery && (
-                                <button
-                                    onClick={clearSearch}
-                                    style={{
-                                        position: 'absolute',
-                                        right: '0.625rem',
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        padding: '0.25rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        color: '#666',
-                                    }}
-                                >
+                                <button onClick={clearSearch} className="cld-search-clear">
                                     <X size={16} />
                                 </button>
                             )}
@@ -635,72 +533,19 @@ export default function ContactListDetails() {
                     </div>
 
                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        <div style={{ position: 'relative' }}>
-                            <button
-                                className="button button--secondary"
-                                onClick={toggleDropdown}
-                            >
+                        <div className="cld-dropdown">
+                            <button className="button button--secondary" onClick={toggleDropdown}>
                                 <Upload size={16} />
                                 <span>Import</span>
                                 <ChevronDown size={16} />
                             </button>
                             {showDropdown && (
-                                <div
-                                    style={{
-                                        position: 'absolute',
-                                        top: '100%',
-                                        right: 0,
-                                        marginTop: '0.25rem',
-                                        background: '#ffffff',
-                                        border: '1px solid #f0f0f0',
-                                        borderRadius: '0.5rem',
-                                        boxShadow: '0 4px 12px 0 rgba(0, 0, 0, 0.1)',
-                                        minWidth: '180px',
-                                        zIndex: 100,
-                                        overflow: 'hidden',
-                                    }}
-                                >
-                                    <button
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.625rem 0.875rem',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.625rem',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            fontSize: '0.8125rem',
-                                            color: '#1a1a1a',
-                                            transition: 'all 0.15s ease',
-                                            textAlign: 'left',
-                                        }}
-                                        onClick={() => handleImportContacts('manual')}
-                                        onMouseEnter={(e) => (e.currentTarget.style.background = '#f8f8f8')}
-                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                                    >
+                                <div className="cld-dropdown-menu">
+                                    <button className="cld-dropdown-item" onClick={() => handleImportContacts('manual')}>
                                         <PlusCircle size={16} />
                                         <span>Add Manually</span>
                                     </button>
-                                    <button
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.625rem 0.875rem',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.625rem',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            fontSize: '0.8125rem',
-                                            color: '#1a1a1a',
-                                            transition: 'all 0.15s ease',
-                                            textAlign: 'left',
-                                        }}
-                                        onClick={() => handleImportContacts('csv')}
-                                        onMouseEnter={(e) => (e.currentTarget.style.background = '#f8f8f8')}
-                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                                    >
+                                    <button className="cld-dropdown-item" onClick={() => handleImportContacts('csv')}>
                                         <Upload size={16} />
                                         <span>Import CSV</span>
                                     </button>
@@ -719,18 +564,11 @@ export default function ContactListDetails() {
 
                         {selectedContacts.length > 0 && (
                             <>
-                                <button
-                                    className="button button--secondary"
-                                    onClick={() => setShowStatusUpdateModal(true)}
-                                >
+                                <button className="button button--secondary" onClick={() => setShowStatusUpdateModal(true)}>
                                     <UserCheck size={16} />
                                     <span>Update Status</span>
                                 </button>
-                                <button
-                                    className="button button--secondary"
-                                    onClick={handleDeleteSelected}
-                                    style={{ color: '#dc2626' }}
-                                >
+                                <button className="button button--secondary button--danger" onClick={handleDeleteSelected}>
                                     <Trash size={16} />
                                     <span>Delete ({selectedContacts.length})</span>
                                 </button>
@@ -739,64 +577,44 @@ export default function ContactListDetails() {
                     </div>
                 </div>
 
-                <div style={{ borderBottom: '1px solid #f0f0f0', marginBottom: '1.5rem' }}>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                        <button
-                            onClick={() => setActiveTab('contacts')}
-                            style={{
-                                padding: '0.75rem 1rem',
-                                background: 'none',
-                                border: 'none',
-                                borderBottom: activeTab === 'contacts' ? '2px solid #1a1a1a' : '2px solid transparent',
-                                cursor: 'pointer',
-                                fontWeight: activeTab === 'contacts' ? '500' : '400',
-                                color: activeTab === 'contacts' ? '#1a1a1a' : '#666',
-                            }}
-                        >
-                            <Users
-                                size={16}
-                                style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}
-                            />
-                            Contacts
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('api')}
-                            style={{
-                                padding: '0.75rem 1rem',
-                                background: 'none',
-                                border: 'none',
-                                borderBottom: activeTab === 'api' ? '2px solid #1a1a1a' : '2px solid transparent',
-                                cursor: 'pointer',
-                                fontWeight: activeTab === 'api' ? '500' : '400',
-                                color: activeTab === 'api' ? '#1a1a1a' : '#666',
-                            }}
-                        >
-                            <Code
-                                size={16}
-                                style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}
-                            />
-                            API Access
-                        </button>
-                    </div>
+                <div className="cld-tabs">
+                    <button
+                        onClick={() => setActiveTab('contacts')}
+                        className={`cld-tab ${activeTab === 'contacts' ? 'active' : ''}`}
+                    >
+                        <Users size={16} />
+                        Contacts
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('api')}
+                        className={`cld-tab ${activeTab === 'api' ? 'active' : ''}`}
+                    >
+                        <Code size={16} />
+                        API Access
+                    </button>
                 </div>
 
                 {/* Contacts Table */}
                 {activeTab === 'contacts' && (
-                    <div style={{ marginTop: '1rem' }}>
+                    <div>
                         {isLoading ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', gap: '1rem' }}>
-                                <div style={{ width: '2rem', height: '2rem', border: '3px solid #f0f0f0', borderTopColor: '#1a1a1a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
-                                <p style={{ margin: 0, fontSize: '0.9375rem', color: '#666' }}>Loading contacts...</p>
+                            <div className="cld-loading">
+                                <div className="spinner"></div>
+                                <p>Loading contacts...</p>
                             </div>
                         ) : (
                             <>
                                 {contacts.length === 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', textAlign: 'center' }}>
-                                        <div style={{ width: '4rem', height: '4rem', borderRadius: '1rem', background: 'linear-gradient(145deg, #f5f5f5 0%, #e8e8e8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', marginBottom: '1.5rem' }}>
+                                    <div className="cld-empty">
+                                        <div className="cld-empty-icon">
                                             <Users size={32} />
                                         </div>
-                                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: '500', color: '#1a1a1a' }}>No contacts found</h3>
-                                        <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.9375rem', color: '#666', maxWidth: '400px' }}>{searchQuery || statusFilter !== 'all' ? 'No contacts match your search criteria. Try a different search term or clear your filters.' : "This list doesn't have any contacts yet. Import contacts to get started."}</p>
+                                        <h3 className="cld-empty-title">No contacts found</h3>
+                                        <p className="cld-empty-desc">
+                                            {searchQuery || statusFilter !== 'all'
+                                                ? 'No contacts match your search criteria. Try a different search term or clear your filters.'
+                                                : "This list doesn't have any contacts yet. Import contacts to get started."}
+                                        </p>
                                         <div style={{ display: 'flex', gap: '0.75rem' }}>
                                             {searchQuery || statusFilter !== 'all' ? (
                                                 <button
@@ -809,10 +627,7 @@ export default function ContactListDetails() {
                                                     Clear Filters
                                                 </button>
                                             ) : (
-                                                <button
-                                                    className="button button--primary"
-                                                    onClick={() => handleImportContacts('csv')}
-                                                >
+                                                <button className="button button--primary" onClick={() => handleImportContacts('csv')}>
                                                     <Upload size={16} />
                                                     Import Contacts
                                                 </button>
@@ -828,9 +643,9 @@ export default function ContactListDetails() {
                                                     <th>
                                                         <input
                                                             type="checkbox"
+                                                            className="table-checkbox"
                                                             checked={selectedContacts.length === contacts.length && contacts.length > 0}
                                                             onChange={handleSelectAll}
-                                                            style={{ cursor: 'pointer' }}
                                                         />
                                                     </th>
                                                     <th
@@ -873,16 +688,16 @@ export default function ContactListDetails() {
                                                         <td>
                                                             <input
                                                                 type="checkbox"
+                                                                className="table-checkbox"
                                                                 checked={selectedContacts.includes(contact._id)}
                                                                 onChange={() => handleContactSelect(contact._id)}
-                                                                style={{ cursor: 'pointer' }}
                                                             />
                                                         </td>
                                                         <td>{contact.email}</td>
                                                         <td>{contact.firstName || '-'}</td>
                                                         <td>{contact.lastName || '-'}</td>
                                                         <td>
-                                                            <span style={getStatusBadgeStyle(contact.status || 'active')}>
+                                                            <span className={getStatusBadgeClass(contact.status || 'active')}>
                                                                 {getStatusIcon(contact.status || 'active')}
                                                                 <span>{contact.status || 'active'}</span>
                                                             </span>
@@ -890,33 +705,27 @@ export default function ContactListDetails() {
                                                         <td>{contact.phone || '-'}</td>
                                                         <td>{new Date(contact.createdAt).toLocaleDateString()}</td>
                                                         <td className="actions-col">
-                                                            <div className="action-buttons">
+                                                            <div className="cld-action-buttons">
                                                                 {contact.status !== 'active' && (
                                                                     <button
-                                                                        className="action-btn"
+                                                                        className="cld-action-btn cld-action-btn--activate"
                                                                         onClick={() => handleUpdateContactStatus(contact._id, 'active')}
                                                                         title="Set as Active"
                                                                     >
-                                                                        <UserCheck
-                                                                            size={14}
-                                                                            style={{ color: '#2e7d32' }}
-                                                                        />
+                                                                        <UserCheck size={14} />
                                                                     </button>
                                                                 )}
                                                                 {contact.status !== 'unsubscribed' && (
                                                                     <button
-                                                                        className="action-btn"
+                                                                        className="cld-action-btn cld-action-btn--unsubscribe"
                                                                         onClick={() => handleUpdateContactStatus(contact._id, 'unsubscribed')}
                                                                         title="Unsubscribe"
                                                                     >
-                                                                        <UserX
-                                                                            size={14}
-                                                                            style={{ color: '#f57c00' }}
-                                                                        />
+                                                                        <UserX size={14} />
                                                                     </button>
                                                                 )}
                                                                 <button
-                                                                    className="action-btn delete-btn"
+                                                                    className="cld-action-btn cld-action-btn--delete"
                                                                     onClick={() => {
                                                                         if (window.confirm('Are you sure you want to delete this contact?')) {
                                                                             setSelectedContacts([contact._id]);
@@ -936,9 +745,9 @@ export default function ContactListDetails() {
 
                                     </div>
 
-                                    {/* Pagination */}
-                                    {totalPages > 1 && (
-                                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.5rem', padding: '1rem' }}>
+                                        {/* Pagination */}
+                                        {totalPages > 1 && (
+                                            <div className="cld-pagination">
                                                 <button
                                                     className="button button--secondary button--small"
                                                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -946,7 +755,7 @@ export default function ContactListDetails() {
                                                 >
                                                     Previous
                                                 </button>
-                                                <span style={{ fontSize: '0.875rem', color: '#666' }}>
+                                                <span className="cld-pagination-info">
                                                     Page {currentPage} of {totalPages}
                                                 </span>
                                                 <button

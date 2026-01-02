@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
 import TransactionalTemplateForm from '@/components/TransactionalTemplateForm';
-import { AlertCircle, CheckmarkCircle02, Clock01, Code, Edit01, Eye, Mail02, PlusSignCircle, Search01 } from '@/lib/icons';
+import { AlertCircle, CheckCircle, Clock, Code, Edit, Eye, Mail, PlusCircle, Search } from 'lucide-react';
 
 export default function TransactionalTemplates() {
     const { data: session, status } = useSession();
@@ -104,7 +104,7 @@ export default function TransactionalTemplates() {
                 <div className="campaigns-header">
                     <div className="search-container">
                         <div className="search-input-wrapper">
-                            <Search01
+                            <Search
                                 size={18}
                                 className="search-icon"
                             />
@@ -121,7 +121,7 @@ export default function TransactionalTemplates() {
                         className="button button--primary"
                         onClick={handleCreateClick}
                     >
-                        <PlusSignCircle size={18} />
+                        <PlusCircle size={18} />
                         Create Template
                     </button>
                 </div>
@@ -159,7 +159,7 @@ export default function TransactionalTemplates() {
                                         className="button button--primary"
                                         onClick={handleCreateClick}
                                     >
-                                        <PlusSignCircle size={18} />
+                                        <PlusCircle size={18} />
                                         Create Template
                                     </button>
                                 </div>
@@ -194,8 +194,8 @@ export default function TransactionalTemplates() {
                                                                 <div className="campaign-info">
                                                                     <div className="email-icon">
                                                                         <div className={`status-badge ${template.status}`}>
-                                                                            {template.status === 'active' && <CheckmarkCircle02 size={14} />}
-                                                                            {template.status === 'draft' && <Clock01 size={14} />}
+                                                                            {template.status === 'active' && <CheckCircle size={14} />}
+                                                                            {template.status === 'draft' && <Clock size={14} />}
                                                                             {template.status === 'inactive' && <AlertCircle size={14} />}
                                                                             {template.status === 'active' ? 'Active' : template.status === 'draft' ? 'Draft' : 'Inactive'}
                                                                         </div>
@@ -208,7 +208,7 @@ export default function TransactionalTemplates() {
                                                             </td>
                                                             <td className="openrate-col">
                                                                 <div className="stats-value">
-                                                                    <Mail02
+                                                                    <Mail
                                                                         className="stats-icon"
                                                                         size={14}
                                                                     />
@@ -230,7 +230,7 @@ export default function TransactionalTemplates() {
                                                                         className="action-btn edit-btn"
                                                                         title="Edit template"
                                                                     >
-                                                                        <Edit01 size={18} />
+                                                                        <Edit size={18} />
                                                                     </Link>
                                                                     <Link
                                                                         href={`/brands/${id}/transactional/${template._id}/api`}

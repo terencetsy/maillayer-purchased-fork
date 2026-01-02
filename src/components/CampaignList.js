@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { formatDistance } from 'date-fns';
-import { ArrowBounce28Filled, Copy01, Delete02, Edit01, Eye, Mail02, PieChart, UserMinus01 } from '@/lib/icons';
+import { CornerLeftUp, Copy, Trash2, Pencil, Eye, Mail, PieChart, UserMinus } from 'lucide-react';
 
 const CampaignList = ({ campaigns, brandId }) => {
     const handleDuplicate = async (campaignId, campaignName) => {
@@ -150,7 +150,7 @@ const CampaignList = ({ campaigns, brandId }) => {
                                         renderStatsSkeleton()
                                     ) : (
                                         <div className="stats-value">
-                                            <UserMinus01
+                                            <UserMinus
                                                 size={14}
                                                 className="stats-icon"
                                             />
@@ -174,7 +174,7 @@ const CampaignList = ({ campaigns, brandId }) => {
                                         renderStatsSkeleton()
                                     ) : (
                                         <div className="stats-value">
-                                            <ArrowBounce28Filled
+                                            <CornerLeftUp
                                                 size={14}
                                                 className="stats-icon"
                                             />
@@ -207,7 +207,7 @@ const CampaignList = ({ campaigns, brandId }) => {
                                             className="action-btn edit-btn"
                                             title="Edit Campaign"
                                         >
-                                            <Edit01 size={16} />
+                                            <Pencil size={16} />
                                         </Link>
                                     )}
                                     <div
@@ -215,7 +215,7 @@ const CampaignList = ({ campaigns, brandId }) => {
                                         onClick={() => handleDuplicate(campaign._id, campaign.name)}
                                         title="Duplicate Campaign"
                                     >
-                                        <Copy01 size={16} />
+                                        <Copy size={16} />
                                     </div>
                                     {campaign.status === 'draft' && (
                                         <button
@@ -223,7 +223,7 @@ const CampaignList = ({ campaigns, brandId }) => {
                                             title="Delete Campaign"
                                             onClick={() => handleDelete(campaign._id)}
                                         >
-                                            <Delete02 size={16} />
+                                            <Trash2 size={16} />
                                         </button>
                                     )}
                                 </div>

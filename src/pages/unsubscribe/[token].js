@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { CheckmarkCircle02, AlertCircle, MailOutgoing } from '@/lib/icons';
+import { CheckmarkCircle02, AlertCircle } from '@/lib/icons';
 
 export default function Unsubscribe() {
     const router = useRouter();
@@ -140,8 +140,7 @@ export default function Unsubscribe() {
                 <div className="auth-card">
                     {/* Logo */}
                     <div className="auth-logo">
-                        <MailOutgoing size={24} />
-                        <span>Unsubscribe</span>
+                        <img src="https://c1.tablecdn.com/maillayer/logo.png" alt="Maillayer" height={28} />
                     </div>
 
                     {isUnsubscribed ? (

@@ -89,52 +89,45 @@ export default function ContactsBarChart({ data = [], title = 'Daily Activity', 
         return index % 3 === 0;
     };
 
+    // Determine bar max width based on data length
+    const getBarMaxWidth = () => {
+        if (aggregatedData.length <= 14) return '40px';
+        if (aggregatedData.length <= 30) return '32px';
+        return '28px';
+    };
+
     if (!data || data.length === 0) {
         return (
-            <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <div className="chart-container">
+                <div className="chart-header">
                     <div>
-                        <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: '600', color: '#1a1a1a', marginBottom: '0.25rem' }}>{title}</h3>
+                        <h3 className="chart-title">{title}</h3>
                     </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '240px', color: '#999', fontSize: '0.875rem', fontStyle: 'italic' }}>No data available</div>
+                <div className="chart-empty">No data available</div>
             </div>
         );
     }
 
-    const barMaxWidth = aggregatedData.length <= 14 ? '40px' : aggregatedData.length <= 30 ? '32px' : '28px';
-    const gap = aggregatedData.length <= 14 ? '8px' : aggregatedData.length <= 30 ? '6px' : '4px';
-
     return (
-        <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', padding: '1.5rem', marginBottom: '1.5rem' }}>
+        <div className="chart-container">
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div className="chart-header">
                 <div>
-                    <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: '600', color: '#1a1a1a', marginBottom: '0.25rem' }}>{title}</h3>
-                    <span style={{ fontSize: '0.8125rem', color: '#999' }}>
+                    <h3 className="chart-title">{title}</h3>
+                    <div className="chart-subtitle">
                         {data.length} {isDateData(data[0]?.date) ? 'days' : 'items'}
                         {aggregatedData[0]?.isWeek && ' (weekly)'}
                         {aggregatedData[0]?.isBiWeek && ' (bi-weekly)'}
-                    </span>
+                    </div>
                 </div>
-                <span style={{ fontSize: '0.875rem', color: '#666', fontWeight: '500' }}>
+                <span className="chart-total">
                     {total.toLocaleString()} {totalLabel}
                 </span>
             </div>
 
             {/* Bar Chart */}
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'flex-end',
-                    justifyContent: 'space-between',
-                    gap: gap,
-                    height: '240px',
-                    padding: '20px 0',
-                    position: 'relative',
-                    borderBottom: '1px solid #f0f0f0',
-                }}
-            >
+            <div className="chart-bars">
                 {aggregatedData.map((item, index) => {
                     const heightPercentage = (item.value / maxValue) * 100;
                     const isHovered = hoveredIndex === index;
@@ -142,89 +135,37 @@ export default function ContactsBarChart({ data = [], title = 'Daily Activity', 
                     return (
                         <div
                             key={index}
-                            style={{
-                                flex: 1,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '8px',
-                                minWidth: 0,
-                            }}
+                            className="chart-bar-wrapper"
                             onMouseEnter={() => setHoveredIndex(index)}
                             onMouseLeave={() => setHoveredIndex(null)}
                         >
                             {/* Bar Wrapper */}
-                            <div
-                                style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'flex-end',
-                                    height: '200px',
-                                    position: 'relative',
-                                }}
-                            >
+                            <div className="chart-bar-inner">
                                 {/* Value Label */}
                                 <div
-                                    style={{
-                                        fontSize: '11px',
-                                        fontWeight: '600',
-                                        color: '#1a1a1a',
-                                        marginBottom: '4px',
-                                        opacity: isHovered ? 1 : 0,
-                                        transition: 'opacity 0.2s ease',
-                                        whiteSpace: 'nowrap',
-                                    }}
+                                    className="chart-bar-value"
+                                    style={{ opacity: isHovered ? 1 : 0 }}
                                 >
                                     {item.value}
                                 </div>
 
                                 {/* Bar */}
                                 <div
+                                    className="chart-bar"
                                     style={{
-                                        width: '100%',
-                                        maxWidth: barMaxWidth,
-                                        background: isHovered ? '#f0f0f0' : '#f5f5f5',
-                                        borderRadius: '4px 4px 0 0',
-                                        position: 'relative',
-                                        minHeight: '4px',
+                                        maxWidth: getBarMaxWidth(),
                                         height: `${Math.max(heightPercentage, 2)}%`,
-                                        transition: 'all 0.3s ease',
-                                        overflow: 'hidden',
-                                        cursor: 'pointer',
                                     }}
                                 >
                                     {/* Bar Fill */}
-                                    <div
-                                        style={{
-                                            position: 'absolute',
-                                            bottom: 0,
-                                            left: 0,
-                                            right: 0,
-                                            height: '100%',
-                                            background: isHovered ? 'linear-gradient(180deg, #1a1a1a 0%, #4a4a4a 100%)' : 'linear-gradient(180deg, #666 0%, #999 100%)',
-                                            borderRadius: '4px 4px 0 0',
-                                            transition: 'all 0.3s ease',
-                                            boxShadow: isHovered ? '0 0 20px rgba(26, 26, 26, 0.3)' : 'none',
-                                        }}
-                                    ></div>
+                                    <div className="chart-bar-fill"></div>
                                 </div>
                             </div>
 
                             {/* Label */}
                             <div
-                                style={{
-                                    fontSize: '10px',
-                                    color: '#999',
-                                    fontWeight: '500',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    maxWidth: '100%',
-                                    textAlign: 'center',
-                                    visibility: shouldShowLabel(index) ? 'visible' : 'hidden',
-                                }}
+                                className="chart-bar-label"
+                                style={{ visibility: shouldShowLabel(index) ? 'visible' : 'hidden' }}
                                 title={formatLabel(item.date, item)}
                             >
                                 {formatLabel(item.date, item)}

@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
-import { ArrowLeft02, Filter, Mail02, AlertCircle, ChevronDown, MouseLeftClick04 } from '@/lib/icons';
+import { ArrowLeft, Filter, Mail, AlertCircle, ChevronDown, MousePointerClick, Send, Eye, MousePointer } from 'lucide-react';
 import { formatDistance } from 'date-fns';
 
 export default function SequenceLogs() {
@@ -180,22 +180,22 @@ export default function SequenceLogs() {
             case 'open':
                 return {
                     label: 'Open',
-                    icon: <Mail02 size={14} />,
+                    icon: <Eye size={12} />,
                 };
             case 'click':
                 return {
                     label: 'Click',
-                    icon: <MouseLeftClick04 size={14} />,
+                    icon: <MousePointer size={12} />,
                 };
             case 'bounce':
                 return {
                     label: 'Bounce',
-                    icon: <AlertCircle size={14} />,
+                    icon: <AlertCircle size={12} />,
                 };
             case 'complaint':
                 return {
                     label: 'Complaint',
-                    icon: <AlertCircle size={14} />,
+                    icon: <AlertCircle size={12} />,
                 };
             default:
                 return { label: type, icon: null };
@@ -215,108 +215,80 @@ export default function SequenceLogs() {
 
     return (
         <BrandLayout brand={brand}>
-            <div className="template-detail-container">
+            <div className="logs-page-container">
                 {/* Header */}
-                <div className="detail-header">
-                    <Link
-                        href={`/brands/${id}/sequences/${sequenceId}`}
-                        className="back-link"
-                    >
-                        <ArrowLeft02 size={16} />
-                        <span>Back to Sequence</span>
+                <div className="logs-page-header">
+                    <Link href={`/brands/${id}/sequences`} className="back-link">
+                        <ArrowLeft size={14} />
+                        <span>Back to Sequences</span>
                     </Link>
-
-                    <div className="template-header">
-                        <div className="template-header-content">
-                            <h1>{sequence?.name} - Email Logs</h1>
-                            <div className="template-meta">
-                                <div className="subject-line">
-                                    <span className="subject-label">Sequence:</span>
-                                    <span className="subject-value">{sequence?.name}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <h1 className="logs-page-title">{sequence?.name} - Logs</h1>
                 </div>
 
                 {/* Stats Summary */}
                 {stats && (
-                    <div className="detail-section stats-summary-section">
-                        <div className="section-header">
-                            <h2>Email Performance</h2>
+                    <div className="logs-stats-grid">
+                        <div className="logs-stat-card">
+                            <div className="logs-stat-icon logs-stat-icon--sent">
+                                <Send size={16} />
+                            </div>
+                            <div className="logs-stat-content">
+                                <span className="logs-stat-value">{stats.sent?.toLocaleString() || 0}</span>
+                                <span className="logs-stat-label">Sent</span>
+                            </div>
                         </div>
 
-                        <div className="stats-cards">
-                            <div className="stat-card">
-                                <div className="stat-icon stat-icon-sent">
-                                    <Mail02 size={18} />
-                                </div>
-                                <div className="stat-content">
-                                    <div className="stat-value">{stats.sent?.toLocaleString() || 0}</div>
-                                    <div className="stat-label">Total Sent</div>
-                                </div>
+                        <div className="logs-stat-card">
+                            <div className="logs-stat-icon logs-stat-icon--opened">
+                                <Eye size={16} />
                             </div>
-
-                            <div className="stat-card">
-                                <div className="stat-icon stat-icon-opened">
-                                    <Mail02 size={18} />
-                                </div>
-                                <div className="stat-content">
-                                    <div className="stat-value">{stats.opens?.toLocaleString() || 0}</div>
-                                    <div className="stat-label">Opens</div>
-                                    <div className="stat-percent">{stats.openRate || 0}% open rate</div>
-                                </div>
+                            <div className="logs-stat-content">
+                                <span className="logs-stat-value">{stats.opens?.toLocaleString() || 0}</span>
+                                <span className="logs-stat-label">Opens ({stats.openRate || 0}%)</span>
                             </div>
+                        </div>
 
-                            <div className="stat-card">
-                                <div className="stat-icon stat-icon-clicked">
-                                    <MouseLeftClick04 size={18} />
-                                </div>
-                                <div className="stat-content">
-                                    <div className="stat-value">{stats.clicks?.toLocaleString() || 0}</div>
-                                    <div className="stat-label">Clicks</div>
-                                    <div className="stat-percent">{stats.clickRate || 0}% click rate</div>
-                                </div>
+                        <div className="logs-stat-card">
+                            <div className="logs-stat-icon logs-stat-icon--clicked">
+                                <MousePointerClick size={16} />
                             </div>
+                            <div className="logs-stat-content">
+                                <span className="logs-stat-value">{stats.clicks?.toLocaleString() || 0}</span>
+                                <span className="logs-stat-label">Clicks ({stats.clickRate || 0}%)</span>
+                            </div>
+                        </div>
 
-                            <div className="stat-card">
-                                <div className="stat-icon stat-icon-bounced">
-                                    <AlertCircle size={18} />
-                                </div>
-                                <div className="stat-content">
-                                    <div className="stat-value">{stats.bounces || 0}</div>
-                                    <div className="stat-label">Bounces</div>
-                                    <div className="stat-percent">{stats.bounceRate || 0}% bounce rate</div>
-                                </div>
+                        <div className="logs-stat-card">
+                            <div className="logs-stat-icon logs-stat-icon--bounced">
+                                <AlertCircle size={16} />
+                            </div>
+                            <div className="logs-stat-content">
+                                <span className="logs-stat-value">{stats.bounces || 0}</span>
+                                <span className="logs-stat-label">Bounces ({stats.bounceRate || 0}%)</span>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* Filters */}
-                <div className="detail-section transaction-logs-section">
-                    <div className="section-header logs-header">
-                        <h2>Email Activity Logs</h2>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button
-                                className="button button--secondary button--small"
-                                onClick={() => setShowFilters(!showFilters)}
-                            >
-                                <Filter size={14} />
-                                <span>Filter</span>
-                                <ChevronDown
-                                    size={14}
-                                    style={{ transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
-                                />
-                            </button>
-                        </div>
+                {/* Filters & Logs */}
+                <div className="logs-section">
+                    <div className="logs-section-header">
+                        <h2>Activity Logs</h2>
+                        <button
+                            className="button button--secondary button--small"
+                            onClick={() => setShowFilters(!showFilters)}
+                        >
+                            <Filter size={14} />
+                            Filter
+                            <ChevronDown size={14} className={`filter-chevron ${showFilters ? 'open' : ''}`} />
+                        </button>
                     </div>
 
                     {showFilters && (
-                        <div style={{ padding: '1rem', background: '#fafafa', borderRadius: '0.5rem', marginBottom: '1rem' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '500', color: '#666', marginBottom: '0.5rem' }}>Email Address</label>
+                        <div className="logs-filters">
+                            <div className="logs-filters-grid">
+                                <div className="filter-field">
+                                    <label className="filter-label">Email</label>
                                     <input
                                         type="text"
                                         name="email"
@@ -327,23 +299,23 @@ export default function SequenceLogs() {
                                     />
                                 </div>
 
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '500', color: '#666', marginBottom: '0.5rem' }}>Status</label>
+                                <div className="filter-field">
+                                    <label className="filter-label">Status</label>
                                     <select
                                         name="status"
                                         value={filters.status}
                                         onChange={handleFilterChange}
                                         className="form-select"
                                     >
-                                        <option value="">All Statuses</option>
+                                        <option value="">All</option>
                                         <option value="sent">Sent</option>
                                         <option value="delivered">Delivered</option>
                                         <option value="failed">Failed</option>
                                     </select>
                                 </div>
 
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '500', color: '#666', marginBottom: '0.5rem' }}>Start Date</label>
+                                <div className="filter-field">
+                                    <label className="filter-label">From</label>
                                     <input
                                         type="date"
                                         name="startDate"
@@ -353,8 +325,8 @@ export default function SequenceLogs() {
                                     />
                                 </div>
 
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '500', color: '#666', marginBottom: '0.5rem' }}>End Date</label>
+                                <div className="filter-field">
+                                    <label className="filter-label">To</label>
                                     <input
                                         type="date"
                                         name="endDate"
@@ -370,20 +342,20 @@ export default function SequenceLogs() {
                     {/* Logs Table */}
                     {isLoading ? (
                         <div className="loading-inline">
-                            <div className="spinner-small"></div>
-                            <p>Loading logs...</p>
+                            <div className="spinner"></div>
+                            <span>Loading logs...</span>
                         </div>
                     ) : logs.length > 0 ? (
                         <>
-                            <div className="logs-table-container">
-                                <table className="logs-table">
+                            <div className="logs-table-wrapper">
+                                <table className="campaigns-table">
                                     <thead>
                                         <tr>
                                             <th>Status</th>
                                             <th>Email</th>
                                             <th>Step</th>
                                             <th>Subject</th>
-                                            <th>Sent At</th>
+                                            <th>Sent</th>
                                             <th>Events</th>
                                         </tr>
                                     </thead>
@@ -391,13 +363,13 @@ export default function SequenceLogs() {
                                         {logs.map((log) => (
                                             <tr key={log._id}>
                                                 <td>
-                                                    <span className={`status-badge status-${log.status}`}>{log.status}</span>
+                                                    <span className={`status-badge ${log.status}`}>{log.status}</span>
                                                 </td>
-                                                <td>{log.email}</td>
-                                                <td>Email {log.emailOrder}</td>
-                                                <td>{log.subject}</td>
-                                                <td>
-                                                    <span title={formatDate(log.sentAt)}>{formatDistance(new Date(log.sentAt), new Date(), { addSuffix: true })}</span>
+                                                <td className="log-email">{log.email}</td>
+                                                <td className="log-step">Step {log.emailOrder}</td>
+                                                <td className="log-subject">{log.subject}</td>
+                                                <td className="log-date" title={formatDate(log.sentAt)}>
+                                                    {formatDistance(new Date(log.sentAt), new Date(), { addSuffix: true })}
                                                 </td>
                                                 <td>
                                                     {log.events && log.events.length > 0 ? (
@@ -408,7 +380,7 @@ export default function SequenceLogs() {
                                                                     <span
                                                                         key={i}
                                                                         title={`${eventInfo.label} - ${formatDate(event.timestamp)}`}
-                                                                        className="event-indicator"
+                                                                        className={`event-indicator event-indicator--${event.type}`}
                                                                     >
                                                                         {eventInfo.icon}
                                                                     </span>
@@ -416,7 +388,7 @@ export default function SequenceLogs() {
                                                             })}
                                                         </div>
                                                     ) : (
-                                                        <span className="text-muted">No events</span>
+                                                        <span className="text-muted">—</span>
                                                     )}
                                                 </td>
                                             </tr>
@@ -427,7 +399,7 @@ export default function SequenceLogs() {
 
                             {/* Pagination */}
                             {pagination.totalPages > 1 && (
-                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.5rem', padding: '1rem' }}>
+                                <div className="logs-pagination">
                                     <button
                                         className="button button--secondary button--small"
                                         onClick={() => handlePageChange(pagination.page - 1)}
@@ -435,7 +407,7 @@ export default function SequenceLogs() {
                                     >
                                         Previous
                                     </button>
-                                    <span style={{ fontSize: '0.875rem', color: '#666' }}>
+                                    <span className="pagination-text">
                                         Page {pagination.page} of {pagination.totalPages}
                                     </span>
                                     <button
@@ -449,7 +421,7 @@ export default function SequenceLogs() {
                             )}
                         </>
                     ) : (
-                        <div className="empty-state">
+                        <div className="empty-state compact">
                             <p>No logs available for this sequence.</p>
                         </div>
                     )}

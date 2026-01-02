@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
-import { ArrowLeft, Mail, MousePointer, AlertTriangle, Filter, Download, MailX, Users, Eye, X, Clock, Calendar, Send, Globe, MapPin, Smartphone, Monitor, Tablet, Server, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Mail, MousePointer, AlertTriangle, Filter, Download, MailX, Users, Eye, X, Clock, Calendar, Send, Globe, MapPin, Smartphone, Server, ChevronDown } from 'lucide-react';
 import { formatDistance } from 'date-fns';
 import GeoBarChart from '@/components/campaign/GeoBarChart';
 
@@ -169,7 +169,6 @@ export default function CampaignDetail() {
         try {
             setGeoLoading(true);
 
-            // Using the correct API route from the original GeoStats component
             let url = `/api/brands/${id}/campaigns/${campaignId}/geostats`;
             if (eventTypeFilter) {
                 url += `?eventType=${eventTypeFilter}`;
@@ -270,40 +269,40 @@ export default function CampaignDetail() {
                 return {
                     label: 'Open',
                     icon: <Mail {...iconProps} />,
-                    color: '#16a34a',
+                    className: 'event-open',
                 };
             case 'click':
                 return {
                     label: 'Click',
                     icon: <MousePointer {...iconProps} />,
-                    color: '#2563eb',
+                    className: 'event-click',
                 };
             case 'bounce':
                 return {
                     label: 'Bounce',
                     icon: <X {...iconProps} />,
-                    color: '#dc2626',
+                    className: 'event-bounce',
                 };
             case 'complaint':
                 return {
                     label: 'Complaint',
                     icon: <AlertTriangle {...iconProps} />,
-                    color: '#d97706',
+                    className: 'event-complaint',
                 };
             case 'delivery':
                 return {
                     label: 'Delivery',
                     icon: <Mail {...iconProps} />,
-                    color: '#059669',
+                    className: 'event-delivery',
                 };
             case 'unsubscribe':
                 return {
                     label: 'Unsubscribe',
                     icon: <MailX {...iconProps} />,
-                    color: '#dc2626',
+                    className: 'event-unsubscribe',
                 };
             default:
-                return { label: type, icon: null, color: '#666' };
+                return { label: type, icon: null, className: '' };
         }
     };
 
@@ -361,10 +360,7 @@ export default function CampaignDetail() {
     if (error) {
         return (
             <BrandLayout brand={brand}>
-                <div
-                    className="alert alert--error"
-                    style={{ margin: '2rem' }}
-                >
+                <div className="alert alert--error">
                     <span>{error}</span>
                 </div>
             </BrandLayout>
@@ -373,76 +369,70 @@ export default function CampaignDetail() {
 
     return (
         <BrandLayout brand={brand}>
-            <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+            <div className="campaign-detail">
                 {/* Navigation */}
-                <div style={{ marginBottom: '1.5rem' }}>
-                    <Link
-                        href={`/brands/${id}/campaigns`}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#666', textDecoration: 'none', fontSize: '0.875rem', marginBottom: '1rem' }}
-                    >
+                <div className="campaign-detail__nav">
+                    <Link href={`/brands/${id}/campaigns`} className="back-link">
                         <ArrowLeft size={16} />
                         <span>Back to campaigns</span>
                     </Link>
 
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-                        <div>
-                            <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: '500', color: '#1a1a1a' }}>{campaign.name}</h1>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <span className={`status-badge status-${campaign.status}`}>{campaign.status === 'draft' ? 'Draft' : campaign.status === 'sending' ? 'Sending' : campaign.status === 'sent' ? 'Sent' : campaign.status === 'scheduled' ? 'Scheduled' : campaign.status}</span>
-                            </div>
+                    <div className="campaign-detail__header">
+                        <div className="campaign-detail__title-row">
+                            <h1 className="campaign-detail__title">{campaign.name}</h1>
+                            <span className={`status-badge ${campaign.status}`}>
+                                {campaign.status === 'draft' ? 'Draft' : campaign.status === 'sending' ? 'Sending' : campaign.status === 'sent' ? 'Sent' : campaign.status === 'scheduled' ? 'Scheduled' : campaign.status}
+                            </span>
                         </div>
                     </div>
                 </div>
 
                 {/* Campaign Overview Card */}
-                <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1rem', paddingBottom: '0.75rem', borderBottom: '1px solid #f5f5f5' }}>
+                <div className="detail-card">
+                    <div className="detail-card__header">
                         <Mail size={18} />
-                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: '500', color: '#1a1a1a' }}>Campaign Overview</h2>
+                        <h2>Campaign Overview</h2>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Subject</span>
-                            <span style={{ fontSize: '0.9375rem', color: '#1a1a1a' }}>{campaign.subject}</span>
+                    <div className="detail-card__grid">
+                        <div className="detail-card__item">
+                            <span className="detail-card__label">Subject</span>
+                            <span className="detail-card__value">{campaign.subject}</span>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                        <div className="detail-card__item">
+                            <span className="detail-card__label">
                                 <Calendar size={14} />
                                 Created
                             </span>
-                            <span style={{ fontSize: '0.9375rem', color: '#1a1a1a' }}>{formatDate(campaign.createdAt)}</span>
+                            <span className="detail-card__value">{formatDate(campaign.createdAt)}</span>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                        <div className="detail-card__item">
+                            <span className="detail-card__label">
                                 <Send size={14} />
                                 Sent
                             </span>
-                            <span style={{ fontSize: '0.9375rem', color: '#1a1a1a' }}>{formatDate(campaign.sentAt) || 'Not sent yet'}</span>
+                            <span className="detail-card__value">{formatDate(campaign.sentAt) || 'Not sent yet'}</span>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                        <div className="detail-card__item">
+                            <span className="detail-card__label">
                                 <Users size={14} />
                                 Recipients
                             </span>
-                            <span style={{ fontSize: '0.9375rem', color: '#1a1a1a' }}>{campaign.stats?.recipients || 0} contacts</span>
+                            <span className="detail-card__value">{campaign.stats?.recipients || 0} contacts</span>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>From</span>
-                            <span style={{ fontSize: '0.9375rem', color: '#1a1a1a' }}>
+                        <div className="detail-card__item">
+                            <span className="detail-card__label">From</span>
+                            <span className="detail-card__value">
                                 {campaign.fromName || brand.name} &lt;{campaign.fromEmail || brand.fromEmail || 'Not set'}&gt;
                             </span>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                            <button
-                                className="button button--secondary button--small"
-                                onClick={() => setShowPreviewModal(true)}
-                            >
+                        <div className="detail-card__item detail-card__item--action">
+                            <button className="button button--secondary button--small" onClick={() => setShowPreviewModal(true)}>
                                 <Eye size={14} />
                                 <span>Preview Email</span>
                             </button>
@@ -453,8 +443,8 @@ export default function CampaignDetail() {
                 {/* Performance Stats */}
                 {campaign.status !== 'draft' && (
                     <>
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', margin: '0 0 1rem 0', fontSize: '1.125rem', fontWeight: '500', color: '#1a1a1a' }}>Campaign Performance</h2>
+                        <div className="stats-section">
+                            <h2 className="section-title">Campaign Performance</h2>
 
                             {!stats ? (
                                 <div className="loading-section">
@@ -462,57 +452,57 @@ export default function CampaignDetail() {
                                     <p>Loading statistics...</p>
                                 </div>
                             ) : (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                                    <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '0.5rem', background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', flexShrink: 0 }}>
+                                <div className="stats-grid">
+                                    <div className="stat-card">
+                                        <div className="stat-card__icon stat-card__icon--blue">
                                             <Mail size={20} />
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1a1a1a', lineHeight: 1, marginBottom: '0.25rem' }}>{stats.recipients || 0}</div>
-                                            <div style={{ fontSize: '0.8125rem', color: '#666' }}>Recipients</div>
+                                        <div className="stat-card__content">
+                                            <div className="stat-card__value">{stats.recipients || 0}</div>
+                                            <div className="stat-card__label">Recipients</div>
                                         </div>
                                     </div>
 
-                                    <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '0.5rem', background: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', flexShrink: 0 }}>
+                                    <div className="stat-card">
+                                        <div className="stat-card__icon stat-card__icon--green">
                                             <Mail size={20} />
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1a1a1a', lineHeight: 1, marginBottom: '0.25rem' }}>{stats.open?.unique || 0}</div>
-                                            <div style={{ fontSize: '0.8125rem', color: '#666' }}>Unique Opens</div>
-                                            <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem' }}>{stats.openRate || 0}% open rate</div>
+                                        <div className="stat-card__content">
+                                            <div className="stat-card__value">{stats.open?.unique || 0}</div>
+                                            <div className="stat-card__label">Unique Opens</div>
+                                            <div className="stat-card__sub">{stats.openRate || 0}% open rate</div>
                                         </div>
                                     </div>
 
-                                    <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '0.5rem', background: 'rgba(251, 191, 36, 0.1)', color: '#d97706', flexShrink: 0 }}>
+                                    <div className="stat-card">
+                                        <div className="stat-card__icon stat-card__icon--yellow">
                                             <MousePointer size={20} />
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1a1a1a', lineHeight: 1, marginBottom: '0.25rem' }}>{stats.click?.unique || 0}</div>
-                                            <div style={{ fontSize: '0.8125rem', color: '#666' }}>Unique Clicks</div>
-                                            <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem' }}>{stats.clickRate || 0}% click rate</div>
+                                        <div className="stat-card__content">
+                                            <div className="stat-card__value">{stats.click?.unique || 0}</div>
+                                            <div className="stat-card__label">Unique Clicks</div>
+                                            <div className="stat-card__sub">{stats.clickRate || 0}% click rate</div>
                                         </div>
                                     </div>
 
-                                    <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '0.5rem', background: 'rgba(107, 114, 128, 0.1)', color: '#6b7280', flexShrink: 0 }}>
+                                    <div className="stat-card">
+                                        <div className="stat-card__icon stat-card__icon--gray">
                                             <Users size={20} />
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1a1a1a', lineHeight: 1, marginBottom: '0.25rem' }}>{stats.unsubscribed?.total || 0}</div>
-                                            <div style={{ fontSize: '0.8125rem', color: '#666' }}>Unsubscribes</div>
+                                        <div className="stat-card__content">
+                                            <div className="stat-card__value">{stats.unsubscribed?.total || 0}</div>
+                                            <div className="stat-card__label">Unsubscribes</div>
                                         </div>
                                     </div>
 
-                                    <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', flexShrink: 0 }}>
+                                    <div className="stat-card">
+                                        <div className="stat-card__icon stat-card__icon--red">
                                             <AlertTriangle size={20} />
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1a1a1a', lineHeight: 1, marginBottom: '0.25rem' }}>{stats.bounce?.total || 0}</div>
-                                            <div style={{ fontSize: '0.8125rem', color: '#666' }}>Bounces</div>
-                                            <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem' }}>{stats.recipients ? (((stats.bounce?.total || 0) / stats.recipients) * 100).toFixed(1) : 0}% bounce rate</div>
+                                        <div className="stat-card__content">
+                                            <div className="stat-card__value">{stats.bounce?.total || 0}</div>
+                                            <div className="stat-card__label">Bounces</div>
+                                            <div className="stat-card__sub">{stats.recipients ? (((stats.bounce?.total || 0) / stats.recipients) * 100).toFixed(1) : 0}% bounce rate</div>
                                         </div>
                                     </div>
                                 </div>
@@ -520,41 +510,28 @@ export default function CampaignDetail() {
                         </div>
 
                         {/* Geographic & Device Insights */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                                <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', margin: 0, fontSize: '1.125rem', fontWeight: '500', color: '#1a1a1a' }}>
+                        <div className="geo-section">
+                            <div className="geo-section__header">
+                                <h2 className="section-title">
                                     <Globe size={20} />
                                     Geographic & Device Insights
                                 </h2>
 
-                                <button
-                                    className="button button--secondary button--small"
-                                    onClick={() => setShowGeoFilters(!showGeoFilters)}
-                                >
+                                <button className="button button--secondary button--small" onClick={() => setShowGeoFilters(!showGeoFilters)}>
                                     <Filter size={14} />
                                     <span>Filter</span>
-                                    <ChevronDown
-                                        size={14}
-                                        style={{ transform: showGeoFilters ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
-                                    />
+                                    <ChevronDown size={14} className={`chevron ${showGeoFilters ? 'chevron--open' : ''}`} />
                                 </button>
                             </div>
 
                             {showGeoFilters && (
-                                <div style={{ padding: '1rem', background: '#fafafa', borderRadius: '0.5rem', marginBottom: '1rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                                        <div style={{ flex: '1 1 200px' }}>
-                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '500', color: '#666', marginBottom: '0.5rem' }}>Event Type</label>
-                                            <select
-                                                value={eventTypeFilter}
-                                                onChange={(e) => setEventTypeFilter(e.target.value)}
-                                                className="form-select"
-                                            >
+                                <div className="filter-panel">
+                                    <div className="filter-panel__row">
+                                        <div className="filter-panel__field">
+                                            <label className="filter-panel__label">Event Type</label>
+                                            <select value={eventTypeFilter} onChange={(e) => setEventTypeFilter(e.target.value)} className="form-select">
                                                 {eventTypes.map((type) => (
-                                                    <option
-                                                        key={type.value}
-                                                        value={type.value}
-                                                    >
+                                                    <option key={type.value} value={type.value}>
                                                         {type.label}
                                                     </option>
                                                 ))}
@@ -562,13 +539,10 @@ export default function CampaignDetail() {
                                         </div>
 
                                         {eventTypeFilter && (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: '#fff', borderRadius: '0.375rem', border: '1px solid #e5e5e5' }}>
-                                                <span style={{ fontSize: '0.75rem', color: '#666' }}>Active:</span>
-                                                <span style={{ fontSize: '0.75rem', fontWeight: '500', color: '#1a1a1a' }}>{eventTypes.find((t) => t.value === eventTypeFilter)?.label}</span>
-                                                <button
-                                                    onClick={() => setEventTypeFilter('')}
-                                                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0', display: 'flex', color: '#666', fontSize: '1.25rem', lineHeight: 1 }}
-                                                >
+                                            <div className="filter-panel__active">
+                                                <span className="filter-panel__active-label">Active:</span>
+                                                <span className="filter-panel__active-value">{eventTypes.find((t) => t.value === eventTypeFilter)?.label}</span>
+                                                <button onClick={() => setEventTypeFilter('')} className="filter-panel__clear">
                                                     ×
                                                 </button>
                                             </div>
@@ -578,84 +552,20 @@ export default function CampaignDetail() {
                             )}
 
                             {/* Tabs */}
-                            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', overflowX: 'auto', borderBottom: '1px solid #f0f0f0' }}>
-                                <button
-                                    onClick={() => setActiveGeoTab('location')}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        padding: '0.75rem 1rem',
-                                        background: 'transparent',
-                                        border: 'none',
-                                        borderBottom: activeGeoTab === 'location' ? '2px solid #1a1a1a' : '2px solid transparent',
-                                        fontSize: '0.875rem',
-                                        color: activeGeoTab === 'location' ? '#1a1a1a' : '#666',
-                                        fontWeight: activeGeoTab === 'location' ? '500' : '400',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                    }}
-                                >
+                            <div className="geo-tabs">
+                                <button onClick={() => setActiveGeoTab('location')} className={`geo-tab ${activeGeoTab === 'location' ? 'geo-tab--active' : ''}`}>
                                     <Globe size={16} />
                                     <span>Location</span>
                                 </button>
-                                <button
-                                    onClick={() => setActiveGeoTab('devices')}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        padding: '0.75rem 1rem',
-                                        background: 'transparent',
-                                        border: 'none',
-                                        borderBottom: activeGeoTab === 'devices' ? '2px solid #1a1a1a' : '2px solid transparent',
-                                        fontSize: '0.875rem',
-                                        color: activeGeoTab === 'devices' ? '#1a1a1a' : '#666',
-                                        fontWeight: activeGeoTab === 'devices' ? '500' : '400',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                    }}
-                                >
+                                <button onClick={() => setActiveGeoTab('devices')} className={`geo-tab ${activeGeoTab === 'devices' ? 'geo-tab--active' : ''}`}>
                                     <Smartphone size={16} />
                                     <span>Devices</span>
                                 </button>
-                                <button
-                                    onClick={() => setActiveGeoTab('browsers')}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        padding: '0.75rem 1rem',
-                                        background: 'transparent',
-                                        border: 'none',
-                                        borderBottom: activeGeoTab === 'browsers' ? '2px solid #1a1a1a' : '2px solid transparent',
-                                        fontSize: '0.875rem',
-                                        color: activeGeoTab === 'browsers' ? '#1a1a1a' : '#666',
-                                        fontWeight: activeGeoTab === 'browsers' ? '500' : '400',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                    }}
-                                >
+                                <button onClick={() => setActiveGeoTab('browsers')} className={`geo-tab ${activeGeoTab === 'browsers' ? 'geo-tab--active' : ''}`}>
                                     <Globe size={16} />
                                     <span>Browsers</span>
                                 </button>
-                                <button
-                                    onClick={() => setActiveGeoTab('os')}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        padding: '0.75rem 1rem',
-                                        background: 'transparent',
-                                        border: 'none',
-                                        borderBottom: activeGeoTab === 'os' ? '2px solid #1a1a1a' : '2px solid transparent',
-                                        fontSize: '0.875rem',
-                                        color: activeGeoTab === 'os' ? '#1a1a1a' : '#666',
-                                        fontWeight: activeGeoTab === 'os' ? '500' : '400',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                    }}
-                                >
+                                <button onClick={() => setActiveGeoTab('os')} className={`geo-tab ${activeGeoTab === 'os' ? 'geo-tab--active' : ''}`}>
                                     <Server size={16} />
                                     <span>OS</span>
                                 </button>
@@ -663,18 +573,12 @@ export default function CampaignDetail() {
 
                             {/* Location Tab - Toggle between Countries/Cities */}
                             {activeGeoTab === 'location' && (
-                                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-                                    <button
-                                        onClick={() => setMapView('countries')}
-                                        className={`button button--small ${mapView === 'countries' ? 'button--primary' : 'button--secondary'}`}
-                                    >
+                                <div className="geo-toggle">
+                                    <button onClick={() => setMapView('countries')} className={`button button--small ${mapView === 'countries' ? 'button--primary' : 'button--secondary'}`}>
                                         <Globe size={14} />
                                         <span>Countries</span>
                                     </button>
-                                    <button
-                                        onClick={() => setMapView('cities')}
-                                        className={`button button--small ${mapView === 'cities' ? 'button--primary' : 'button--secondary'}`}
-                                    >
+                                    <button onClick={() => setMapView('cities')} className={`button button--small ${mapView === 'cities' ? 'button--primary' : 'button--secondary'}`}>
                                         <MapPin size={14} />
                                         <span>Cities</span>
                                     </button>
@@ -688,53 +592,35 @@ export default function CampaignDetail() {
                                     <p>Loading geographic insights...</p>
                                 </div>
                             ) : geoData.totalEvents === 0 ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', textAlign: 'center' }}>
-                                    <Globe
-                                        size={24}
-                                        style={{ color: '#999', marginBottom: '1rem' }}
-                                    />
-                                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#666' }}>No location data available{eventTypeFilter ? ` for ${eventTypeFilter} events` : ''}</p>
+                                <div className="empty-state">
+                                    <Globe size={24} />
+                                    <p>No location data available{eventTypeFilter ? ` for ${eventTypeFilter} events` : ''}</p>
                                     {eventTypeFilter && (
-                                        <button
-                                            className="button button--secondary button--small"
-                                            onClick={() => setEventTypeFilter('')}
-                                            style={{ marginTop: '1rem' }}
-                                        >
+                                        <button className="button button--secondary button--small" onClick={() => setEventTypeFilter('')}>
                                             Clear filter
                                         </button>
                                     )}
                                 </div>
                             ) : (
-                                <GeoBarChart
-                                    data={getChartData()}
-                                    title={getChartTitle()}
-                                    totalLabel="events"
-                                    type={activeGeoTab === 'location' ? (mapView === 'countries' ? 'countries' : 'cities') : activeGeoTab}
-                                />
+                                <GeoBarChart data={getChartData()} title={getChartTitle()} totalLabel="events" type={activeGeoTab === 'location' ? (mapView === 'countries' ? 'countries' : 'cities') : activeGeoTab} />
                             )}
                         </div>
 
                         {/* Events Section */}
-                        <div style={{ marginTop: '1.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                                <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', margin: 0, fontSize: '1.125rem', fontWeight: '500', color: '#1a1a1a' }}>
+                        <div className="events-section">
+                            <div className="events-section__header">
+                                <h2 className="section-title">
                                     <Clock size={20} />
                                     Email Activity
                                 </h2>
 
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <button
-                                        className="button button--secondary button--small"
-                                        onClick={() => setShowFilters(!showFilters)}
-                                    >
+                                <div className="events-section__actions">
+                                    <button className="button button--secondary button--small" onClick={() => setShowFilters(!showFilters)}>
                                         <Filter size={14} />
                                         <span>Filter</span>
                                     </button>
 
-                                    <button
-                                        className="button button--secondary button--small"
-                                        onClick={exportEvents}
-                                    >
+                                    <button className="button button--secondary button--small" onClick={exportEvents}>
                                         <Download size={14} />
                                         <span>Export</span>
                                     </button>
@@ -743,15 +629,10 @@ export default function CampaignDetail() {
 
                             {/* Filters */}
                             {showFilters && (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', padding: '1rem', background: '#fafafa', borderRadius: '0.5rem', marginBottom: '1rem' }}>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '500', color: '#666', marginBottom: '0.5rem' }}>Event Type</label>
-                                        <select
-                                            name="eventType"
-                                            value={filters.eventType}
-                                            onChange={handleFilterChange}
-                                            className="form-select"
-                                        >
+                                <div className="filter-panel filter-panel--grid">
+                                    <div className="filter-panel__field">
+                                        <label className="filter-panel__label">Event Type</label>
+                                        <select name="eventType" value={filters.eventType} onChange={handleFilterChange} className="form-select">
                                             <option value="">All Events</option>
                                             <option value="open">Opens</option>
                                             <option value="click">Clicks</option>
@@ -761,40 +642,23 @@ export default function CampaignDetail() {
                                         </select>
                                     </div>
 
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '500', color: '#666', marginBottom: '0.5rem' }}>Email Address</label>
-                                        <input
-                                            type="text"
-                                            name="email"
-                                            value={filters.email}
-                                            onChange={handleFilterChange}
-                                            placeholder="Filter by email"
-                                            className="form-input"
-                                        />
+                                    <div className="filter-panel__field">
+                                        <label className="filter-panel__label">Email Address</label>
+                                        <input type="text" name="email" value={filters.email} onChange={handleFilterChange} placeholder="Filter by email" className="form-input" />
                                     </div>
 
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '500', color: '#666', marginBottom: '0.5rem' }}>Sort By</label>
-                                        <select
-                                            name="sort"
-                                            value={filters.sort}
-                                            onChange={handleFilterChange}
-                                            className="form-select"
-                                        >
+                                    <div className="filter-panel__field">
+                                        <label className="filter-panel__label">Sort By</label>
+                                        <select name="sort" value={filters.sort} onChange={handleFilterChange} className="form-select">
                                             <option value="timestamp">Date/Time</option>
                                             <option value="email">Email</option>
                                             <option value="eventType">Event Type</option>
                                         </select>
                                     </div>
 
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '500', color: '#666', marginBottom: '0.5rem' }}>Order</label>
-                                        <select
-                                            name="order"
-                                            value={filters.order}
-                                            onChange={handleFilterChange}
-                                            className="form-select"
-                                        >
+                                    <div className="filter-panel__field">
+                                        <label className="filter-panel__label">Order</label>
+                                        <select name="order" value={filters.order} onChange={handleFilterChange} className="form-select">
                                             <option value="desc">Newest First</option>
                                             <option value="asc">Oldest First</option>
                                         </select>
@@ -810,7 +674,7 @@ export default function CampaignDetail() {
                                 </div>
                             ) : events.length > 0 ? (
                                 <>
-                                    <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', overflow: 'hidden' }}>
+                                    <div className="events-table-wrapper">
                                         <table className="campaigns-table">
                                             <thead>
                                                 <tr>
@@ -826,8 +690,8 @@ export default function CampaignDetail() {
                                                     return (
                                                         <tr key={event._id || index}>
                                                             <td>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                                    <span style={{ color: eventInfo.color }}>{eventInfo.icon}</span>
+                                                                <div className={`event-type ${eventInfo.className}`}>
+                                                                    {eventInfo.icon}
                                                                     <span>{eventInfo.label}</span>
                                                                 </div>
                                                             </td>
@@ -837,15 +701,12 @@ export default function CampaignDetail() {
                                                             </td>
                                                             <td>
                                                                 {(event.eventType === 'click' || event.type === 'click') && (event.metadata?.url || event.url) && (
-                                                                    <span
-                                                                        style={{ fontSize: '0.8125rem', color: '#666' }}
-                                                                        title={event.metadata?.url || event.url}
-                                                                    >
+                                                                    <span className="event-detail" title={event.metadata?.url || event.url}>
                                                                         {(event.metadata?.url || event.url).length > 50 ? `${(event.metadata?.url || event.url).substring(0, 50)}...` : event.metadata?.url || event.url}
                                                                     </span>
                                                                 )}
                                                                 {(event.eventType === 'bounce' || event.type === 'bounce') && (
-                                                                    <span style={{ fontSize: '0.8125rem', color: '#666' }}>
+                                                                    <span className="event-detail">
                                                                         {event.metadata?.bounceType || event.reason || 'Bounce'}
                                                                         {event.metadata?.diagnosticCode ? ` - ${event.metadata.diagnosticCode}` : ''}
                                                                     </span>
@@ -860,32 +721,24 @@ export default function CampaignDetail() {
 
                                     {/* Pagination */}
                                     {pagination.totalPages > 1 && (
-                                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.5rem', padding: '1rem' }}>
-                                            <button
-                                                className="button button--secondary button--small"
-                                                onClick={() => handlePageChange(pagination.page - 1)}
-                                                disabled={pagination.page <= 1}
-                                            >
+                                        <div className="events-pagination">
+                                            <button className="button button--secondary button--small" onClick={() => handlePageChange(pagination.page - 1)} disabled={pagination.page <= 1}>
                                                 <span>Previous</span>
                                             </button>
 
-                                            <span style={{ fontSize: '0.875rem', color: '#666' }}>
+                                            <span className="events-pagination__text">
                                                 Page {pagination.page} of {pagination.totalPages}
                                             </span>
 
-                                            <button
-                                                className="button button--secondary button--small"
-                                                onClick={() => handlePageChange(pagination.page + 1)}
-                                                disabled={pagination.page >= pagination.totalPages}
-                                            >
+                                            <button className="button button--secondary button--small" onClick={() => handlePageChange(pagination.page + 1)} disabled={pagination.page >= pagination.totalPages}>
                                                 <span>Next</span>
                                             </button>
                                         </div>
                                     )}
                                 </>
                             ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', background: '#fff', border: '1px solid #f0f0f0', borderRadius: '0.75rem', textAlign: 'center' }}>
-                                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#666' }}>No events have been recorded for this campaign yet.</p>
+                                <div className="empty-state">
+                                    <p>No events have been recorded for this campaign yet.</p>
                                 </div>
                             )}
                         </div>
@@ -894,25 +747,20 @@ export default function CampaignDetail() {
 
                 {/* Email Preview Modal */}
                 {showPreviewModal && (
-                    <div className="modal-overlay">
-                        <div className="modal-container">
-                            <div className="modal-header">
+                    <div className="preview-modal-overlay">
+                        <div className="preview-modal">
+                            <div className="preview-modal__header">
                                 <h2>Email Preview</h2>
-                                <button
-                                    className="close-btn"
-                                    onClick={() => setShowPreviewModal(false)}
-                                >
+                                <button className="preview-modal__close" onClick={() => setShowPreviewModal(false)}>
                                     <X size={18} />
                                 </button>
                             </div>
-                            <div className="modal-body">
-                                <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #f0f0f0' }}>
-                                    <span style={{ fontSize: '0.8125rem', fontWeight: '500', color: '#666' }}>Subject:</span> <span style={{ fontSize: '0.875rem', color: '#1a1a1a' }}>{campaign.subject}</span>
+                            <div className="preview-modal__body">
+                                <div className="preview-modal__subject">
+                                    <span className="preview-modal__subject-label">Subject:</span>
+                                    <span className="preview-modal__subject-value">{campaign.subject}</span>
                                 </div>
-                                <div
-                                    dangerouslySetInnerHTML={{ __html: campaign.content || '<p>No content available.</p>' }}
-                                    style={{ fontFamily: 'Arial, sans-serif', fontSize: '0.9375rem', lineHeight: '1.6', color: '#1a1a1a' }}
-                                ></div>
+                                <div className="preview-modal__content" dangerouslySetInnerHTML={{ __html: campaign.content || '<p>No content available.</p>' }}></div>
                             </div>
                         </div>
                     </div>

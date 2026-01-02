@@ -3,10 +3,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import BrandLayout from '@/components/BrandLayout';
-import { PlusCircle, Search, Users, Trash, UploadCloud, UserPlus, Filter, Tag, Edit2, X, ChevronDown, Check } from 'lucide-react';
+import { PlusCircle, Search, Users, Trash, UploadCloud, UserPlus, Filter, Tag, Edit2, X, ChevronDown, Check, Eye, Plus } from 'lucide-react';
 import CreateContactListModal from '@/components/contact/CreateContactListModal';
 import ImportContactsModal from '@/components/contact/ImportContactsModal';
-import { Eye, PlusSign } from '@/lib/icons';
 import Link from 'next/link';
 
 export default function BrandContacts() {
@@ -255,48 +254,14 @@ export default function BrandContacts() {
 
     const getSegmentTypeBadge = (type) => {
         if (type === 'static') {
-            return (
-                <span
-                    style={{
-                        fontSize: '0.6875rem',
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        backgroundColor: '#e3f2fd',
-                        color: '#1976d2',
-                    }}
-                >
-                    Static
-                </span>
-            );
+            return <span className="segment-type-badge segment-type-badge--static">Static</span>;
         }
-        return (
-            <span
-                style={{
-                    fontSize: '0.6875rem',
-                    padding: '3px 8px',
-                    borderRadius: '4px',
-                    backgroundColor: '#f3e5f5',
-                    color: '#7b1fa2',
-                }}
-            >
-                Dynamic
-            </span>
-        );
+        return <span className="segment-type-badge segment-type-badge--dynamic">Dynamic</span>;
     };
 
     const getContactListNames = (contactListIds) => {
         if (!contactListIds || contactListIds.length === 0) {
-            return (
-                <span
-                    style={{
-                        fontSize: '0.8125rem',
-                        color: '#999',
-                        fontStyle: 'italic',
-                    }}
-                >
-                    All lists
-                </span>
-            );
+            return <span className="contact-list-all">All lists</span>;
         }
 
         const listNames = contactListIds
@@ -307,47 +272,20 @@ export default function BrandContacts() {
             .filter(Boolean);
 
         if (listNames.length === 0) {
-            return <span style={{ fontSize: '0.8125rem', color: '#999', fontStyle: 'italic' }}>All lists</span>;
+            return <span className="contact-list-all">All lists</span>;
         }
 
-        // Show first 2 lists with pill style, then +X more if needed
         const displayLimit = 2;
         const displayedLists = listNames.slice(0, displayLimit);
         const remainingCount = listNames.length - displayLimit;
 
         return (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center' }}>
+            <div className="contact-list-pills">
                 {displayedLists.map((name, index) => (
-                    <span
-                        key={index}
-                        style={{
-                            fontSize: '0.6875rem',
-                            padding: '3px 8px',
-                            borderRadius: '4px',
-                            backgroundColor: '#f0f0f0',
-                            color: '#333',
-                            maxWidth: '120px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            display: 'inline-block',
-                        }}
-                        title={name}
-                    >
-                        {name}
-                    </span>
+                    <span key={index} className="contact-list-pill" title={name}>{name}</span>
                 ))}
                 {remainingCount > 0 && (
-                    <span
-                        style={{
-                            fontSize: '0.6875rem',
-                            padding: '3px 8px',
-                            borderRadius: '4px',
-                            backgroundColor: '#e8e8e8',
-                            color: '#666',
-                        }}
-                        title={listNames.slice(displayLimit).join(', ')}
-                    >
+                    <span className="contact-list-pill-more" title={listNames.slice(displayLimit).join(', ')}>
                         +{remainingCount} more
                     </span>
                 )}
@@ -372,103 +310,43 @@ export default function BrandContacts() {
         <BrandLayout brand={brand}>
             <div className="campaigns-container">
                 {/* Tab Navigation */}
-                <div style={{ borderBottom: '1px solid #f0f0f0', marginBottom: '1.5rem' }}>
-                    <div style={{ display: 'flex', gap: '0' }}>
-                        <button
-                            onClick={() => setActiveTab('lists')}
-                            style={{
-                                padding: '0.875rem 1.25rem',
-                                background: 'none',
-                                border: 'none',
-                                borderBottom: activeTab === 'lists' ? '2px solid #1a1a1a' : '2px solid transparent',
-                                cursor: 'pointer',
-                                fontWeight: activeTab === 'lists' ? '500' : '400',
-                                color: activeTab === 'lists' ? '#1a1a1a' : '#666',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                fontSize: '0.9375rem',
-                                transition: 'all 0.2s ease',
-                            }}
-                        >
-                            <Users size={18} />
-                            Contact Lists
-                            {contactLists.length > 0 && (
-                                <span
-                                    style={{
-                                        fontSize: '0.75rem',
-                                        padding: '2px 8px',
-                                        borderRadius: '10px',
-                                        backgroundColor: activeTab === 'lists' ? '#1a1a1a' : '#e5e5e5',
-                                        color: activeTab === 'lists' ? '#fff' : '#666',
-                                    }}
-                                >
-                                    {contactLists.length}
-                                </span>
-                            )}
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('segments')}
-                            style={{
-                                padding: '0.875rem 1.25rem',
-                                background: 'none',
-                                border: 'none',
-                                borderBottom: activeTab === 'segments' ? '2px solid #1a1a1a' : '2px solid transparent',
-                                cursor: 'pointer',
-                                fontWeight: activeTab === 'segments' ? '500' : '400',
-                                color: activeTab === 'segments' ? '#1a1a1a' : '#666',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                fontSize: '0.9375rem',
-                                transition: 'all 0.2s ease',
-                            }}
-                        >
-                            <Filter size={18} />
-                            Segments
-                            {segments.length > 0 && (
-                                <span
-                                    style={{
-                                        fontSize: '0.75rem',
-                                        padding: '2px 8px',
-                                        borderRadius: '10px',
-                                        backgroundColor: activeTab === 'segments' ? '#1a1a1a' : '#e5e5e5',
-                                        color: activeTab === 'segments' ? '#fff' : '#666',
-                                    }}
-                                >
-                                    {segments.length}
-                                </span>
-                            )}
-                        </button>
-                    </div>
+                <div className="contacts-tabs">
+                    <button
+                        onClick={() => setActiveTab('lists')}
+                        className={`contacts-tab ${activeTab === 'lists' ? 'active' : ''}`}
+                    >
+                        <Users size={18} />
+                        Contact Lists
+                        {contactLists.length > 0 && (
+                            <span className="contacts-tab-count">{contactLists.length}</span>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('segments')}
+                        className={`contacts-tab ${activeTab === 'segments' ? 'active' : ''}`}
+                    >
+                        <Filter size={18} />
+                        Segments
+                        {segments.length > 0 && (
+                            <span className="contacts-tab-count">{segments.length}</span>
+                        )}
+                    </button>
                 </div>
 
                 {/* Alerts */}
                 {error && (
-                    <div
-                        className="alert alert--error"
-                        style={{ marginBottom: '1rem' }}
-                    >
+                    <div className="contacts-alert contacts-alert--error">
                         <span>{error}</span>
-                        <button
-                            onClick={() => setError('')}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                        >
+                        <button onClick={() => setError('')} className="contacts-alert-close">
                             <X size={16} />
                         </button>
                     </div>
                 )}
 
                 {success && (
-                    <div
-                        className="alert alert--success"
-                        style={{ marginBottom: '1rem' }}
-                    >
+                    <div className="contacts-alert contacts-alert--success">
                         <span>{success}</span>
-                        <button
-                            onClick={() => setSuccess('')}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                        >
+                        <button onClick={() => setSuccess('')} className="contacts-alert-close">
                             <X size={16} />
                         </button>
                     </div>
@@ -498,30 +376,27 @@ export default function BrandContacts() {
                                 className="button button--primary"
                                 onClick={handleCreateList}
                             >
-                                <PlusSign size={18} />
+                                <Plus size={18} />
                                 Create Contact List
                             </button>
                         </div>
 
                         {/* Contact Lists Table or Empty State */}
                         {isLoading ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', gap: '1rem' }}>
-                                <div style={{ width: '2rem', height: '2rem', border: '3px solid #f0f0f0', borderTopColor: '#1a1a1a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
-                                <p style={{ margin: 0, fontSize: '0.9375rem', color: '#666' }}>Loading contact lists...</p>
+                            <div className="contacts-loading">
+                                <div className="spinner"></div>
+                                <p>Loading contact lists...</p>
                             </div>
                         ) : (
                             <>
                                 {contactLists.length === 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', textAlign: 'center' }}>
-                                        <div style={{ width: '4rem', height: '4rem', borderRadius: '1rem', background: 'linear-gradient(145deg, #f5f5f5 0%, #e8e8e8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', marginBottom: '1.5rem' }}>
+                                    <div className="contacts-empty">
+                                        <div className="contacts-empty-icon">
                                             <Users size={32} />
                                         </div>
-                                        <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: 500, color: '#1a1a1a' }}>No contact lists yet</h2>
-                                        <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.9375rem', color: '#666', maxWidth: '400px' }}>Create your first contact list to start managing your contacts</p>
-                                        <button
-                                            className="button button--primary"
-                                            onClick={handleCreateList}
-                                        >
+                                        <h2 className="contacts-empty-title">No contact lists yet</h2>
+                                        <p className="contacts-empty-desc">Create your first contact list to start managing your contacts</p>
+                                        <button className="button button--primary" onClick={handleCreateList}>
                                             <PlusCircle size={18} />
                                             Create Contact List
                                         </button>
@@ -529,13 +404,10 @@ export default function BrandContacts() {
                                 ) : (
                                     <>
                                         {filteredContactLists.length === 0 ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem', textAlign: 'center' }}>
-                                                <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: 500, color: '#1a1a1a' }}>No matching contact lists</h2>
-                                                <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.9375rem', color: '#666' }}>No contact lists match your search criteria</p>
-                                                <button
-                                                    className="button button--secondary"
-                                                    onClick={() => setSearchQuery('')}
-                                                >
+                                            <div className="contacts-empty contacts-search-empty">
+                                                <h2 className="contacts-empty-title">No matching contact lists</h2>
+                                                <p className="contacts-empty-desc">No contact lists match your search criteria</p>
+                                                <button className="button button--secondary" onClick={() => setSearchQuery('')}>
                                                     Clear Search
                                                 </button>
                                             </div>
@@ -555,51 +427,30 @@ export default function BrandContacts() {
                                                         {filteredContactLists.map((list) => (
                                                             <tr key={list._id}>
                                                                 <td className="campaign-col">
-                                                                    <div className="campaign-info">
-                                                                        <div>
-                                                                            <div style={{ fontWeight: '500' }}>
-                                                                                <Link
-                                                                                    style={{ color: '#000' }}
-                                                                                    href={`/brands/${id}/contacts/${list._id}`}
-                                                                                >
-                                                                                    {list.name}
-                                                                                </Link>
-                                                                            </div>
-                                                                            {list.description && <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '2px' }}>{list.description}</div>}
-                                                                        </div>
+                                                                    <div className="list-name-cell">
+                                                                        <Link href={`/brands/${id}/contacts/${list._id}`} className="list-name">
+                                                                            {list.name}
+                                                                        </Link>
+                                                                        {list.description && <div className="list-description">{list.description}</div>}
                                                                     </div>
                                                                 </td>
                                                                 <td>
-                                                                    <div className="stats-value">
-                                                                        <span style={{ fontWeight: '500' }}>{list.contactCount || 0}</span>
-                                                                    </div>
+                                                                    <div className="stats-value">{list.contactCount || 0}</div>
                                                                 </td>
                                                                 <td>{formatDate(list.createdAt)}</td>
                                                                 <td>
-                                                                    <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: '#e8f5e9', color: '#2e7d32' }}>Active</span>
+                                                                    <span className="status-badge status-badge--active">Active</span>
                                                                 </td>
                                                                 <td className="actions-col">
-                                                                    <div className="action-buttons">
-                                                                        <Link
-                                                                            href={`/brands/${id}/contacts/${list._id}`}
-                                                                            className="action-btn"
-                                                                            title="View Details"
-                                                                        >
-                                                                            <Eye />
+                                                                    <div className="contacts-action-buttons">
+                                                                        <Link href={`/brands/${id}/contacts/${list._id}`} className="contacts-action-btn" title="View Details">
+                                                                            <Eye size={16} />
                                                                         </Link>
-                                                                        <button
-                                                                            className="action-btn"
-                                                                            onClick={(e) => handleImportContacts(e, list._id, 'manual')}
-                                                                            title="Add Contact"
-                                                                        >
+                                                                        <button className="contacts-action-btn" onClick={(e) => handleImportContacts(e, list._id, 'manual')} title="Add Contact">
                                                                             <UserPlus size={16} />
                                                                             Add
                                                                         </button>
-                                                                        <button
-                                                                            className="action-btn"
-                                                                            onClick={(e) => handleImportContacts(e, list._id, 'csv')}
-                                                                            title="Import CSV"
-                                                                        >
+                                                                        <button className="contacts-action-btn" onClick={(e) => handleImportContacts(e, list._id, 'csv')} title="Import CSV">
                                                                             <UploadCloud size={16} />
                                                                             Import
                                                                         </button>
@@ -642,30 +493,27 @@ export default function BrandContacts() {
                                 className="button button--primary"
                                 onClick={handleCreateSegment}
                             >
-                                <PlusSign size={18} />
+                                <Plus size={18} />
                                 Create Segment
                             </button>
                         </div>
 
                         {/* Segments List */}
                         {isLoadingSegments ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', gap: '1rem' }}>
-                                <div style={{ width: '2rem', height: '2rem', border: '3px solid #f0f0f0', borderTopColor: '#1a1a1a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
-                                <p style={{ margin: 0, fontSize: '0.9375rem', color: '#666' }}>Loading segments...</p>
+                            <div className="contacts-loading">
+                                <div className="spinner"></div>
+                                <p>Loading segments...</p>
                             </div>
                         ) : (
                             <>
                                 {segments.length === 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', textAlign: 'center' }}>
-                                        <div style={{ width: '4rem', height: '4rem', borderRadius: '1rem', background: 'linear-gradient(145deg, #f5f5f5 0%, #e8e8e8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', marginBottom: '1.5rem' }}>
+                                    <div className="contacts-empty">
+                                        <div className="contacts-empty-icon">
                                             <Filter size={32} />
                                         </div>
-                                        <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: 500, color: '#1a1a1a' }}>No segments yet</h2>
-                                        <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.9375rem', color: '#666', maxWidth: '400px' }}>Segments allow you to target specific groups of contacts based on tags, custom fields, or other criteria. Create your first segment to get started.</p>
-                                        <button
-                                            className="button button--primary"
-                                            onClick={handleCreateSegment}
-                                        >
+                                        <h2 className="contacts-empty-title">No segments yet</h2>
+                                        <p className="contacts-empty-desc">Segments allow you to target specific groups of contacts based on tags, custom fields, or other criteria. Create your first segment to get started.</p>
+                                        <button className="button button--primary" onClick={handleCreateSegment}>
                                             <PlusCircle size={18} />
                                             Create Segment
                                         </button>
@@ -673,77 +521,51 @@ export default function BrandContacts() {
                                 ) : (
                                     <>
                                         {filteredSegments.length === 0 ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem', textAlign: 'center' }}>
-                                                <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: 500, color: '#1a1a1a' }}>No matching segments</h2>
-                                                <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.9375rem', color: '#666' }}>No segments match your search criteria</p>
-                                                <button
-                                                    className="button button--secondary"
-                                                    onClick={() => setSearchQuery('')}
-                                                >
+                                            <div className="contacts-empty contacts-search-empty">
+                                                <h2 className="contacts-empty-title">No matching segments</h2>
+                                                <p className="contacts-empty-desc">No segments match your search criteria</p>
+                                                <button className="button button--secondary" onClick={() => setSearchQuery('')}>
                                                     Clear Search
                                                 </button>
                                             </div>
                                         ) : (
-                                            <div style={{ overflowX: 'auto' }}>
-                                                <table
-                                                    className="campaigns-table"
-                                                    style={{ tableLayout: 'fixed', width: '100%', minWidth: '800px' }}
-                                                >
+                                            <div className="table-wrapper">
+                                                <table className="campaigns-table">
                                                     <thead>
                                                         <tr>
-                                                            <th style={{ width: '22%' }}>Segment Name</th>
-                                                            <th style={{ width: '10%' }}>Type</th>
-                                                            <th style={{ width: '25%' }}>Contact Lists</th>
-                                                            <th style={{ width: '18%' }}>Conditions</th>
-                                                            <th style={{ width: '10%' }}>Contacts</th>
-                                                            <th style={{ width: '15%' }}>Actions</th>
+                                                            <th>Segment Name</th>
+                                                            <th>Type</th>
+                                                            <th>Contact Lists</th>
+                                                            <th>Conditions</th>
+                                                            <th>Contacts</th>
+                                                            <th>Actions</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         {filteredSegments.map((segment) => (
                                                             <tr key={segment._id}>
-                                                                <td style={{ maxWidth: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                                        <div
-                                                                            style={{ fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                                                                            title={segment.name}
-                                                                        >
-                                                                            {segment.name}
-                                                                        </div>
+                                                                <td className="campaign-col">
+                                                                    <div className="list-name-cell">
+                                                                        <div className="list-name" title={segment.name}>{segment.name}</div>
                                                                         {segment.description && (
-                                                                            <div
-                                                                                style={{ fontSize: '0.75rem', color: '#666', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                                                                                title={segment.description}
-                                                                            >
-                                                                                {segment.description}
-                                                                            </div>
+                                                                            <div className="list-description" title={segment.description}>{segment.description}</div>
                                                                         )}
                                                                     </div>
                                                                 </td>
                                                                 <td>{getSegmentTypeBadge(segment.type)}</td>
-                                                                <td style={{ maxWidth: '0', overflow: 'hidden' }}>{getContactListNames(segment.contactListIds)}</td>
+                                                                <td>{getContactListNames(segment.contactListIds)}</td>
                                                                 <td>
-                                                                    <span style={{ fontSize: '0.8125rem', color: '#666' }}>{getRuleDescription(segment)}</span>
+                                                                    <span className="rule-description">{getRuleDescription(segment)}</span>
                                                                 </td>
                                                                 <td>
-                                                                    <div className="stats-value">
-                                                                        <span style={{ fontWeight: '500' }}>~{segment.cachedCount || 0}</span>
-                                                                    </div>
+                                                                    <div className="stats-value">~{segment.cachedCount || 0}</div>
                                                                 </td>
-                                                                <td>
-                                                                    <div className="action-buttons">
-                                                                        <button
-                                                                            className="action-btn"
-                                                                            onClick={() => handleEditSegment(segment)}
-                                                                            title="Edit Segment"
-                                                                        >
+                                                                <td className="actions-col">
+                                                                    <div className="contacts-action-buttons">
+                                                                        <button className="contacts-action-btn" onClick={() => handleEditSegment(segment)} title="Edit Segment">
                                                                             <Edit2 size={16} />
                                                                         </button>
-                                                                        <button
-                                                                            className="action-btn delete-btn"
-                                                                            onClick={() => handleDeleteSegment(segment._id)}
-                                                                            title="Delete Segment"
-                                                                        >
+                                                                        <button className="contacts-action-btn delete-btn" onClick={() => handleDeleteSegment(segment._id)} title="Delete Segment">
                                                                             <Trash size={16} />
                                                                         </button>
                                                                     </div>
@@ -989,32 +811,17 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
             return null;
         }
 
-        const inputStyle = {
-            flex: '2 1 150px',
-            minWidth: '150px',
-            padding: '0.5rem 0.75rem',
-            border: '1px solid #e0e0e0',
-            borderRadius: '0.375rem',
-            fontSize: '0.875rem',
-            backgroundColor: '#fff',
-        };
-
         // Tags field
         if (rule.field === 'tags') {
             return (
                 <select
                     value={rule.value}
                     onChange={(e) => updateRule(index, { value: e.target.value })}
-                    style={inputStyle}
+                    className="segment-rule-select segment-rule-input--value"
                 >
                     <option value="">Select a tag...</option>
                     {availableTags.map((tag) => (
-                        <option
-                            key={tag.name}
-                            value={tag.name}
-                        >
-                            {tag.name} ({tag.count})
-                        </option>
+                        <option key={tag.name} value={tag.name}>{tag.name} ({tag.count})</option>
                     ))}
                 </select>
             );
@@ -1026,7 +833,7 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                 <select
                     value={rule.value}
                     onChange={(e) => updateRule(index, { value: e.target.value })}
-                    style={inputStyle}
+                    className="segment-rule-select segment-rule-input--value"
                 >
                     <option value="">Select status...</option>
                     <option value="active">Active</option>
@@ -1044,7 +851,7 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                     type="date"
                     value={rule.value}
                     onChange={(e) => updateRule(index, { value: e.target.value })}
-                    style={inputStyle}
+                    className="segment-rule-input segment-rule-input--value"
                 />
             );
         }
@@ -1060,7 +867,7 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                         <select
                             value={rule.value}
                             onChange={(e) => updateRule(index, { value: e.target.value })}
-                            style={inputStyle}
+                            className="segment-rule-select segment-rule-input--value"
                         >
                             <option value="">Select...</option>
                             <option value="true">True / Yes</option>
@@ -1076,7 +883,7 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                             type="date"
                             value={rule.value}
                             onChange={(e) => updateRule(index, { value: e.target.value })}
-                            style={inputStyle}
+                            className="segment-rule-input segment-rule-input--value"
                         />
                     );
                 }
@@ -1089,7 +896,7 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                             value={rule.value}
                             onChange={(e) => updateRule(index, { value: e.target.value })}
                             placeholder="Enter number..."
-                            style={inputStyle}
+                            className="segment-rule-input segment-rule-input--value"
                         />
                     );
                 }
@@ -1100,7 +907,7 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                         <select
                             value={rule.value}
                             onChange={(e) => updateRule(index, { value: e.target.value })}
-                            style={inputStyle}
+                            className="segment-rule-select segment-rule-input--value"
                         >
                             <option value="">Select value...</option>
                             {customField.values.map((val) => (
@@ -1124,100 +931,35 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                 value={rule.value}
                 onChange={(e) => updateRule(index, { value: e.target.value })}
                 placeholder="Value..."
-                style={inputStyle}
+                className="segment-rule-input segment-rule-input--value"
             />
         );
     };
 
     return (
         <div
-            style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 1000,
-                padding: '1rem',
-            }}
+            className="segment-modal-overlay"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose();
             }}
         >
-            <div
-                style={{
-                    backgroundColor: '#fff',
-                    borderRadius: '0.75rem',
-                    width: '100%',
-                    maxWidth: '750px',
-                    maxHeight: 'calc(100vh - 2rem)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
-                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                }}
-            >
+            <div className="segment-modal">
                 {/* Fixed Header */}
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '1.25rem 1.5rem',
-                        borderBottom: '1px solid #f0f0f0',
-                        flexShrink: 0,
-                    }}
-                >
-                    <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600, color: '#1a1a1a' }}>{segment ? 'Edit Segment' : 'Create Segment'}</h2>
+                <div className="segment-modal-header">
+                    <h2 className="segment-modal-title">{segment ? 'Edit Segment' : 'Create Segment'}</h2>
                     <button
                         onClick={onClose}
                         type="button"
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: '0.5rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '0.375rem',
-                            color: '#666',
-                            transition: 'background-color 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        className="segment-modal-close"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Scrollable Content */}
-                <div
-                    style={{
-                        flex: 1,
-                        overflowY: 'auto',
-                        padding: '1.5rem',
-                    }}
-                >
+                <div className="segment-modal-body">
                     {error && (
-                        <div
-                            style={{
-                                marginBottom: '1rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                padding: '0.75rem 1rem',
-                                backgroundColor: '#fef2f2',
-                                border: '1px solid #fecaca',
-                                borderRadius: '0.5rem',
-                                color: '#dc2626',
-                                fontSize: '0.875rem',
-                            }}
-                        >
+                        <div className="segment-form-error">
                             <span>{error}</span>
                         </div>
                     )}
@@ -1227,83 +969,58 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                         onSubmit={handleSubmit}
                     >
                         {/* Basic Info */}
-                        <div style={{ marginBottom: '1.25rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#333' }}>
-                                Segment Name<span style={{ color: '#dc2626' }}>*</span>
+                        <div className="segment-form-group">
+                            <label className="segment-form-label">
+                                Segment Name<span className="segment-form-required">*</span>
                             </label>
                             <input
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                                 placeholder="e.g., Active Users, Premium Customers"
-                                style={{
-                                    width: '100%',
-                                    padding: '0.625rem 0.875rem',
-                                    border: '1px solid #e0e0e0',
-                                    borderRadius: '0.5rem',
-                                    fontSize: '0.9375rem',
-                                }}
+                                className="segment-form-input"
                             />
                         </div>
 
-                        <div style={{ marginBottom: '1.25rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#333' }}>Description</label>
+                        <div className="segment-form-group">
+                            <label className="segment-form-label">Description</label>
                             <textarea
                                 value={formData.description}
                                 onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
                                 placeholder="Describe what this segment represents..."
                                 rows={2}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.625rem 0.875rem',
-                                    border: '1px solid #e0e0e0',
-                                    borderRadius: '0.5rem',
-                                    fontSize: '0.9375rem',
-                                    resize: 'vertical',
-                                    minHeight: '60px',
-                                }}
+                                className="segment-form-textarea"
                             />
                         </div>
 
                         {/* Contact Lists */}
-                        <div style={{ marginBottom: '1.25rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#333' }}>Apply to Contact Lists</label>
-                            <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.8125rem', color: '#666' }}>Select which contact lists this segment should filter. Leave empty to include all lists.</p>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div className="segment-form-group">
+                            <label className="segment-form-label">Apply to Contact Lists</label>
+                            <p className="segment-form-hint">Select which contact lists this segment should filter. Leave empty to include all lists.</p>
+                            <div className="segment-list-chips">
                                 {contactLists.map((list) => (
                                     <button
                                         key={list._id}
                                         type="button"
                                         onClick={() => toggleContactList(list._id)}
-                                        style={{
-                                            padding: '0.5rem 0.875rem',
-                                            borderRadius: '0.375rem',
-                                            border: formData.contactListIds.includes(list._id) ? '2px solid #1a1a1a' : '1px solid #e0e0e0',
-                                            background: formData.contactListIds.includes(list._id) ? '#f5f5f5' : '#fff',
-                                            cursor: 'pointer',
-                                            fontSize: '0.8125rem',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.375rem',
-                                            transition: 'all 0.15s ease',
-                                        }}
+                                        className={`segment-list-chip ${formData.contactListIds.includes(list._id) ? 'selected' : ''}`}
                                     >
                                         {formData.contactListIds.includes(list._id) && <Check size={14} />}
                                         {list.name}
-                                        <span style={{ color: '#999', fontSize: '0.75rem' }}>({list.contactCount || 0})</span>
+                                        <span className="segment-list-chip-count">({list.contactCount || 0})</span>
                                     </button>
                                 ))}
-                                {contactLists.length === 0 && <p style={{ margin: 0, fontSize: '0.8125rem', color: '#999', fontStyle: 'italic' }}>No contact lists available</p>}
+                                {contactLists.length === 0 && <p className="segment-no-lists">No contact lists available</p>}
                             </div>
                         </div>
 
                         {/* Conditions */}
-                        <div style={{ marginBottom: '1rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#333' }}>Filter Conditions</label>
+                        <div className="segment-form-group">
+                            <label className="segment-form-label">Filter Conditions</label>
 
                             {/* Match Type */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                                <span style={{ fontSize: '0.875rem', color: '#666' }}>Match</span>
+                            <div className="segment-match-type">
+                                <span className="segment-match-label">Match</span>
                                 <select
                                     value={formData.conditions.matchType}
                                     onChange={(e) =>
@@ -1312,13 +1029,7 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                                             conditions: { ...prev.conditions, matchType: e.target.value },
                                         }))
                                     }
-                                    style={{
-                                        padding: '0.5rem 0.75rem',
-                                        border: '1px solid #e0e0e0',
-                                        borderRadius: '0.375rem',
-                                        fontSize: '0.875rem',
-                                        backgroundColor: '#fff',
-                                    }}
+                                    className="segment-match-select"
                                 >
                                     <option value="all">ALL conditions</option>
                                     <option value="any">ANY condition</option>
@@ -1327,20 +1038,7 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
 
                             {/* Custom Fields Info */}
                             {customFields.length > 0 && (
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        padding: '0.625rem 0.875rem',
-                                        backgroundColor: '#f0f9ff',
-                                        border: '1px solid #bfdbfe',
-                                        borderRadius: '0.5rem',
-                                        marginBottom: '1rem',
-                                        fontSize: '0.8125rem',
-                                        color: '#1e40af',
-                                    }}
-                                >
+                                <div className="segment-custom-fields-info">
                                     <Tag size={14} />
                                     <span>
                                         {customFields.length} custom field{customFields.length !== 1 ? 's' : ''} available for filtering
@@ -1349,21 +1047,9 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                             )}
 
                             {/* Rules */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div className="segment-rules">
                                 {formData.conditions.rules.map((rule, index) => (
-                                    <div
-                                        key={index}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'flex-start',
-                                            gap: '0.5rem',
-                                            padding: '0.875rem',
-                                            background: '#fafafa',
-                                            borderRadius: '0.5rem',
-                                            flexWrap: 'wrap',
-                                            border: '1px solid #f0f0f0',
-                                        }}
-                                    >
+                                    <div key={index} className="segment-rule">
                                         {/* Field Selector */}
                                         <select
                                             value={rule.field}
@@ -1377,15 +1063,7 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                                                     customFieldName: newField === 'customField' ? '' : undefined,
                                                 });
                                             }}
-                                            style={{
-                                                flex: '1 1 130px',
-                                                minWidth: '130px',
-                                                padding: '0.5rem 0.75rem',
-                                                border: '1px solid #e0e0e0',
-                                                borderRadius: '0.375rem',
-                                                fontSize: '0.875rem',
-                                                backgroundColor: '#fff',
-                                            }}
+                                            className="segment-rule-select segment-rule-select--field"
                                         >
                                             <optgroup label="Standard Fields">
                                                 {fieldOptions
@@ -1419,16 +1097,7 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                                                         value: '',
                                                     });
                                                 }}
-                                                style={{
-                                                    flex: '1 1 140px',
-                                                    minWidth: '140px',
-                                                    padding: '0.5rem 0.75rem',
-                                                    border: '1px solid #e0e0e0',
-                                                    borderRadius: '0.375rem',
-                                                    fontSize: '0.875rem',
-                                                    backgroundColor: rule.customFieldName ? '#fff' : '#fffbeb',
-                                                    borderColor: rule.customFieldName ? '#e0e0e0' : '#fbbf24',
-                                                }}
+                                                className={`segment-rule-select segment-rule-select--custom ${!rule.customFieldName ? 'segment-rule-select--warning' : ''}`}
                                             >
                                                 <option value="">Select field...</option>
                                                 {customFields.map((cf) => (
@@ -1446,15 +1115,7 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                                         <select
                                             value={rule.operator}
                                             onChange={(e) => updateRule(index, { operator: e.target.value })}
-                                            style={{
-                                                flex: '1 1 140px',
-                                                minWidth: '140px',
-                                                padding: '0.5rem 0.75rem',
-                                                border: '1px solid #e0e0e0',
-                                                borderRadius: '0.375rem',
-                                                fontSize: '0.875rem',
-                                                backgroundColor: '#fff',
-                                            }}
+                                            className="segment-rule-select segment-rule-select--operator"
                                         >
                                             {getOperatorsForField(rule.field, rule.customFieldName).map((opt) => (
                                                 <option
@@ -1473,19 +1134,7 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                                         <button
                                             type="button"
                                             onClick={() => removeRule(index)}
-                                            style={{
-                                                padding: '0.5rem',
-                                                background: 'transparent',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                color: '#dc2626',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                borderRadius: '0.375rem',
-                                                transition: 'background-color 0.15s ease',
-                                            }}
-                                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fef2f2')}
-                                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                            className="segment-rule-remove"
                                         >
                                             <X size={18} />
                                         </button>
@@ -1493,44 +1142,15 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                                 ))}
 
                                 {formData.conditions.rules.length === 0 && (
-                                    <div
-                                        style={{
-                                            padding: '1.5rem',
-                                            textAlign: 'center',
-                                            backgroundColor: '#fafafa',
-                                            borderRadius: '0.5rem',
-                                            border: '1px dashed #e0e0e0',
-                                        }}
-                                    >
-                                        <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.875rem', color: '#666' }}>No conditions added. This segment will include all contacts from selected lists.</p>
+                                    <div className="segment-rules-empty">
+                                        <p>No conditions added. This segment will include all contacts from selected lists.</p>
                                     </div>
                                 )}
 
                                 <button
                                     type="button"
                                     onClick={addRule}
-                                    style={{
-                                        alignSelf: 'flex-start',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.375rem',
-                                        padding: '0.5rem 0.875rem',
-                                        backgroundColor: '#fff',
-                                        border: '1px solid #e0e0e0',
-                                        borderRadius: '0.375rem',
-                                        fontSize: '0.8125rem',
-                                        color: '#333',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.15s ease',
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.backgroundColor = '#f5f5f5';
-                                        e.currentTarget.style.borderColor = '#ccc';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.backgroundColor = '#fff';
-                                        e.currentTarget.style.borderColor = '#e0e0e0';
-                                    }}
+                                    className="segment-add-rule-btn"
                                 >
                                     <PlusCircle size={16} />
                                     Add Condition
@@ -1541,33 +1161,12 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                 </div>
 
                 {/* Fixed Footer */}
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'flex-end',
-                        gap: '0.75rem',
-                        padding: '1.25rem 1.5rem',
-                        borderTop: '1px solid #f0f0f0',
-                        backgroundColor: '#fafafa',
-                        flexShrink: 0,
-                    }}
-                >
+                <div className="segment-modal-footer">
                     <button
                         type="button"
                         onClick={onClose}
                         disabled={isSubmitting}
-                        style={{
-                            padding: '0.625rem 1.25rem',
-                            backgroundColor: '#fff',
-                            border: '1px solid #e0e0e0',
-                            borderRadius: '0.5rem',
-                            fontSize: '0.875rem',
-                            fontWeight: 500,
-                            color: '#333',
-                            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                            opacity: isSubmitting ? 0.6 : 1,
-                        }}
+                        className="button button--secondary"
                     >
                         Cancel
                     </button>
@@ -1575,24 +1174,11 @@ function SegmentFormModal({ brandId, segment, contactLists, availableTags, onClo
                         type="submit"
                         form="segment-form"
                         disabled={isSubmitting}
-                        style={{
-                            padding: '0.625rem 1.25rem',
-                            backgroundColor: '#1a1a1a',
-                            border: 'none',
-                            borderRadius: '0.5rem',
-                            fontSize: '0.875rem',
-                            fontWeight: 500,
-                            color: '#fff',
-                            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                            opacity: isSubmitting ? 0.6 : 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                        }}
+                        className="button button--primary"
                     >
                         {isSubmitting ? (
                             <>
-                                <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⟳</span>
+                                <span className="spinner-small"></span>
                                 Saving...
                             </>
                         ) : segment ? (

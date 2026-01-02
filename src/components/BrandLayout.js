@@ -1,9 +1,9 @@
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
 import { useSession } from 'next-auth/react';
-import { Code, ContactBook, DatabaseSync, Home03, Mail02, Setting07, Shield02, Zap } from '@/lib/icons';
+import { Mail, Users, Code, Link2, Zap, Settings, Shield, Home } from 'lucide-react';
 
 export default function BrandLayout({ children, brand }) {
     const router = useRouter();
@@ -24,24 +24,8 @@ export default function BrandLayout({ children, brand }) {
         }
     }, [status, router]);
 
-    // Fetch quota information
-    useEffect(() => {
-        if (brand && brand._id) {
-            fetchQuota();
-            // Refresh quota every 5 minutes
-            const interval = setInterval(fetchQuota, 5 * 60 * 1000);
-            return () => clearInterval(interval);
-        }
-    }, [brand]);
-
-    const getQuotaClass = (percentage) => {
-        if (percentage >= 90) return 'quota-critical';
-        if (percentage >= 75) return 'quota-high';
-        if (percentage >= 50) return 'quota-medium';
-        return 'quota-low';
-    };
-
-    const fetchQuota = async () => {
+    const fetchQuota = useCallback(async () => {
+        if (!brand?._id) return;
         try {
             const response = await fetch(`/api/brands/${brand._id}/quota`);
             const data = await response.json();
@@ -60,18 +44,35 @@ export default function BrandLayout({ children, brand }) {
         } finally {
             setLoadingQuota(false);
         }
+    }, [brand?._id]);
+
+    // Fetch quota information
+    useEffect(() => {
+        if (brand && brand._id) {
+            fetchQuota();
+            // Refresh quota every 5 minutes
+            const interval = setInterval(fetchQuota, 5 * 60 * 1000);
+            return () => clearInterval(interval);
+        }
+    }, [brand, fetchQuota]);
+
+    const getQuotaClass = (percentage) => {
+        if (percentage >= 90) return 'quota-critical';
+        if (percentage >= 75) return 'quota-high';
+        if (percentage >= 50) return 'quota-medium';
+        return 'quota-low';
     };
 
     // Determine active menu item based on the current path
     const getActiveMenuItem = () => {
         const path = router.pathname;
-        console.log(path);
         if (path.includes('/brands/[id]/campaigns/[campaignId]')) return 'campaignEditor';
         if (path.includes('/campaigns')) return 'campaigns';
         if (path.includes('/brands/[id]/contacts/[listId]')) return 'contactsList';
         if (path.includes('/contacts')) return 'contacts';
         if (path.includes('/transactional')) return 'transactional';
         if (path.includes('/integrations')) return 'integrations';
+        if (path.includes('/sequences')) return 'sequences';
         if (path.includes('/settings')) return 'settings';
         if (path.includes('/verification')) return 'verification';
         return '';
@@ -119,90 +120,94 @@ export default function BrandLayout({ children, brand }) {
 
             <div className="app-container">
                 {/* Sidebar */}
-                <div className="sidebar">
-                    <div>
-                        <div className="sidebar-header">
-                            <div className="brand-logo">
-                                <div className="logo-icon">
-                                    <img
-                                        src={`https://www.google.com/s2/favicons?sz=64&domain_url=${brand.website}`}
-                                        height={24}
-                                        width={24}
-                                    />
-                                </div>
-                                <div className="brand-info">
-                                    <div className="brand-name">{brand.name}</div>
-                                    <div className="brand-website">{brand.website}</div>
-                                </div>
+                <aside className="sidebar">
+                    <div className="sidebar-header">
+                        <div className="brand-logo">
+                            <div className="logo-icon">
+                                <img
+                                    src={`https://www.google.com/s2/favicons?sz=64&domain_url=${brand.website}`}
+                                    alt={brand.name}
+                                    height={20}
+                                    width={20}
+                                />
+                            </div>
+                            <div className="brand-info">
+                                <div className="brand-name">{brand.name}</div>
+                                <div className="brand-website">{brand.website}</div>
                             </div>
                         </div>
-
-                        <nav className="sidebar-nav">
-                            <Link
-                                href={`/brands/${brand._id}/campaigns`}
-                                className={`nav-item ${activeMenuItem === 'campaigns' ? 'active' : ''}`}
-                            >
-                                <Mail02 size={20} />
-                                <span>Campaigns</span>
-                            </Link>
-
-                            <Link
-                                href={`/brands/${brand._id}/contacts`}
-                                className={`nav-item ${activeMenuItem === 'contacts' ? 'active' : ''}`}
-                            >
-                                <ContactBook size={20} />
-                                <span>Contacts</span>
-                            </Link>
-
-                            <Link
-                                href={`/brands/${brand._id}/transactional`}
-                                className={`nav-item ${activeMenuItem === 'transactional' ? 'active' : ''}`}
-                            >
-                                <Code size={20} />
-                                <span>Transactional</span>
-                            </Link>
-                            <Link
-                                href={`/brands/${brand._id}/integrations`}
-                                className={`nav-item ${router.pathname.includes('/brands/[id]/integrations') ? 'active' : ''}`}
-                            >
-                                <DatabaseSync size={18} />
-                                Integrations
-                            </Link>
-                            <Link
-                                href={`/brands/${brand._id}/sequences`}
-                                className={router.pathname.includes('/sequences') ? 'active' : ''}
-                            >
-                                <Zap size={20} />
-                                <span>Email Sequences</span>
-                            </Link>
-                            <Link
-                                href={`/brands/${brand._id}/settings`}
-                                className={`nav-item ${activeMenuItem === 'settings' ? 'active' : ''}`}
-                            >
-                                <Setting07 size={20} />
-                                <span>Settings</span>
-                            </Link>
-
-                            {(brand.status === 'pending_setup' || brand.status === 'pending_verification') && (
-                                <Link
-                                    href={`/brands/${brand._id}/verification`}
-                                    className={`nav-item verification ${activeMenuItem === 'verification' ? 'active' : ''}`}
-                                >
-                                    <Shield02 />
-                                    <span>Verification</span>
-                                    <span className="verification-badge">Required</span>
-                                </Link>
-                            )}
-                            <div className="divider" />
-                            <Link
-                                href="/brands"
-                                className="nav-item secondary"
-                            >
-                                <Home03 size={20} />
-                                <span>Back to Brands</span>
-                            </Link>
-                        </nav>
                     </div>
+
+                    <nav className="sidebar-nav">
+                        <Link
+                            href={`/brands/${brand._id}/campaigns`}
+                            className={`nav-item ${activeMenuItem === 'campaigns' ? 'active' : ''}`}
+                        >
+                            <Mail size={18} />
+                            <span>Campaigns</span>
+                        </Link>
+
+                        <Link
+                            href={`/brands/${brand._id}/contacts`}
+                            className={`nav-item ${activeMenuItem === 'contacts' ? 'active' : ''}`}
+                        >
+                            <Users size={18} />
+                            <span>Contacts</span>
+                        </Link>
+
+                        <Link
+                            href={`/brands/${brand._id}/transactional`}
+                            className={`nav-item ${activeMenuItem === 'transactional' ? 'active' : ''}`}
+                        >
+                            <Code size={18} />
+                            <span>Transactional</span>
+                        </Link>
+
+                        <Link
+                            href={`/brands/${brand._id}/integrations`}
+                            className={`nav-item ${activeMenuItem === 'integrations' ? 'active' : ''}`}
+                        >
+                            <Link2 size={18} />
+                            <span>Integrations</span>
+                        </Link>
+
+                        <Link
+                            href={`/brands/${brand._id}/sequences`}
+                            className={`nav-item ${activeMenuItem === 'sequences' ? 'active' : ''}`}
+                        >
+                            <Zap size={18} />
+                            <span>Sequences</span>
+                        </Link>
+
+                        <Link
+                            href={`/brands/${brand._id}/settings`}
+                            className={`nav-item ${activeMenuItem === 'settings' ? 'active' : ''}`}
+                        >
+                            <Settings size={18} />
+                            <span>Settings</span>
+                        </Link>
+
+                        {(brand.status === 'pending_setup' || brand.status === 'pending_verification') && (
+                            <Link
+                                href={`/brands/${brand._id}/verification`}
+                                className={`nav-item verification ${activeMenuItem === 'verification' ? 'active' : ''}`}
+                            >
+                                <Shield size={18} />
+                                <span>Verification</span>
+                                <span className="verification-badge">Required</span>
+                            </Link>
+                        )}
+
+                        <div className="divider" />
+
+                        <Link
+                            href="/brands"
+                            className="nav-item secondary"
+                        >
+                            <Home size={18} />
+                            <span>Back to Brands</span>
+                        </Link>
+                    </nav>
 
                     <div className="sidebar-footer">
                         {loadingQuota ? (
@@ -239,20 +244,10 @@ export default function BrandLayout({ children, brand }) {
                             </Link>
                         )}
                     </div>
-                </div>
+                </aside>
 
                 {/* Main content */}
                 <main className="brand-main-content">
-                    <header className="top-header">
-                        <h1 className="page-title">
-                            {activeMenuItem === 'campaigns' && 'Campaigns'}
-                            {activeMenuItem === 'campaignEditor' && ''}
-                            {activeMenuItem === 'contacts' && 'Contacts'}
-                            {activeMenuItem === 'contactsList' && ''}
-                            {activeMenuItem === 'analytics' && 'Analytics'}
-                        </h1>
-                    </header>
-
                     <div className="content-area">{children}</div>
                 </main>
             </div>

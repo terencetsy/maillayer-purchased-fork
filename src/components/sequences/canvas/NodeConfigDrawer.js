@@ -1,6 +1,6 @@
 // src/components/sequences/canvas/NodeConfigDrawer.js
 import { useState, useEffect, useRef } from 'react';
-import { X, List, Zap, Check, Clock, Mail, AlertCircle } from 'lucide-react';
+import { X, Clock } from 'lucide-react';
 import UnifiedEditor from '@/components/editor/UnifiedEditor';
 
 export default function NodeConfigDrawer({ isOpen, nodeId, sequence, onUpdate, onClose, brandId }) {
@@ -8,24 +8,12 @@ export default function NodeConfigDrawer({ isOpen, nodeId, sequence, onUpdate, o
 
     const renderContent = () => {
         if (nodeId === 'trigger') {
-            return (
-                <TriggerConfig
-                    sequence={sequence}
-                    onUpdate={onUpdate}
-                    brandId={brandId}
-                />
-            );
+            return <TriggerConfig sequence={sequence} onUpdate={onUpdate} brandId={brandId} />;
         }
 
         const email = sequence.emails?.find((e) => e.id === nodeId);
         if (email) {
-            return (
-                <EmailConfig
-                    sequence={sequence}
-                    email={email}
-                    onUpdate={onUpdate}
-                />
-            );
+            return <EmailConfig sequence={sequence} email={email} onUpdate={onUpdate} />;
         }
 
         return null;
@@ -33,68 +21,58 @@ export default function NodeConfigDrawer({ isOpen, nodeId, sequence, onUpdate, o
 
     const getTitle = () => {
         if (nodeId === 'trigger') return 'Configure Trigger';
-
         const email = sequence.emails?.find((e) => e.id === nodeId);
         if (email) return `Email ${email.order}`;
-
         return 'Configure';
     };
 
     return (
         <>
-            {/* Overlay */}
-            <div
-                className={`drawer-overlay ${isOpen ? 'open' : ''}`}
-                onClick={onClose}
-            />
-
-            {/* Drawer */}
-            <div className={`drawer-container ${isOpen ? 'open' : ''}`}>
+            <div className={`overlay ${isOpen ? 'open' : ''}`} onClick={onClose} />
+            <div className={`drawer ${isOpen ? 'open' : ''}`}>
                 <div className="drawer-header">
                     <h2>{getTitle()}</h2>
-                    <button
-                        className="drawer-close"
-                        onClick={onClose}
-                    >
-                        <X size={20} />
+                    <button className="close-btn" onClick={onClose}>
+                        <X size={18} />
                     </button>
                 </div>
-                <div className="drawer-content">{renderContent()}</div>
+                <div className="drawer-body">{renderContent()}</div>
             </div>
 
             <style jsx>{`
-                .drawer-overlay {
+                .overlay {
                     position: fixed;
                     inset: 0;
-                    background: rgba(0, 0, 0, 0.4);
+                    background: rgba(0, 0, 0, 0.6);
                     z-index: 999;
                     opacity: 0;
                     pointer-events: none;
-                    transition: opacity 0.3s ease;
+                    transition: opacity 0.2s;
                 }
 
-                .drawer-overlay.open {
+                .overlay.open {
                     opacity: 1;
                     pointer-events: all;
                 }
 
-                .drawer-container {
+                .drawer {
                     position: fixed;
                     right: 0;
                     top: 0;
                     bottom: 0;
-                    width: 700px;
-                    max-width: 90vw;
-                    background: #fff;
+                    width: 480px;
+                    max-width: 100vw;
+                    background: #0a0a0a;
                     z-index: 1000;
                     display: flex;
                     flex-direction: column;
-                    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+                    box-shadow: -4px 0 32px rgba(0, 0, 0, 0.5);
                     transform: translateX(100%);
-                    transition: transform 0.3s ease;
+                    transition: transform 0.2s ease;
+                    border-left: 1px solid rgba(255,255,255,0.08);
                 }
 
-                .drawer-container.open {
+                .drawer.open {
                     transform: translateX(0);
                 }
 
@@ -102,49 +80,47 @@ export default function NodeConfigDrawer({ isOpen, nodeId, sequence, onUpdate, o
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    padding: 1.5rem;
-                    border-bottom: 1px solid #e0e0e0;
+                    padding: 16px 20px;
+                    border-bottom: 1px solid rgba(255,255,255,0.08);
                     flex-shrink: 0;
                 }
 
                 .drawer-header h2 {
                     margin: 0;
-                    font-size: 1.25rem;
-                    font-weight: 400;
+                    font-size: 15px;
+                    font-weight: 600;
+                    color: #fafafa;
                 }
 
-                .drawer-close {
-                    background: none;
-                    border: none;
-                    cursor: pointer;
-                    color: #666;
+                .close-btn {
+                    width: 32px;
+                    height: 32px;
                     display: flex;
-                    padding: 0.25rem;
-                    border-radius: 4px;
-                    transition: all 0.2s;
+                    align-items: center;
+                    justify-content: center;
+                    background: rgba(255,255,255,0.05);
+                    border: 1px solid rgba(255,255,255,0.08);
+                    border-radius: 6px;
+                    color: #71717a;
+                    cursor: pointer;
+                    transition: all 0.15s;
                 }
 
-                .drawer-close:hover {
-                    background: #f5f5f5;
-                    color: #1a1a1a;
+                .close-btn:hover {
+                    background: rgba(255,255,255,0.08);
+                    color: #fafafa;
                 }
 
-                .drawer-content {
+                .drawer-body {
                     flex: 1;
                     overflow-y: auto;
-                    padding: 1.5rem;
+                    padding: 20px;
                 }
             `}</style>
         </>
     );
 }
 
-// Keep the TriggerConfig, EmailConfig, and SequenceSettings components exactly the same as before
-// Just copy them from the NodeConfigModal.js file
-
-// Add these to NodeConfigDrawer.js after the main component
-
-// Trigger Configuration Component
 function TriggerConfig({ sequence, onUpdate, brandId }) {
     const [contactLists, setContactLists] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -169,23 +145,11 @@ function TriggerConfig({ sequence, onUpdate, brandId }) {
         }
     };
 
-    const handleTriggerTypeChange = (type) => {
-        const updates = {
-            triggerType: type,
-            triggerConfig: {
-                ...sequence.triggerConfig,
-                contactListIds: type === 'contact_list' ? sequence.triggerConfig?.contactListIds || [] : undefined,
-                integrationType: type === 'integration' ? sequence.triggerConfig?.integrationType || '' : undefined,
-                integrationEvent: type === 'integration' ? sequence.triggerConfig?.integrationEvent || '' : undefined,
-            },
-        };
-
-        onUpdate(updates);
-    };
-
     const handleListToggle = (listId) => {
         const currentLists = sequence.triggerConfig?.contactListIds || [];
-        const newLists = currentLists.includes(listId) ? currentLists.filter((id) => id !== listId) : [...currentLists, listId];
+        const newLists = currentLists.includes(listId)
+            ? currentLists.filter((id) => id !== listId)
+            : [...currentLists, listId];
 
         onUpdate({
             triggerConfig: {
@@ -195,228 +159,184 @@ function TriggerConfig({ sequence, onUpdate, brandId }) {
         });
     };
 
+    const selectedCount = sequence.triggerConfig?.contactListIds?.length || 0;
+
     return (
-        <div className="config-section">
-            <p className="section-description">Choose how contacts enter this sequence</p>
+        <div className="config-form">
+            <p className="description">
+                When contacts are added to the selected lists, they will automatically enter this sequence.
+            </p>
 
-            <div className="form-group">
-                <label className="form-label">Trigger Type</label>
-                <div className="trigger-options">
-                    <button
-                        type="button"
-                        className={`trigger-option ${sequence.triggerType === 'contact_list' ? 'selected' : ''}`}
-                        onClick={() => handleTriggerTypeChange('contact_list')}
-                    >
-                        <List size={18} />
-                        <span>Contact Lists</span>
-                        {sequence.triggerType === 'contact_list' && (
-                            <Check
-                                size={16}
-                                className="check-icon"
-                            />
-                        )}
-                    </button>
-
-                    <button
-                        type="button"
-                        className={`trigger-option ${sequence.triggerType === 'integration' ? 'selected' : ''}`}
-                        onClick={() => handleTriggerTypeChange('integration')}
-                    >
-                        <Zap size={18} />
-                        <span>Integration</span>
-                        {sequence.triggerType === 'integration' && (
-                            <Check
-                                size={16}
-                                className="check-icon"
-                            />
-                        )}
-                    </button>
+            <div className="form-section">
+                <div className="section-header">
+                    <label className="section-label">Contact Lists</label>
+                    {selectedCount > 0 && <span className="count-badge">{selectedCount} selected</span>}
                 </div>
+
+                {loading ? (
+                    <div className="loading-state">Loading lists...</div>
+                ) : contactLists.length === 0 ? (
+                    <div className="empty-state">No contact lists found</div>
+                ) : (
+                    <div className="list-grid">
+                        {contactLists.map((list) => {
+                            const isSelected = sequence.triggerConfig?.contactListIds?.includes(list._id);
+                            return (
+                                <label key={list._id} className={`list-item ${isSelected ? 'selected' : ''}`}>
+                                    <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={() => handleListToggle(list._id)}
+                                    />
+                                    <span className="checkbox">
+                                        <svg viewBox="0 0 12 12" fill="none">
+                                            <path d="M2 6l3 3 5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                    </span>
+                                    <div className="list-info">
+                                        <span className="list-name">{list.name}</span>
+                                        <span className="list-count">{list.contactCount || 0} contacts</span>
+                                    </div>
+                                </label>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
-            {sequence.triggerType === 'contact_list' && (
-                <div className="form-group">
-                    <label className="form-label">Select Lists</label>
-                    <p className="helper-text">Contacts added to these lists will enter the sequence</p>
-
-                    {loading ? (
-                        <div className="loading-state">Loading...</div>
-                    ) : contactLists.length === 0 ? (
-                        <div className="empty-state">No contact lists found</div>
-                    ) : (
-                        <div className="list-options">
-                            {contactLists.map((list) => {
-                                const isSelected = sequence.triggerConfig?.contactListIds?.includes(list._id);
-                                return (
-                                    <label
-                                        key={list._id}
-                                        className={`list-option ${isSelected ? 'selected' : ''}`}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={isSelected}
-                                            onChange={() => handleListToggle(list._id)}
-                                        />
-                                        <div className="list-option-content">
-                                            <div className="list-option-name">{list.name}</div>
-                                            <div className="list-option-count">{list.contactCount || 0} contacts</div>
-                                        </div>
-                                        {isSelected && (
-                                            <Check
-                                                size={16}
-                                                className="check-icon"
-                                            />
-                                        )}
-                                    </label>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {sequence.triggerType === 'integration' && (
-                <div className="form-group">
-                    <label className="form-label">Integration Settings</label>
-                    <div className="empty-state">Integration configuration coming soon</div>
-                </div>
-            )}
-
             <style jsx>{`
-                .config-section {
+                .config-form {
                     display: flex;
                     flex-direction: column;
-                    gap: 1.5rem;
+                    gap: 20px;
                 }
 
-                .section-description {
+                .description {
                     margin: 0;
-                    color: #666;
-                    font-size: 0.875rem;
+                    font-size: 13px;
+                    color: #71717a;
+                    line-height: 1.5;
                 }
 
-                .form-group {
+                .form-section {
                     display: flex;
                     flex-direction: column;
-                    gap: 0.75rem;
+                    gap: 12px;
                 }
 
-                .form-label {
-                    font-size: 0.875rem;
-                    font-weight: 400;
-                    color: #1a1a1a;
-                }
-
-                .helper-text {
-                    margin: 0;
-                    font-size: 0.8125rem;
-                    color: #999;
-                }
-
-                .trigger-options {
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 0.75rem;
-                }
-
-                .trigger-option {
-                    padding: 1rem;
-                    border: 2px solid #e0e0e0;
-                    border-radius: 8px;
-                    background: #fff;
-                    cursor: pointer;
+                .section-header {
                     display: flex;
                     align-items: center;
-                    gap: 0.75rem;
-                    transition: all 0.2s;
-                    position: relative;
+                    justify-content: space-between;
                 }
 
-                .trigger-option:hover {
-                    border-color: #ccc;
-                    background: #fafafa;
+                .section-label {
+                    font-size: 13px;
+                    font-weight: 500;
+                    color: #a1a1aa;
                 }
 
-                .trigger-option.selected {
-                    border-color: #1a1a1a;
-                    background: #f9f9f9;
-                }
-
-                .trigger-option span {
-                    font-size: 0.875rem;
-                    font-weight: 400;
-                }
-
-                .check-icon {
-                    position: absolute;
-                    top: 8px;
-                    right: 8px;
-                    color: #2e7d32;
-                }
-
-                .list-options {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 0.5rem;
-                    max-height: 400px;
-                    overflow-y: auto;
-                }
-
-                .list-option {
-                    padding: 0.75rem;
-                    border: 1px solid #e0e0e0;
-                    border-radius: 6px;
-                    display: flex;
-                    align-items: center;
-                    gap: 0.75rem;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    position: relative;
-                }
-
-                .list-option:hover {
-                    background: #fafafa;
-                    border-color: #ccc;
-                }
-
-                .list-option.selected {
-                    background: #f0f7ff;
-                    border-color: #1976d2;
-                }
-
-                .list-option input[type='checkbox'] {
-                    cursor: pointer;
-                }
-
-                .list-option-content {
-                    flex: 1;
-                }
-
-                .list-option-name {
-                    font-size: 0.875rem;
-                    font-weight: 400;
-                    color: #1a1a1a;
-                }
-
-                .list-option-count {
-                    font-size: 0.75rem;
-                    color: #999;
-                    margin-top: 2px;
+                .count-badge {
+                    font-size: 11px;
+                    font-weight: 500;
+                    color: #818cf8;
+                    background: rgba(99, 102, 241, 0.15);
+                    padding: 3px 8px;
+                    border-radius: 100px;
                 }
 
                 .loading-state,
                 .empty-state {
-                    padding: 2rem;
+                    padding: 32px;
                     text-align: center;
-                    color: #999;
-                    font-size: 0.875rem;
+                    color: #52525b;
+                    font-size: 13px;
+                    background: rgba(255,255,255,0.02);
+                    border: 1px solid rgba(255,255,255,0.05);
+                    border-radius: 8px;
+                }
+
+                .list-grid {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+
+                .list-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 12px;
+                    background: rgba(255,255,255,0.02);
+                    border: 1px solid rgba(255,255,255,0.08);
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.15s;
+                }
+
+                .list-item:hover {
+                    background: rgba(255,255,255,0.04);
+                    border-color: rgba(255,255,255,0.12);
+                }
+
+                .list-item.selected {
+                    background: rgba(99, 102, 241, 0.1);
+                    border-color: rgba(99, 102, 241, 0.3);
+                }
+
+                .list-item input[type="checkbox"] {
+                    position: absolute;
+                    opacity: 0;
+                    pointer-events: none;
+                }
+
+                .checkbox {
+                    width: 18px;
+                    height: 18px;
+                    border: 2px solid rgba(255,255,255,0.2);
+                    border-radius: 4px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    transition: all 0.15s;
+                    color: transparent;
+                }
+
+                .checkbox svg {
+                    width: 10px;
+                    height: 10px;
+                }
+
+                .list-item.selected .checkbox {
+                    background: #6366f1;
+                    border-color: #6366f1;
+                    color: #fff;
+                }
+
+                .list-info {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                .list-name {
+                    font-size: 13px;
+                    font-weight: 500;
+                    color: #fafafa;
+                }
+
+                .list-count {
+                    font-size: 12px;
+                    color: #52525b;
                 }
             `}</style>
         </div>
     );
 }
 
-// Email Configuration Component
 function EmailConfig({ sequence, email, onUpdate }) {
     const [subject, setSubject] = useState(email.subject || '');
     const [content, setContent] = useState(email.content || '');
@@ -429,7 +349,6 @@ function EmailConfig({ sequence, email, onUpdate }) {
         if (updateTimeoutRef.current) {
             clearTimeout(updateTimeoutRef.current);
         }
-
         updateTimeoutRef.current = setTimeout(() => {
             handleSave(updates);
         }, 500);
@@ -445,15 +364,11 @@ function EmailConfig({ sequence, email, onUpdate }) {
         debouncedUpdate({ subject, content: newContent, delayAmount, delayUnit });
     };
 
-    const handleDelayChange = (newDelayAmount, newDelayUnit) => {
-        const amount = newDelayAmount !== undefined ? newDelayAmount : delayAmount;
-        const unit = newDelayUnit !== undefined ? newDelayUnit : delayUnit;
-
+    const handleDelayChange = (newAmount, newUnit) => {
+        const amount = newAmount !== undefined ? newAmount : delayAmount;
+        const unit = newUnit !== undefined ? newUnit : delayUnit;
         setDelayAmount(amount);
-        if (newDelayUnit !== undefined) {
-            setDelayUnit(unit);
-        }
-
+        if (newUnit !== undefined) setDelayUnit(unit);
         debouncedUpdate({ subject, content, delayAmount: amount, delayUnit: unit });
     };
 
@@ -484,122 +399,171 @@ function EmailConfig({ sequence, email, onUpdate }) {
     }, []);
 
     return (
-        <div className="config-section">
-            <div className="delay-config">
-                <div className="delay-header">
+        <div className="config-form">
+            <div className="delay-section">
+                <div className="delay-icon">
                     <Clock size={16} />
-                    <span>Send Delay</span>
                 </div>
-                <div className="delay-inputs">
-                    <input
-                        type="number"
-                        min="0"
-                        value={delayAmount}
-                        onChange={(e) => handleDelayChange(parseInt(e.target.value) || 0)}
-                        className="form-input"
-                    />
-                    <select
-                        value={delayUnit}
-                        onChange={(e) => handleDelayChange(undefined, e.target.value)}
-                        className="form-select"
-                    >
-                        <option value="minutes">Minutes</option>
-                        <option value="hours">Hours</option>
-                        <option value="days">Days</option>
-                    </select>
+                <div className="delay-content">
+                    <span className="delay-label">Send after</span>
+                    <div className="delay-inputs">
+                        <input
+                            type="number"
+                            min="0"
+                            value={delayAmount}
+                            onChange={(e) => handleDelayChange(parseInt(e.target.value) || 0)}
+                            className="delay-input"
+                        />
+                        <select
+                            value={delayUnit}
+                            onChange={(e) => handleDelayChange(undefined, e.target.value)}
+                            className="delay-select"
+                        >
+                            <option value="minutes">minutes</option>
+                            <option value="hours">hours</option>
+                            <option value="days">days</option>
+                        </select>
+                    </div>
                 </div>
-                {email.order > 1 && <p className="delay-note">Sent after the previous email</p>}
             </div>
 
             <div className="form-group">
-                <label className="form-label">
-                    Subject<span className="form-required">*</span>
-                </label>
+                <label className="form-label">Subject</label>
                 <input
                     type="text"
                     value={subject}
                     onChange={(e) => handleSubjectChange(e.target.value)}
-                    placeholder="Welcome! Here's what's next..."
+                    placeholder="Enter email subject..."
                     className="form-input"
                 />
             </div>
 
             <div className="form-group">
-                <label className="form-label">
-                    Content<span className="form-required">*</span>
-                </label>
-                <UnifiedEditor
-                    value={content}
-                    onChange={handleContentChange}
-                />
+                <label className="form-label">Content</label>
+                <div className="editor-wrapper">
+                    <UnifiedEditor value={content} onChange={handleContentChange} />
+                </div>
             </div>
 
             <style jsx>{`
-                .config-section {
+                .config-form {
                     display: flex;
                     flex-direction: column;
-                    gap: 1.5rem;
+                    gap: 20px;
                 }
 
-                .delay-config {
-                    background: #f9f9f9;
-                    border: 1px solid #e0e0e0;
-                    border-radius: 8px;
-                    padding: 1rem;
-                }
-
-                .delay-header {
+                .delay-section {
                     display: flex;
                     align-items: center;
-                    gap: 0.5rem;
-                    margin-bottom: 0.75rem;
-                    font-size: 0.875rem;
-                    font-weight: 400;
-                    color: #666;
+                    gap: 12px;
+                    padding: 14px;
+                    background: rgba(255,255,255,0.02);
+                    border: 1px solid rgba(255,255,255,0.08);
+                    border-radius: 10px;
+                }
+
+                .delay-icon {
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: rgba(255,255,255,0.05);
+                    border-radius: 8px;
+                    color: #71717a;
+                }
+
+                .delay-content {
+                    flex: 1;
+                }
+
+                .delay-label {
+                    display: block;
+                    font-size: 12px;
+                    color: #52525b;
+                    margin-bottom: 6px;
                 }
 
                 .delay-inputs {
-                    display: grid;
-                    grid-template-columns: 1fr 1.5fr;
-                    gap: 0.5rem;
+                    display: flex;
+                    gap: 8px;
                 }
 
-                .delay-note {
-                    margin: 0.75rem 0 0 0;
-                    font-size: 0.75rem;
-                    color: #999;
+                .delay-input {
+                    width: 70px;
+                    padding: 8px 10px;
+                    border: 1px solid rgba(255,255,255,0.1);
+                    border-radius: 6px;
+                    font-size: 13px;
+                    color: #fafafa;
+                    background: rgba(255,255,255,0.05);
+                    transition: all 0.15s;
+                }
+
+                .delay-input:focus {
+                    outline: none;
+                    border-color: rgba(255,255,255,0.2);
+                    background: rgba(255,255,255,0.08);
+                }
+
+                .delay-select {
+                    padding: 8px 10px;
+                    border: 1px solid rgba(255,255,255,0.1);
+                    border-radius: 6px;
+                    font-size: 13px;
+                    color: #fafafa;
+                    background: rgba(255,255,255,0.05);
+                    cursor: pointer;
+                    transition: all 0.15s;
+                }
+
+                .delay-select:focus {
+                    outline: none;
+                    border-color: rgba(255,255,255,0.2);
+                }
+
+                .delay-select option {
+                    background: #1c1c1c;
+                    color: #fafafa;
                 }
 
                 .form-group {
                     display: flex;
                     flex-direction: column;
-                    gap: 0.5rem;
+                    gap: 8px;
                 }
 
                 .form-label {
-                    font-size: 0.875rem;
-                    font-weight: 400;
-                    color: #1a1a1a;
+                    font-size: 13px;
+                    font-weight: 500;
+                    color: #a1a1aa;
                 }
 
-                .form-required {
-                    color: #dc2626;
-                    margin-left: 4px;
+                .form-input {
+                    padding: 10px 12px;
+                    border: 1px solid rgba(255,255,255,0.1);
+                    border-radius: 8px;
+                    font-size: 14px;
+                    color: #fafafa;
+                    background: rgba(255,255,255,0.03);
+                    transition: all 0.15s;
                 }
 
-                .form-input,
-                .form-select {
-                    padding: 0.625rem 0.75rem;
-                    border: 1px solid #e0e0e0;
-                    border-radius: 6px;
-                    font-size: 0.875rem;
-                    transition: all 0.2s;
-                }
-
-                .form-input:focus,
-                .form-select:focus {
+                .form-input:focus {
                     outline: none;
-                    border-color: #1a1a1a;
+                    border-color: rgba(255,255,255,0.2);
+                    background: rgba(255,255,255,0.05);
+                }
+
+                .form-input::placeholder {
+                    color: #52525b;
+                }
+
+                .editor-wrapper {
+                    border: 1px solid rgba(255,255,255,0.1);
+                    border-radius: 8px;
+                    overflow: hidden;
+                    background: rgba(255,255,255,0.02);
                 }
             `}</style>
         </div>

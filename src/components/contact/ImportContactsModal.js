@@ -434,20 +434,11 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                 className="form-modal"
                 style={{
                     maxWidth: currentMethod === 'csv' && step === 2 ? '600px' : '500px',
-                    maxHeight: '90vh',
-                    display: 'flex',
-                    flexDirection: 'column',
                 }}
             >
-                <div
-                    className="modal-form-container"
-                    style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}
-                >
+                <div className="modal-form-container" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                     {/* Fixed Header */}
-                    <div
-                        className="modal-form-header"
-                        style={{ flexShrink: 0 }}
-                    >
+                    <div className="modal-form-header" style={{ flexShrink: 0 }}>
                         <h2>{renderMethodTitle()}</h2>
                         <button
                             className="modal-form-close"
@@ -460,22 +451,16 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                     </div>
 
                     {/* Scrollable Content */}
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '0 1.5rem' }}>
+                    <div style={{ flex: 1, overflowY: 'auto' }}>
                         {error && (
-                            <div
-                                className="alert alert--error"
-                                style={{ marginTop: '1rem' }}
-                            >
+                            <div className="cld-alert cld-alert--error" style={{ marginBottom: '1rem' }}>
                                 <AlertCircle size={16} />
                                 <span>{error}</span>
                             </div>
                         )}
 
                         {success && (
-                            <div
-                                className="alert alert--success"
-                                style={{ marginTop: '1rem' }}
-                            >
+                            <div className="cld-alert cld-alert--success" style={{ marginBottom: '1rem' }}>
                                 <CheckCircle size={16} />
                                 <span>{success}</span>
                             </div>
@@ -483,16 +468,9 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
 
                         {/* Manual Contact Form */}
                         {currentMethod === 'manual' && (
-                            <form
-                                onSubmit={handleManualSubmit}
-                                className="form"
-                                style={{ paddingTop: '1rem' }}
-                            >
+                            <form onSubmit={handleManualSubmit} className="form">
                                 <div className="form-group">
-                                    <label
-                                        htmlFor="email"
-                                        className="form-label"
-                                    >
+                                    <label htmlFor="email" className="form-label">
                                         Email<span className="form-required">*</span>
                                     </label>
                                     <input
@@ -510,10 +488,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
 
                                 <div className="form-row">
                                     <div className="form-group">
-                                        <label
-                                            htmlFor="firstName"
-                                            className="form-label"
-                                        >
+                                        <label htmlFor="firstName" className="form-label">
                                             First Name
                                         </label>
                                         <input
@@ -529,10 +504,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                     </div>
 
                                     <div className="form-group">
-                                        <label
-                                            htmlFor="lastName"
-                                            className="form-label"
-                                        >
+                                        <label htmlFor="lastName" className="form-label">
                                             Last Name
                                         </label>
                                         <input
@@ -549,10 +521,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                 </div>
 
                                 <div className="form-group">
-                                    <label
-                                        htmlFor="phone"
-                                        className="form-label"
-                                    >
+                                    <label htmlFor="phone" className="form-label">
                                         Phone Number
                                     </label>
                                     <input
@@ -572,48 +541,23 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                     <button
                                         type="button"
                                         onClick={() => setShowManualCustomFields(!showManualCustomFields)}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem',
-                                            background: 'none',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            fontSize: '0.875rem',
-                                            fontWeight: '500',
-                                            color: '#1a1a1a',
-                                            padding: '0.5rem 0',
-                                        }}
+                                        className="import-custom-toggle"
                                     >
-                                        {showManualCustomFields ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                        Custom Fields
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            {showManualCustomFields ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                            Custom Fields
+                                        </span>
                                         {manualCustomFields.length > 0 && (
-                                            <span
-                                                style={{
-                                                    background: '#fff3e0',
-                                                    color: '#f57c00',
-                                                    padding: '0.125rem 0.5rem',
-                                                    borderRadius: '1rem',
-                                                    fontSize: '0.75rem',
-                                                }}
-                                            >
+                                            <span className={`import-custom-badge ${manualCustomFields.filter((f) => f.key && f.value).length > 0 ? 'import-custom-badge--active' : 'import-custom-badge--inactive'}`}>
                                                 {manualCustomFields.filter((f) => f.key && f.value).length}
                                             </span>
                                         )}
                                     </button>
 
                                     {showManualCustomFields && (
-                                        <div
-                                            style={{
-                                                marginTop: '0.5rem',
-                                                padding: '1rem',
-                                                background: '#fafafa',
-                                                borderRadius: '0.5rem',
-                                                border: '1px solid #f0f0f0',
-                                            }}
-                                        >
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                                                <span style={{ fontSize: '0.8125rem', color: '#666' }}>Add custom data to this contact</span>
+                                        <div className="import-manual-custom">
+                                            <div className="import-manual-custom-header">
+                                                <span className="import-manual-custom-hint">Add custom data to this contact</span>
                                                 <button
                                                     type="button"
                                                     className="button button--secondary button--small"
@@ -626,14 +570,11 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                             </div>
 
                                             {manualCustomFields.length === 0 ? (
-                                                <p style={{ fontSize: '0.8125rem', color: '#999', margin: 0, fontStyle: 'italic' }}>No custom fields added yet.</p>
+                                                <p className="import-manual-custom-empty">No custom fields added yet.</p>
                                             ) : (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                                     {manualCustomFields.map((cf, index) => (
-                                                        <div
-                                                            key={index}
-                                                            style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}
-                                                        >
+                                                        <div key={index} className="import-manual-custom-row">
                                                             <input
                                                                 type="text"
                                                                 value={cf.key}
@@ -655,7 +596,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                                             <button
                                                                 type="button"
                                                                 onClick={() => removeManualCustomField(index)}
-                                                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '0.25rem' }}
+                                                                className="import-custom-remove"
                                                                 disabled={isLoading}
                                                             >
                                                                 <Trash2 size={16} />
@@ -668,10 +609,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                     )}
                                 </div>
 
-                                <div
-                                    className="form-actions"
-                                    style={{ paddingBottom: '1.5rem' }}
-                                >
+                                <div className="form-actions">
                                     <button
                                         type="button"
                                         className="button button--secondary"
@@ -687,10 +625,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                     >
                                         {isLoading ? (
                                             <>
-                                                <Loader
-                                                    size={16}
-                                                    className="spinner-icon"
-                                                />
+                                                <Loader size={16} className="spinner-icon" />
                                                 Adding...
                                             </>
                                         ) : (
@@ -703,49 +638,27 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
 
                         {/* CSV Import */}
                         {currentMethod === 'csv' && (
-                            <div style={{ paddingTop: '1rem', paddingBottom: '1.5rem' }}>
+                            <div>
                                 {/* Step 1: File Upload */}
                                 {step === 1 && (
                                     <div>
                                         <div
-                                            style={{
-                                                border: file ? '2px solid #2e7d32' : '2px dashed #d0d0d0',
-                                                borderRadius: '0.5rem',
-                                                padding: '2rem',
-                                                textAlign: 'center',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s ease',
-                                                backgroundColor: file ? '#f1f8f4' : '#fafafa',
-                                                marginBottom: '1rem',
-                                            }}
+                                            className={`import-dropzone ${file ? 'has-file' : ''}`}
                                             onClick={() => fileInputRef.current.click()}
-                                            onMouseEnter={(e) => {
-                                                if (!file) e.currentTarget.style.borderColor = '#999';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (!file) e.currentTarget.style.borderColor = '#d0d0d0';
-                                            }}
                                         >
                                             {file ? (
-                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                                                    <FileText
-                                                        size={32}
-                                                        color="#2e7d32"
-                                                    />
-                                                    <div style={{ textAlign: 'left' }}>
-                                                        <div style={{ fontWeight: '500', color: '#1a1a1a' }}>{file.name}</div>
-                                                        <div style={{ fontSize: '0.875rem', color: '#666' }}>{(file.size / 1024).toFixed(1)} KB</div>
+                                                <div className="import-file-info">
+                                                    <FileText size={32} className="file-icon" />
+                                                    <div className="file-details">
+                                                        <div className="file-name">{file.name}</div>
+                                                        <div className="file-size">{(file.size / 1024).toFixed(1)} KB</div>
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <Upload
-                                                        size={32}
-                                                        color="#666"
-                                                        style={{ marginBottom: '0.5rem' }}
-                                                    />
-                                                    <p style={{ margin: '0.5rem 0', color: '#1a1a1a', fontWeight: '500' }}>Click to select or drag and drop CSV file</p>
-                                                    <small style={{ color: '#666' }}>Your CSV should have a header row with column names</small>
+                                                    <Upload size={32} className="import-dropzone-icon" />
+                                                    <p className="import-dropzone-title">Click to select or drag and drop CSV file</p>
+                                                    <small className="import-dropzone-hint">Your CSV should have a header row with column names</small>
                                                 </>
                                             )}
                                         </div>
@@ -758,23 +671,15 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                             style={{ display: 'none' }}
                                         />
 
-                                        <p style={{ textAlign: 'center', fontSize: '0.875rem', color: '#666', marginBottom: '1.5rem' }}>
+                                        <p className="import-template-link">
                                             Need a template?{' '}
-                                            <a
-                                                href="/csv-template.csv"
-                                                download
-                                                style={{ color: '#1a1a1a', textDecoration: 'underline' }}
-                                            >
+                                            <a href="/csv-template.csv" download>
                                                 Download CSV template
                                             </a>
                                         </p>
 
                                         <div className="form-actions">
-                                            <button
-                                                type="button"
-                                                className="button button--secondary"
-                                                onClick={onClose}
-                                            >
+                                            <button type="button" className="button button--secondary" onClick={onClose}>
                                                 Cancel
                                             </button>
                                             <button
@@ -792,16 +697,13 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                 {/* Step 2: Field Mapping */}
                                 {step === 2 && (
                                     <div className="form">
-                                        <p
-                                            className="form-help"
-                                            style={{ marginBottom: '1rem' }}
-                                        >
+                                        <p className="form-help" style={{ marginBottom: '1rem' }}>
                                             Map the columns from your CSV file to contact fields. Email is required.
                                         </p>
 
                                         {/* Standard Field Mappings */}
                                         <div style={{ marginBottom: '1.5rem' }}>
-                                            <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', fontWeight: '600' }}>Standard Fields</h4>
+                                            <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-primary)' }}>Standard Fields</h4>
 
                                             <div className="form-group">
                                                 <label className="form-label">
@@ -816,10 +718,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                                 >
                                                     <option value="">Select a column</option>
                                                     {csvHeaders.map((header) => (
-                                                        <option
-                                                            key={header}
-                                                            value={header}
-                                                        >
+                                                        <option key={header} value={header}>
                                                             {header}
                                                         </option>
                                                     ))}
@@ -836,10 +735,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                                 >
                                                     <option value="">Select (optional)</option>
                                                     {csvHeaders.map((header) => (
-                                                        <option
-                                                            key={header}
-                                                            value={header}
-                                                        >
+                                                        <option key={header} value={header}>
                                                             {header}
                                                         </option>
                                                     ))}
@@ -856,20 +752,14 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                                 >
                                                     <option value="">Select (optional)</option>
                                                     {csvHeaders.map((header) => (
-                                                        <option
-                                                            key={header}
-                                                            value={header}
-                                                        >
+                                                        <option key={header} value={header}>
                                                             {header}
                                                         </option>
                                                     ))}
                                                 </select>
                                             </div>
 
-                                            <div
-                                                className="form-group"
-                                                style={{ marginBottom: 0 }}
-                                            >
+                                            <div className="form-group" style={{ marginBottom: 0 }}>
                                                 <label className="form-label">Phone</label>
                                                 <select
                                                     name="phone"
@@ -879,10 +769,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                                 >
                                                     <option value="">Select (optional)</option>
                                                     {csvHeaders.map((header) => (
-                                                        <option
-                                                            key={header}
-                                                            value={header}
-                                                        >
+                                                        <option key={header} value={header}>
                                                             {header}
                                                         </option>
                                                     ))}
@@ -891,56 +778,27 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                         </div>
 
                                         {/* Custom Field Mappings Toggle */}
-                                        <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: '1rem' }}>
+                                        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
                                             <button
                                                 type="button"
                                                 onClick={() => setShowCustomFieldMappings(!showCustomFieldMappings)}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.5rem',
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                    fontSize: '0.875rem',
-                                                    fontWeight: '500',
-                                                    color: '#1a1a1a',
-                                                    padding: '0.5rem 0',
-                                                    width: '100%',
-                                                    justifyContent: 'space-between',
-                                                }}
+                                                className="import-custom-toggle"
                                             >
                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                     {showCustomFieldMappings ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                                     Custom Field Mapping
                                                 </span>
                                                 {totalCustomFieldsCount > 0 && (
-                                                    <span
-                                                        style={{
-                                                            background: enabledCustomFieldsCount > 0 ? '#e8f5e9' : '#f5f5f5',
-                                                            color: enabledCustomFieldsCount > 0 ? '#2e7d32' : '#666',
-                                                            padding: '0.125rem 0.5rem',
-                                                            borderRadius: '1rem',
-                                                            fontSize: '0.75rem',
-                                                        }}
-                                                    >
+                                                    <span className={`import-custom-badge ${enabledCustomFieldsCount > 0 ? 'import-custom-badge--active' : 'import-custom-badge--inactive'}`}>
                                                         {enabledCustomFieldsCount} / {totalCustomFieldsCount} selected
                                                     </span>
                                                 )}
                                             </button>
 
                                             {showCustomFieldMappings && (
-                                                <div
-                                                    style={{
-                                                        marginTop: '0.75rem',
-                                                        padding: '1rem',
-                                                        background: '#fff7ed',
-                                                        borderRadius: '0.5rem',
-                                                        border: '1px solid #fed7aa',
-                                                    }}
-                                                >
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                                                        <span style={{ fontSize: '0.8125rem', color: '#9a3412' }}>Select columns to import as custom fields</span>
+                                                <div className="import-custom-section">
+                                                    <div className="import-custom-header">
+                                                        <span className="import-custom-hint">Select columns to import as custom fields</span>
                                                         <button
                                                             type="button"
                                                             className="button button--secondary button--small"
@@ -952,47 +810,23 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                                     </div>
 
                                                     {customFieldMappings.length === 0 ? (
-                                                        <p style={{ fontSize: '0.8125rem', color: '#999', margin: 0, fontStyle: 'italic' }}>No additional columns found. Click &quot;Add&quot; to map custom fields.</p>
+                                                        <p className="import-manual-custom-empty">No additional columns found. Click &quot;Add&quot; to map custom fields.</p>
                                                     ) : (
                                                         <>
                                                             {/* Select All / Deselect All */}
-                                                            <div
-                                                                style={{
-                                                                    display: 'flex',
-                                                                    gap: '0.5rem',
-                                                                    marginBottom: '0.75rem',
-                                                                    paddingBottom: '0.75rem',
-                                                                    borderBottom: '1px solid #fed7aa',
-                                                                }}
-                                                            >
+                                                            <div className="import-custom-actions">
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => toggleAllCustomFields(true)}
-                                                                    style={{
-                                                                        background: 'none',
-                                                                        border: 'none',
-                                                                        cursor: 'pointer',
-                                                                        fontSize: '0.75rem',
-                                                                        color: '#2e7d32',
-                                                                        padding: '0.25rem 0.5rem',
-                                                                        textDecoration: 'underline',
-                                                                    }}
+                                                                    className="import-custom-action-btn import-custom-action-btn--select"
                                                                 >
                                                                     Select All
                                                                 </button>
-                                                                <span style={{ color: '#ccc' }}>|</span>
+                                                                <span className="import-custom-divider">|</span>
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => toggleAllCustomFields(false)}
-                                                                    style={{
-                                                                        background: 'none',
-                                                                        border: 'none',
-                                                                        cursor: 'pointer',
-                                                                        fontSize: '0.75rem',
-                                                                        color: '#666',
-                                                                        padding: '0.25rem 0.5rem',
-                                                                        textDecoration: 'underline',
-                                                                    }}
+                                                                    className="import-custom-action-btn import-custom-action-btn--deselect"
                                                                 >
                                                                     Deselect All
                                                                 </button>
@@ -1000,25 +834,12 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
 
                                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                                                 {customFieldMappings.map((mapping, index) => (
-                                                                    <div
-                                                                        key={index}
-                                                                        style={{
-                                                                            display: 'flex',
-                                                                            gap: '0.5rem',
-                                                                            alignItems: 'center',
-                                                                            padding: '0.5rem',
-                                                                            background: mapping.enabled ? '#fff' : '#f9f9f9',
-                                                                            borderRadius: '0.375rem',
-                                                                            border: mapping.enabled ? '1px solid #2e7d32' : '1px solid #e0e0e0',
-                                                                            opacity: mapping.enabled ? 1 : 0.7,
-                                                                            transition: 'all 0.2s ease',
-                                                                        }}
-                                                                    >
+                                                                    <div key={index} className={`import-custom-row ${mapping.enabled ? 'enabled' : ''}`}>
                                                                         <input
                                                                             type="checkbox"
+                                                                            className="table-checkbox"
                                                                             checked={mapping.enabled}
                                                                             onChange={() => toggleCustomFieldMapping(index)}
-                                                                            style={{ cursor: 'pointer', flexShrink: 0, width: '16px', height: '16px' }}
                                                                         />
                                                                         <select
                                                                             value={mapping.csvColumn}
@@ -1028,16 +849,13 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                                                         >
                                                                             <option value="">CSV Column</option>
                                                                             {getAvailableHeaders().map((header) => (
-                                                                                <option
-                                                                                    key={header}
-                                                                                    value={header}
-                                                                                >
+                                                                                <option key={header} value={header}>
                                                                                     {header}
                                                                                 </option>
                                                                             ))}
                                                                             {mapping.csvColumn && !getAvailableHeaders().includes(mapping.csvColumn) && <option value={mapping.csvColumn}>{mapping.csvColumn}</option>}
                                                                         </select>
-                                                                        <span style={{ color: '#999', flexShrink: 0 }}>→</span>
+                                                                        <span className="import-custom-arrow">→</span>
                                                                         <input
                                                                             type="text"
                                                                             value={mapping.customFieldName}
@@ -1049,7 +867,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                                                         <button
                                                                             type="button"
                                                                             onClick={() => removeCustomFieldMapping(index)}
-                                                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '0.25rem', flexShrink: 0 }}
+                                                                            className="import-custom-remove"
                                                                         >
                                                                             <Trash2 size={16} />
                                                                         </button>
@@ -1060,7 +878,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                                     )}
 
                                                     {enabledCustomFieldsCount > 0 && (
-                                                        <p style={{ fontSize: '0.75rem', color: '#2e7d32', margin: '0.75rem 0 0 0', fontWeight: '500' }}>
+                                                        <p className="import-custom-count">
                                                             ✓ {enabledCustomFieldsCount} custom field{enabledCustomFieldsCount > 1 ? 's' : ''} will be imported
                                                         </p>
                                                     )}
@@ -1068,15 +886,8 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                             )}
                                         </div>
 
-                                        <div
-                                            className="form-actions"
-                                            style={{ marginTop: '1.5rem' }}
-                                        >
-                                            <button
-                                                type="button"
-                                                className="button button--secondary"
-                                                onClick={() => setStep(1)}
-                                            >
+                                        <div className="form-actions" style={{ marginTop: '1.5rem' }}>
+                                            <button type="button" className="button button--secondary" onClick={() => setStep(1)}>
                                                 <ArrowLeft size={16} />
                                                 Back
                                             </button>
@@ -1095,17 +906,14 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                 {/* Step 3: Review Contacts */}
                                 {step === 3 && (
                                     <div>
-                                        <p
-                                            className="form-help"
-                                            style={{ marginBottom: '1rem' }}
-                                        >
+                                        <p className="form-help" style={{ marginBottom: '1rem' }}>
                                             {parsedContacts.length} contacts found in your CSV file. Duplicate emails will be skipped.
                                         </p>
 
                                         {/* Custom Fields Summary */}
                                         {showCustomFieldMappings && enabledCustomFieldsCount > 0 && (
-                                            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#fff7ed', borderRadius: '0.375rem', border: '1px solid #fed7aa' }}>
-                                                <p style={{ margin: 0, fontSize: '0.8125rem', color: '#9a3412' }}>
+                                            <div className="import-custom-summary">
+                                                <p>
                                                     <strong>Custom fields:</strong>{' '}
                                                     {customFieldMappings
                                                         .filter((m) => m.enabled && m.csvColumn && m.customFieldName)
@@ -1115,27 +923,24 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                             </div>
                                         )}
 
-                                        <div style={{ overflowX: 'auto', marginBottom: '1.5rem', border: '1px solid #f0f0f0', borderRadius: '0.5rem' }}>
-                                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <div className="import-review-table">
+                                            <table>
                                                 <thead>
-                                                    <tr style={{ backgroundColor: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
-                                                        <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#1a1a1a' }}>Email</th>
-                                                        <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#1a1a1a' }}>First Name</th>
-                                                        <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#1a1a1a' }}>Last Name</th>
-                                                        {showCustomFieldMappings && enabledCustomFieldsCount > 0 && <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#1a1a1a' }}>Custom</th>}
+                                                    <tr>
+                                                        <th>Email</th>
+                                                        <th>First Name</th>
+                                                        <th>Last Name</th>
+                                                        {showCustomFieldMappings && enabledCustomFieldsCount > 0 && <th>Custom</th>}
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {parsedContacts.slice(0, 5).map((contact, index) => (
-                                                        <tr
-                                                            key={index}
-                                                            style={{ borderBottom: '1px solid #f0f0f0' }}
-                                                        >
-                                                            <td style={{ padding: '0.75rem', fontSize: '0.8125rem', color: '#1a1a1a' }}>{contact.email}</td>
-                                                            <td style={{ padding: '0.75rem', fontSize: '0.8125rem', color: '#666' }}>{contact.firstName || '-'}</td>
-                                                            <td style={{ padding: '0.75rem', fontSize: '0.8125rem', color: '#666' }}>{contact.lastName || '-'}</td>
+                                                        <tr key={index}>
+                                                            <td>{contact.email}</td>
+                                                            <td>{contact.firstName || '-'}</td>
+                                                            <td>{contact.lastName || '-'}</td>
                                                             {showCustomFieldMappings && enabledCustomFieldsCount > 0 && (
-                                                                <td style={{ padding: '0.75rem', fontSize: '0.75rem', color: '#666' }}>{contact.customFields ? <span style={{ background: '#e8f5e9', color: '#2e7d32', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', fontSize: '0.6875rem' }}>{Object.keys(contact.customFields).length} fields</span> : '-'}</td>
+                                                                <td>{contact.customFields ? <span className="import-review-badge">{Object.keys(contact.customFields).length} fields</span> : '-'}</td>
                                                             )}
                                                         </tr>
                                                     ))}
@@ -1143,15 +948,15 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                             </table>
                                         </div>
 
-                                        {parsedContacts.length > 5 && <p style={{ textAlign: 'center', fontSize: '0.875rem', color: '#666', marginBottom: '1.5rem' }}>+{parsedContacts.length - 5} more contacts</p>}
+                                        {parsedContacts.length > 5 && <p className="import-review-more">+{parsedContacts.length - 5} more contacts</p>}
 
                                         {isBatchImporting && (
-                                            <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#fafafa', borderRadius: '0.5rem' }}>
-                                                <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9375rem', fontWeight: '500' }}>Importing Contacts in Batches</h4>
-                                                <div style={{ width: '100%', height: '0.5rem', backgroundColor: '#e0e0e0', borderRadius: '0.25rem', overflow: 'hidden', marginBottom: '1rem' }}>
-                                                    <div style={{ width: `${batchProgress}%`, height: '100%', backgroundColor: '#2e7d32', transition: 'width 0.3s ease' }}></div>
+                                            <div className="import-batch-progress">
+                                                <h4 className="import-batch-title">Importing Contacts in Batches</h4>
+                                                <div className="import-batch-bar">
+                                                    <div className="import-batch-fill" style={{ width: `${batchProgress}%` }}></div>
                                                 </div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: '#666' }}>
+                                                <div className="import-batch-stats">
                                                     <span>
                                                         Processed: {batchStats.processed} of {batchStats.total}
                                                     </span>
@@ -1179,10 +984,7 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
                                             >
                                                 {isLoading || isBatchImporting ? (
                                                     <>
-                                                        <Loader
-                                                            size={16}
-                                                            className="spinner-icon"
-                                                        />
+                                                        <Loader size={16} className="spinner-icon" />
                                                         {isBatchImporting ? `Importing... ${batchProgress}%` : 'Preparing...'}
                                                     </>
                                                 ) : (
@@ -1195,33 +997,30 @@ export default function ImportContactsModal({ brandId, listId, method = 'manual'
 
                                 {/* Step 4: Import Complete */}
                                 {step === 4 && importResult && (
-                                    <div style={{ textAlign: 'center' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-                                            <CheckCircle
-                                                size={48}
-                                                color="#2e7d32"
-                                            />
+                                    <div className="import-complete">
+                                        <div className="import-complete-icon">
+                                            <CheckCircle size={48} />
                                         </div>
 
-                                        <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.25rem', fontWeight: '500', color: '#1a1a1a' }}>Import Complete!</h3>
+                                        <h3 className="import-complete-title">Import Complete!</h3>
 
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem', textAlign: 'left' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: '#fafafa', borderRadius: '0.375rem' }}>
-                                                <span style={{ fontSize: '0.875rem', color: '#666' }}>Total Processed:</span>
-                                                <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#1a1a1a' }}>{importResult.total}</span>
+                                        <div className="import-complete-stats">
+                                            <div className="import-stat-row import-stat-row--total">
+                                                <span className="import-stat-label">Total Processed:</span>
+                                                <span className="import-stat-value">{importResult.total}</span>
                                             </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: '#e8f5e9', borderRadius: '0.375rem' }}>
-                                                <span style={{ fontSize: '0.875rem', color: '#2e7d32' }}>Successfully Added:</span>
-                                                <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#2e7d32' }}>{importResult.imported}</span>
+                                            <div className="import-stat-row import-stat-row--success">
+                                                <span className="import-stat-label">Successfully Added:</span>
+                                                <span className="import-stat-value">{importResult.imported}</span>
                                             </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: '#fff3e0', borderRadius: '0.375rem' }}>
-                                                <span style={{ fontSize: '0.875rem', color: '#f57c00' }}>Duplicates Skipped:</span>
-                                                <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#f57c00' }}>{importResult.skipped}</span>
+                                            <div className="import-stat-row import-stat-row--skipped">
+                                                <span className="import-stat-label">Duplicates Skipped:</span>
+                                                <span className="import-stat-value">{importResult.skipped}</span>
                                             </div>
                                             {importResult.customFieldsCount > 0 && (
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: '#fff7ed', borderRadius: '0.375rem' }}>
-                                                    <span style={{ fontSize: '0.875rem', color: '#9a3412' }}>Custom Fields Imported:</span>
-                                                    <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#9a3412' }}>{importResult.customFieldsCount}</span>
+                                                <div className="import-stat-row import-stat-row--custom">
+                                                    <span className="import-stat-label">Custom Fields Imported:</span>
+                                                    <span className="import-stat-value">{importResult.customFieldsCount}</span>
                                                 </div>
                                             )}
                                         </div>

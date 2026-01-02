@@ -536,35 +536,9 @@ export default function SendCampaign() {
     // Helper to get segment type badge
     const getSegmentTypeBadge = (type) => {
         if (type === 'static') {
-            return (
-                <span
-                    style={{
-                        fontSize: '0.625rem',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        backgroundColor: '#e3f2fd',
-                        color: '#1976d2',
-                        marginLeft: '0.5rem',
-                    }}
-                >
-                    Static
-                </span>
-            );
+            return <span className="sc-segment-badge sc-segment-badge--static">Static</span>;
         }
-        return (
-            <span
-                style={{
-                    fontSize: '0.625rem',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    backgroundColor: '#f3e5f5',
-                    color: '#7b1fa2',
-                    marginLeft: '0.5rem',
-                }}
-            >
-                Dynamic
-            </span>
-        );
+        return <span className="sc-segment-badge sc-segment-badge--dynamic">Dynamic</span>;
     };
 
     if (isLoading || !brand || !campaign) {
@@ -598,7 +572,7 @@ export default function SendCampaign() {
                         <span>{error}</span>
                         <button
                             onClick={() => setError('')}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto' }}
+                            className="sc-alert-close"
                         >
                             <X size={16} />
                         </button>
@@ -651,26 +625,20 @@ export default function SendCampaign() {
                             </div>
 
                             {/* Email Preview */}
-                            <div
-                                className="sc-card-content"
-                                style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid oklch(0.95 0 0)' }}
-                            >
+                            <div className="sc-card-content sc-card-content--bordered">
                                 <div className="sc-preview-wrapper">
                                     <div className="sc-preview-label">Email Content</div>
                                     <div
                                         className="sc-email-preview"
                                         dangerouslySetInnerHTML={{
-                                            __html: campaign.content || '<p style="color: #999;">No content yet. Go back and edit your campaign to add content.</p>',
+                                            __html: campaign.content || '<p class="sc-no-content">No content yet. Go back and edit your campaign to add content.</p>',
                                         }}
                                     ></div>
                                 </div>
                             </div>
 
                             {/* Test Email Section */}
-                            <div
-                                className="sc-card-content"
-                                style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid oklch(0.95 0 0)' }}
-                            >
+                            <div className="sc-card-content sc-card-content--bordered">
                                 <div className="sc-test-email-section">
                                     <div className="sc-test-email-header">
                                         <span className="sc-preview-label">Send Test Email</span>
@@ -783,16 +751,7 @@ export default function SendCampaign() {
                             <div className="sc-card-header">
                                 <Filter size={16} />
                                 <h2>Segments</h2>
-                                <span
-                                    style={{
-                                        fontSize: '0.75rem',
-                                        color: '#666',
-                                        marginLeft: '0.5rem',
-                                        fontWeight: 'normal',
-                                    }}
-                                >
-                                    (Optional)
-                                </span>
+                                <span className="sc-header-optional">(Optional)</span>
                             </div>
                             <div className="sc-card-content">
                                 {isLoadingSegments ? (
@@ -803,31 +762,15 @@ export default function SendCampaign() {
                                 ) : (
                                     <>
                                         {segments.length === 0 ? (
-                                            <div
-                                                className="sc-empty"
-                                                style={{ padding: '1.5rem', textAlign: 'center' }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        width: '3rem',
-                                                        height: '3rem',
-                                                        borderRadius: '0.75rem',
-                                                        background: 'linear-gradient(145deg, #f5f5f5 0%, #e8e8e8 100%)',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        margin: '0 auto 1rem',
-                                                        color: '#666',
-                                                    }}
-                                                >
+                                            <div className="sc-empty sc-empty--segments">
+                                                <div className="sc-empty-icon">
                                                     <Tag size={20} />
                                                 </div>
-                                                <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', color: '#666' }}>No segments created yet</p>
-                                                <p style={{ margin: '0 0 1rem 0', fontSize: '0.75rem', color: '#999' }}>Segments allow you to target specific groups based on tags, custom fields, or other criteria.</p>
+                                                <p className="sc-empty-title">No segments created yet</p>
+                                                <p className="sc-empty-desc">Segments allow you to target specific groups based on tags, custom fields, or other criteria.</p>
                                                 <Link
                                                     href={`/brands/${id}/contacts`}
-                                                    className="button button--secondary button--small"
-                                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
+                                                    className="button button--secondary button--small sc-empty-action"
                                                 >
                                                     <Plus size={14} />
                                                     Create Segment
@@ -858,17 +801,10 @@ export default function SendCampaign() {
                                                     ))}
                                                 </div>
 
-                                                <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #f0f0f0' }}>
+                                                <div className="sc-manage-link">
                                                     <Link
                                                         href={`/brands/${id}/contacts`}
-                                                        style={{
-                                                            fontSize: '0.75rem',
-                                                            color: '#666',
-                                                            textDecoration: 'none',
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            gap: '0.25rem',
-                                                        }}
+                                                        className="sc-manage-link-anchor"
                                                     >
                                                         <Plus size={12} />
                                                         Manage Segments
@@ -883,21 +819,12 @@ export default function SendCampaign() {
 
                         {/* Total Recipients Summary */}
                         {(selectedLists.length > 0 || selectedSegments.length > 0) && (
-                            <div
-                                className="sc-summary"
-                                style={{
-                                    padding: '1rem',
-                                    background: '#f8fafc',
-                                    borderRadius: '0.5rem',
-                                    marginBottom: '1rem',
-                                    border: '1px solid #e2e8f0',
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <div className="sc-recipients-summary">
+                                <div className="sc-recipients-total">
                                     <Users size={16} />
                                     <strong>{formatNumber(totalContacts)} total contacts</strong>
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: '#666' }}>
+                                <div className="sc-recipients-breakdown">
                                     {selectedLists.length > 0 && (
                                         <span>
                                             {selectedLists.length} list{selectedLists.length !== 1 ? 's' : ''}

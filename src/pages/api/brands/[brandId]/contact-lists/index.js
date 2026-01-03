@@ -3,6 +3,7 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getBrandById } from '@/services/brandService';
 import { getContactListsByBrandId, createContactList } from '@/services/contactService';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -23,24 +24,29 @@ export default async function handler(req, res) {
             return res.status(400).json({ message: 'Missing brand ID' });
         }
 
-        // Check if the brand belongs to the user
+        // Check if the brand exists
         const brand = await getBrandById(brandId);
         if (!brand) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
-        }
-
         // GET - Fetch all contact lists for a brand
         if (req.method === 'GET') {
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.VIEW_CONTACTS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
             const contactLists = await getContactListsByBrandId(brandId, userId);
             return res.status(200).json(contactLists);
         }
 
         // POST - Create a new contact list
         if (req.method === 'POST') {
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_CONTACTS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
+
             const { name, description } = req.body;
 
             if (!name) {

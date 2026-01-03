@@ -20,9 +20,9 @@ export async function createTemplate(templateData) {
 export async function getTemplatesByBrandId(brandId, userId) {
     await connectToDatabase();
 
+    // Filter by brandId only - authorization is handled at the API layer
     const templates = await TransactionalTemplate.find({
         brandId,
-        userId,
     })
         .sort({ createdAt: -1 })
         .lean();
@@ -30,13 +30,16 @@ export async function getTemplatesByBrandId(brandId, userId) {
     return templates;
 }
 
-export async function getTemplateById(templateId, userId) {
+export async function getTemplateById(templateId, brandId = null) {
     await connectToDatabase();
 
-    const template = await TransactionalTemplate.findOne({
-        _id: templateId,
-        userId,
-    }).lean();
+    // Filter by brandId if provided - authorization is handled at the API layer
+    const query = { _id: templateId };
+    if (brandId) {
+        query.brandId = brandId;
+    }
+
+    const template = await TransactionalTemplate.findOne(query).lean();
 
     return template;
 }
@@ -52,11 +55,12 @@ export async function getTemplateByApiKey(apiKey) {
     return template;
 }
 
-export async function updateTemplate(templateId, userId, updateData) {
+export async function updateTemplate(templateId, brandId, updateData) {
     await connectToDatabase();
 
+    // Filter by brandId - authorization is handled at the API layer
     const result = await TransactionalTemplate.updateOne(
-        { _id: templateId, userId },
+        { _id: templateId, brandId },
         {
             $set: {
                 ...updateData,
@@ -68,10 +72,11 @@ export async function updateTemplate(templateId, userId, updateData) {
     return result.modifiedCount > 0;
 }
 
-export async function deleteTemplate(templateId, userId) {
+export async function deleteTemplate(templateId, brandId) {
     await connectToDatabase();
 
-    const result = await TransactionalTemplate.deleteOne({ _id: templateId, userId });
+    // Filter by brandId - authorization is handled at the API layer
+    const result = await TransactionalTemplate.deleteOne({ _id: templateId, brandId });
     return result.deletedCount > 0;
 }
 
@@ -185,13 +190,14 @@ export async function getTemplateLogs(templateId, options = {}) {
     };
 }
 
-export async function regenerateApiKey(templateId, userId) {
+export async function regenerateApiKey(templateId, brandId) {
     await connectToDatabase();
 
     const newApiKey = `txn_${mongoose.Types.ObjectId().toString()}_${Date.now().toString(36)}`;
 
+    // Filter by brandId - authorization is handled at the API layer
     const result = await TransactionalTemplate.updateOne(
-        { _id: templateId, userId },
+        { _id: templateId, brandId },
         {
             $set: {
                 apiKey: newApiKey,

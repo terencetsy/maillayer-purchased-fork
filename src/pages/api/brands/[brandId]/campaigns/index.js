@@ -5,6 +5,7 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getCampaignsByBrandId, getCampaignsCount, createCampaign } from '@/services/campaignService';
 import { getBrandById } from '@/services/brandService';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -28,12 +29,13 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
-        }
-
         // GET request - get campaigns for a brand with pagination (NO STATS)
         if (req.method === 'GET') {
+            // Check permission (VIEW_CAMPAIGNS allows owners and team members)
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.VIEW_CAMPAIGNS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
             try {
                 // Parse pagination params
                 const page = parseInt(req.query.page) || 1;
@@ -62,6 +64,12 @@ export default async function handler(req, res) {
 
         // POST request - create new campaign
         if (req.method === 'POST') {
+            // Check permission (EDIT_CAMPAIGNS required for creating campaigns)
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_CAMPAIGNS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
+
             try {
                 const { name, subject, content, fromName, fromEmail, replyTo, status, scheduleType, scheduledAt } = req.body;
 

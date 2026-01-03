@@ -29,27 +29,30 @@ export async function createEmailSequence(sequenceData) {
 export async function getEmailSequencesByBrandId(brandId, userId) {
     await connectToDatabase();
 
+    // Filter by brandId only - authorization is handled at the API layer
     const sequences = await EmailSequence.find({
         brandId: new mongoose.Types.ObjectId(brandId),
-        userId: new mongoose.Types.ObjectId(userId),
     }).sort({ createdAt: -1 });
 
     return sequences;
 }
 
-export async function getEmailSequenceById(sequenceId, userId) {
+export async function getEmailSequenceById(sequenceId, brandId = null) {
     await connectToDatabase();
 
-    const sequence = await EmailSequence.findOne({
-        _id: new mongoose.Types.ObjectId(sequenceId),
-        userId: new mongoose.Types.ObjectId(userId),
-    });
+    // Filter by brandId if provided - authorization is handled at the API layer
+    const query = { _id: new mongoose.Types.ObjectId(sequenceId) };
+    if (brandId) {
+        query.brandId = new mongoose.Types.ObjectId(brandId);
+    }
+
+    const sequence = await EmailSequence.findOne(query);
 
     return sequence;
 }
 
-// src/services/emailSequenceService.js (update the updateEmailSequence function)
-export async function updateEmailSequence(sequenceId, userId, updateData) {
+// Update email sequence - authorization is handled at the API layer
+export async function updateEmailSequence(sequenceId, brandId, updateData) {
     await connectToDatabase();
 
     console.log('Service updating sequence:', sequenceId, updateData); // Debug log
@@ -66,7 +69,7 @@ export async function updateEmailSequence(sequenceId, userId, updateData) {
     if (updateData.status && updateData.status !== 'draft') {
         const sequence = await EmailSequence.findOne({
             _id: new mongoose.Types.ObjectId(sequenceId),
-            userId: new mongoose.Types.ObjectId(userId),
+            brandId: new mongoose.Types.ObjectId(brandId),
         });
 
         if (sequence) {
@@ -103,10 +106,11 @@ export async function updateEmailSequence(sequenceId, userId, updateData) {
 
     console.log('Updating with object:', updateObject); // Debug log
 
+    // Filter by brandId only - authorization is handled at the API layer
     const result = await EmailSequence.findOneAndUpdate(
         {
             _id: new mongoose.Types.ObjectId(sequenceId),
-            userId: new mongoose.Types.ObjectId(userId),
+            brandId: new mongoose.Types.ObjectId(brandId),
         },
         {
             $set: updateObject,
@@ -124,12 +128,13 @@ export async function updateEmailSequence(sequenceId, userId, updateData) {
 
     return result;
 }
-export async function deleteEmailSequence(sequenceId, userId) {
+export async function deleteEmailSequence(sequenceId, brandId) {
     await connectToDatabase();
 
+    // Filter by brandId only - authorization is handled at the API layer
     const result = await EmailSequence.deleteOne({
         _id: new mongoose.Types.ObjectId(sequenceId),
-        userId: new mongoose.Types.ObjectId(userId),
+        brandId: new mongoose.Types.ObjectId(brandId),
     });
 
     return result.deletedCount > 0;

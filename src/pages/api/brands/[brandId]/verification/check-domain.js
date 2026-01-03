@@ -3,6 +3,7 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getBrandById, updateBrand } from '@/services/brandService';
 import AWS from 'aws-sdk';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -35,8 +36,10 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
+        // Check permission - checking domain is an edit settings operation
+        const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_SETTINGS);
+        if (!authCheck.authorized) {
+            return res.status(authCheck.status).json({ message: authCheck.message });
         }
 
         // Make sure AWS credentials are set up

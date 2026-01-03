@@ -5,6 +5,7 @@ import { getBrandById } from '@/services/brandService';
 import { getContactListById } from '@/services/contactService';
 import ContactList from '@/models/ContactList';
 import mongoose from 'mongoose';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -18,10 +19,16 @@ export default async function handler(req, res) {
         const userId = session.user.id;
         const { brandId, listId } = req.query;
 
-        // Verify brand ownership
+        // Verify brand exists
         const brand = await getBrandById(brandId);
-        if (!brand || brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized' });
+        if (!brand) {
+            return res.status(404).json({ message: 'Brand not found' });
+        }
+
+        // Check permission - Settings requires EDIT_SETTINGS permission
+        const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_SETTINGS);
+        if (!authCheck.authorized) {
+            return res.status(authCheck.status).json({ message: authCheck.message });
         }
 
         // Verify list ownership

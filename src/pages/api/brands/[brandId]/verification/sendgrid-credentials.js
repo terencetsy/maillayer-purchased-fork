@@ -3,6 +3,7 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getBrandById, updateBrand } from '@/services/brandService';
 import crypto from 'crypto';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 // Encrypt data using AES-256-CBC
 function encryptData(text, secretKey) {
@@ -44,8 +45,10 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
+        // Check permission - updating credentials is an edit settings operation
+        const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_SETTINGS);
+        if (!authCheck.authorized) {
+            return res.status(authCheck.status).json({ message: authCheck.message });
         }
 
         const { sendgridApiKey, connectionType = 'api' } = req.body;

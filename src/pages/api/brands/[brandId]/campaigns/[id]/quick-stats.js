@@ -6,6 +6,7 @@ import connectToDatabase from '@/lib/mongodb';
 import { getCampaignById } from '@/services/campaignService';
 import { getBrandById } from '@/services/brandService';
 import { getCampaignStats } from '@/services/trackingService';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -29,18 +30,20 @@ export default async function handler(req, res) {
             return res.status(400).json({ message: 'Missing required parameters' });
         }
 
-        // Check if the brand belongs to the user
+        // Check if the brand exists
         const brand = await getBrandById(brandId);
         if (!brand) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
+        // Check permission (VIEW_CAMPAIGNS allows owners and team members)
+        const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.VIEW_CAMPAIGNS);
+        if (!authCheck.authorized) {
+            return res.status(authCheck.status).json({ message: authCheck.message });
         }
 
-        // Check if campaign exists and belongs to the user
-        const campaign = await getCampaignById(id, userId);
+        // Check if campaign exists
+        const campaign = await getCampaignById(id, brandId);
         if (!campaign) {
             return res.status(404).json({ message: 'Campaign not found' });
         }

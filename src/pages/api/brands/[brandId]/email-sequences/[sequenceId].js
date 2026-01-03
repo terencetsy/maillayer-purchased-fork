@@ -4,6 +4,7 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getBrandById } from '@/services/brandService';
 import { getEmailSequenceById, updateEmailSequence, deleteEmailSequence } from '@/services/emailSequenceService';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -27,13 +28,16 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
+        // Check permission based on request method
+        const requiredPermission = req.method === 'GET' ? PERMISSIONS.VIEW_SEQUENCES : PERMISSIONS.EDIT_SEQUENCES;
+        const authCheck = await checkBrandPermission(brandId, userId, requiredPermission);
+        if (!authCheck.authorized) {
+            return res.status(authCheck.status).json({ message: authCheck.message });
         }
 
         // GET - Fetch sequence
         if (req.method === 'GET') {
-            const sequence = await getEmailSequenceById(sequenceId, userId);
+            const sequence = await getEmailSequenceById(sequenceId, brandId);
 
             if (!sequence) {
                 return res.status(404).json({ message: 'Sequence not found' });
@@ -61,7 +65,7 @@ export default async function handler(req, res) {
 
             console.log('Updating sequence with data:', updateData); // Debug log
 
-            const updatedSequence = await updateEmailSequence(sequenceId, userId, updateData);
+            const updatedSequence = await updateEmailSequence(sequenceId, brandId, updateData);
 
             if (!updatedSequence) {
                 return res.status(404).json({ message: 'Sequence not found or update failed' });
@@ -72,7 +76,7 @@ export default async function handler(req, res) {
 
         // DELETE - Delete sequence
         if (req.method === 'DELETE') {
-            const success = await deleteEmailSequence(sequenceId, userId);
+            const success = await deleteEmailSequence(sequenceId, brandId);
 
             if (!success) {
                 return res.status(404).json({ message: 'Sequence not found' });

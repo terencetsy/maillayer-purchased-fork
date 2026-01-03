@@ -6,6 +6,7 @@ import { getBrandById } from '@/services/brandService';
 import Segment from '@/models/Segment';
 import Contact from '@/models/Contact';
 import mongoose from 'mongoose';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 // Build segment query
 function buildSegmentQuery(segment, brandId) {
@@ -151,12 +152,16 @@ export default async function handler(req, res) {
         const { brandId, segmentId } = req.query;
 
         const brand = await getBrandById(brandId);
-        if (!brand || brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized' });
+        if (!brand) {
+            return res.status(404).json({ message: 'Brand not found' });
         }
 
         // GET: Get a specific segment
         if (req.method === 'GET') {
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.VIEW_CONTACTS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
             const segment = await Segment.findOne({
                 _id: new mongoose.Types.ObjectId(segmentId),
                 brandId: new mongoose.Types.ObjectId(brandId),
@@ -172,6 +177,11 @@ export default async function handler(req, res) {
 
         // PUT: Update a segment
         if (req.method === 'PUT') {
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_CONTACTS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
+
             const { name, description, type, conditions, contactListIds } = req.body;
 
             if (!name) {
@@ -209,6 +219,11 @@ export default async function handler(req, res) {
 
         // DELETE: Delete a segment
         if (req.method === 'DELETE') {
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_CONTACTS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
+
             const result = await Segment.deleteOne({
                 _id: new mongoose.Types.ObjectId(segmentId),
                 brandId: new mongoose.Types.ObjectId(brandId),

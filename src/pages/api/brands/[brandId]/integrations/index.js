@@ -3,6 +3,7 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getBrandById } from '@/services/brandService';
 import { getIntegrationsByBrandId, createIntegration } from '@/services/integrationService';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -29,8 +30,11 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
+        // Check permission based on request method
+        const requiredPermission = req.method === 'GET' ? PERMISSIONS.VIEW_INTEGRATIONS : PERMISSIONS.EDIT_INTEGRATIONS;
+        const authCheck = await checkBrandPermission(brandId, userId, requiredPermission);
+        if (!authCheck.authorized) {
+            return res.status(authCheck.status).json({ message: authCheck.message });
         }
 
         // GET - Fetch all integrations for a brand

@@ -18,6 +18,7 @@ import {
 } from '@aws-sdk/client-ses';
 import { SNSClient, ListTopicsCommand, CreateTopicCommand, SubscribeCommand } from '@aws-sdk/client-sns';
 import { SESv2Client, PutEmailIdentityConfigurationSetAttributesCommand } from '@aws-sdk/client-sesv2';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 import config from '@/lib/config';
 
@@ -47,8 +48,10 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
+        // Check permission - domain verification is an edit settings operation
+        const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_SETTINGS);
+        if (!authCheck.authorized) {
+            return res.status(authCheck.status).json({ message: authCheck.message });
         }
 
         // Make sure AWS credentials are set up first

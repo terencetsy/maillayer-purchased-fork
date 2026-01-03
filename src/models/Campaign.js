@@ -17,6 +17,11 @@ const CampaignSchema = new mongoose.Schema({
         type: String,
         default: '',
     },
+    editorMode: {
+        type: String,
+        enum: ['visual', 'html', 'react'],
+        default: 'visual',
+    },
     brandId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Brand',

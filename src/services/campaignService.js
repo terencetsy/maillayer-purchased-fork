@@ -22,9 +22,9 @@ export async function getCampaignsByBrandId(brandId, userId, options = {}) {
 
     const { skip = 0, limit = 10 } = options;
 
+    // Filter by brandId only - authorization is handled at the API layer
     const campaigns = await Campaign.find({
         brandId,
-        userId,
     })
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -37,28 +37,32 @@ export async function getCampaignsByBrandId(brandId, userId, options = {}) {
 export async function getCampaignsCount(brandId, userId) {
     await connectToDatabase();
 
+    // Filter by brandId only - authorization is handled at the API layer
     return await Campaign.countDocuments({
         brandId,
-        userId,
     });
 }
 
-export async function getCampaignById(campaignId, userId) {
+export async function getCampaignById(campaignId, brandId = null) {
     await connectToDatabase();
 
-    const campaign = await Campaign.findOne({
-        _id: campaignId,
-        userId,
-    }).lean();
+    // Filter by campaignId only - authorization is handled at the API layer
+    const query = { _id: campaignId };
+    if (brandId) {
+        query.brandId = brandId;
+    }
+
+    const campaign = await Campaign.findOne(query).lean();
 
     return campaign;
 }
 
-export async function updateCampaign(campaignId, userId, updateData) {
+export async function updateCampaign(campaignId, brandId, updateData) {
     await connectToDatabase();
 
+    // Filter by campaignId and brandId - authorization is handled at the API layer
     const result = await Campaign.updateOne(
-        { _id: campaignId, userId },
+        { _id: campaignId, brandId },
         {
             $set: {
                 ...updateData,
@@ -70,19 +74,21 @@ export async function updateCampaign(campaignId, userId, updateData) {
     return result.modifiedCount > 0;
 }
 
-export async function deleteCampaign(campaignId, userId) {
+export async function deleteCampaign(campaignId, brandId) {
     await connectToDatabase();
 
-    const result = await Campaign.deleteOne({ _id: campaignId, userId });
+    // Filter by campaignId and brandId - authorization is handled at the API layer
+    const result = await Campaign.deleteOne({ _id: campaignId, brandId });
     return result.deletedCount > 0;
 }
 
 // Get campaign stats summary for a brand
-export async function getCampaignStatsByBrandId(brandId, userId) {
+export async function getCampaignStatsByBrandId(brandId) {
     await connectToDatabase();
 
+    // Filter by brandId only - authorization is handled at the API layer
     const stats = await Campaign.aggregate([
-        { $match: { brandId: new mongoose.Types.ObjectId(brandId), userId: new mongoose.Types.ObjectId(userId) } },
+        { $match: { brandId: new mongoose.Types.ObjectId(brandId) } },
         {
             $group: {
                 _id: null,

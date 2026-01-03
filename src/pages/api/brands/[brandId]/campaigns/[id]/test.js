@@ -4,6 +4,7 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getCampaignById } from '@/services/campaignService';
 import { getBrandById } from '@/services/brandService';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 // Dynamic import for provider factory (CommonJS module)
 const getProviderFactory = async () => {
@@ -60,14 +61,16 @@ export default async function handler(req, res) {
             return res.status(400).json({ message: 'Invalid email address' });
         }
 
-        // Check if the brand belongs to the user
+        // Check if the brand exists
         const brand = await getBrandById(brandId, true);
         if (!brand) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
+        // Check permission (EDIT_CAMPAIGNS required for sending test emails)
+        const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_CAMPAIGNS);
+        if (!authCheck.authorized) {
+            return res.status(authCheck.status).json({ message: authCheck.message });
         }
 
         // Check if brand has email provider credentials configured
@@ -88,7 +91,7 @@ export default async function handler(req, res) {
         }
 
         // Get campaign
-        const campaign = await getCampaignById(id, userId);
+        const campaign = await getCampaignById(id, brandId);
 
         if (!campaign) {
             return res.status(404).json({ message: 'Campaign not found' });

@@ -3,6 +3,7 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getBrandById } from '@/services/brandService';
 import { getTemplateById, regenerateApiKey } from '@/services/transactionalService';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -34,22 +35,20 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
+        // Check permission - regenerating key is an edit operation
+        const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_TRANSACTIONAL);
+        if (!authCheck.authorized) {
+            return res.status(authCheck.status).json({ message: authCheck.message });
         }
 
-        // Check if the template exists and belongs to the user
-        const template = await getTemplateById(id, userId);
+        // Check if the template exists
+        const template = await getTemplateById(id, brandId);
         if (!template) {
             return res.status(404).json({ message: 'Template not found' });
         }
 
-        if (template.brandId.toString() !== brandId) {
-            return res.status(403).json({ message: 'Template does not belong to this brand' });
-        }
-
         // Regenerate API key
-        const newApiKey = await regenerateApiKey(id, userId);
+        const newApiKey = await regenerateApiKey(id, brandId);
 
         if (newApiKey) {
             return res.status(200).json({

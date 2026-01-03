@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
-import { ArrowLeft, Save, Send, Info } from 'lucide-react';
+import { ArrowLeft, Save, Send, Loader } from 'lucide-react';
 import UnifiedEditor from '@/components/editor/UnifiedEditor';
 
 export default function CampaignEditor() {
@@ -14,10 +14,12 @@ export default function CampaignEditor() {
     const [brand, setBrand] = useState(null);
     const [campaign, setCampaign] = useState(null);
     const [content, setContent] = useState('');
+    const [editorMode, setEditorMode] = useState('visual');
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [saveMessage, setSaveMessage] = useState('');
+    const [lastSaved, setLastSaved] = useState(null);
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -73,6 +75,7 @@ export default function CampaignEditor() {
             const data = await res.json();
             setCampaign(data);
             setContent(data.content || getDefaultEmailTemplate());
+            setEditorMode(data.editorMode || 'visual');
         } catch (error) {
             console.error('Error fetching campaign details:', error);
             setError(error.message);
@@ -83,6 +86,11 @@ export default function CampaignEditor() {
 
     const handleContentChange = (newContent) => {
         setContent(newContent);
+        setSaveMessage('');
+    };
+
+    const handleEditorModeChange = (newMode) => {
+        setEditorMode(newMode);
         setSaveMessage('');
     };
 
@@ -99,6 +107,7 @@ export default function CampaignEditor() {
                 },
                 body: JSON.stringify({
                     content: content,
+                    editorMode: editorMode,
                 }),
                 credentials: 'same-origin',
             });
@@ -107,11 +116,12 @@ export default function CampaignEditor() {
                 throw new Error('Failed to save campaign content');
             }
 
-            setSaveMessage('Campaign saved successfully');
+            setSaveMessage('Saved');
+            setLastSaved(new Date());
 
             setTimeout(() => {
                 setSaveMessage('');
-            }, 3000);
+            }, 2000);
         } catch (error) {
             console.error('Error saving campaign:', error);
             setError(error.message);
@@ -137,48 +147,48 @@ export default function CampaignEditor() {
 
     return (
         <BrandLayout brand={brand}>
-            <div className="campaign-editor">
-                {/* Top Bar */}
-                <div className="campaign-editor__topbar">
-                    <Link href={`/brands/${id}/campaigns`} className="back-link">
-                        <ArrowLeft size={16} />
-                        <span>All campaigns</span>
-                    </Link>
+            <div className="campaign-editor campaign-editor--compact">
+                {/* Compact Header Bar */}
+                <div className="campaign-editor__header-bar">
+                    <div className="campaign-editor__header-left">
+                        <Link href={`/brands/${id}/campaigns`} className="campaign-editor__back">
+                            <ArrowLeft size={18} />
+                        </Link>
+                        <div className="campaign-editor__meta">
+                            <h1 className="campaign-editor__title">{campaign.name}</h1>
+                            <span className="campaign-editor__subject">{campaign.subject}</span>
+                        </div>
+                    </div>
 
-                    <div className="campaign-editor__actions">
+                    <div className="campaign-editor__header-right">
                         {saveMessage && (
-                            <div className="campaign-editor__alert campaign-editor__alert--success">
-                                <span>{saveMessage}</span>
-                            </div>
+                            <span className="campaign-editor__save-status campaign-editor__save-status--success">
+                                {saveMessage}
+                            </span>
                         )}
 
                         {error && (
-                            <div className="campaign-editor__alert campaign-editor__alert--error">
-                                <span>{error}</span>
-                            </div>
+                            <span className="campaign-editor__save-status campaign-editor__save-status--error">
+                                {error}
+                            </span>
                         )}
 
                         <button
-                            className="button button--secondary"
+                            className="campaign-editor__btn campaign-editor__btn--secondary"
                             onClick={handleSave}
                             disabled={isSaving}
                         >
                             {isSaving ? (
-                                <>
-                                    <span className="spinner-icon">⟳</span>
-                                    <span>Saving...</span>
-                                </>
+                                <Loader size={16} className="spin" />
                             ) : (
-                                <>
-                                    <Save size={16} />
-                                    <span>Save</span>
-                                </>
+                                <Save size={16} />
                             )}
+                            <span>{isSaving ? 'Saving...' : 'Save'}</span>
                         </button>
 
                         {campaign.status === 'draft' && (
                             <button
-                                className="button button--primary"
+                                className="campaign-editor__btn campaign-editor__btn--primary"
                                 onClick={handleSend}
                             >
                                 <Send size={16} />
@@ -188,29 +198,15 @@ export default function CampaignEditor() {
                     </div>
                 </div>
 
-                {/* Campaign Header */}
-                <div className="campaign-editor__header">
-                    <h1 className="campaign-editor__title">{campaign.name}</h1>
-                    <div className="campaign-editor__subject">
-                        <span className="campaign-editor__subject-label">Subject:</span>
-                        <span className="campaign-editor__subject-value">{campaign.subject}</span>
-                    </div>
-                </div>
-
-                {/* Info Bar */}
-                <div className="campaign-editor__info">
-                    <Info size={14} />
-                    <span>Email preview - Your subscribers will see content as displayed below</span>
-                </div>
-
-                {/* Editor Container */}
-                <div className="campaign-editor__container">
+                {/* Editor Container - Full Focus */}
+                <div className="campaign-editor__canvas">
                     <UnifiedEditor
                         value={content}
                         onChange={handleContentChange}
-                        placeholder="Write your email content or switch to HTML mode..."
+                        onModeChange={handleEditorModeChange}
+                        placeholder="Start writing your email..."
                         editable={true}
-                        defaultMode="visual"
+                        defaultMode={editorMode}
                     />
                 </div>
             </div>

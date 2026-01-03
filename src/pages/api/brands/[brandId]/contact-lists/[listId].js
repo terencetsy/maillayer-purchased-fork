@@ -3,6 +3,7 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getBrandById } from '@/services/brandService';
 import { getContactListById, updateContactList, deleteContactList } from '@/services/contactService';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -23,18 +24,18 @@ export default async function handler(req, res) {
             return res.status(400).json({ message: 'Missing required parameters' });
         }
 
-        // Check if the brand belongs to the user
+        // Check if the brand exists
         const brand = await getBrandById(brandId);
         if (!brand) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
-        }
-
         // GET - Fetch a specific contact list
         if (req.method === 'GET') {
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.VIEW_CONTACTS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
             const contactList = await getContactListById(listId, brandId, userId);
 
             if (!contactList) {
@@ -46,6 +47,11 @@ export default async function handler(req, res) {
 
         // PUT - Update a contact list
         if (req.method === 'PUT') {
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_CONTACTS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
+
             const { name, description } = req.body;
 
             if (!name) {
@@ -66,6 +72,11 @@ export default async function handler(req, res) {
 
         // DELETE - Delete a contact list
         if (req.method === 'DELETE') {
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_CONTACTS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
+
             const success = await deleteContactList(listId, brandId, userId);
 
             if (!success) {

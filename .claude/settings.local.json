@@ -9,7 +9,10 @@
       "Bash(head:*)",
       "Bash(find:*)",
       "Bash(timeout 10 npm run dev)",
-      "Bash(npx next build:*)"
+      "Bash(npx next build:*)",
+      "Bash(xargs ls:*)",
+      "Bash(wc:*)",
+      "Bash(npm uninstall:*)"
     ]
   }
 }

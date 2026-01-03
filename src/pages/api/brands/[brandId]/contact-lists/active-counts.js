@@ -5,6 +5,7 @@ import { getBrandById } from '@/services/brandService';
 import { getActiveContactsCount } from '@/services/contactService';
 import Contact from '@/models/Contact';
 import mongoose from 'mongoose';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -31,14 +32,16 @@ export default async function handler(req, res) {
             return res.status(400).json({ message: 'Missing brand ID' });
         }
 
-        // Check if the brand belongs to the user
+        // Check if the brand exists
         const brand = await getBrandById(brandId);
         if (!brand) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
+        // Check permission
+        const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.VIEW_CONTACTS);
+        if (!authCheck.authorized) {
+            return res.status(authCheck.status).json({ message: authCheck.message });
         }
 
         // If no list IDs provided, return empty result

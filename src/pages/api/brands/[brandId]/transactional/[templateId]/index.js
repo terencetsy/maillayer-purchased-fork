@@ -3,6 +3,7 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getBrandById } from '@/services/brandService';
 import { getTemplateById, updateTemplate, deleteTemplate, parseTemplateVariables } from '@/services/transactionalService';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -29,21 +30,20 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
+        // Check permission based on request method
+        const requiredPermission = req.method === 'GET' ? PERMISSIONS.VIEW_TRANSACTIONAL : PERMISSIONS.EDIT_TRANSACTIONAL;
+        const authCheck = await checkBrandPermission(brandId, userId, requiredPermission);
+        if (!authCheck.authorized) {
+            return res.status(authCheck.status).json({ message: authCheck.message });
         }
 
         // GET request - get a specific template
         if (req.method === 'GET') {
             try {
-                const template = await getTemplateById(templateId, userId);
+                const template = await getTemplateById(templateId, brandId);
 
                 if (!template) {
                     return res.status(404).json({ message: 'Template not found' });
-                }
-
-                if (template.brandId.toString() !== brandId) {
-                    return res.status(403).json({ message: 'Template does not belong to this brand' });
                 }
 
                 return res.status(200).json(template);
@@ -58,14 +58,10 @@ export default async function handler(req, res) {
             try {
                 const { name, subject, content, fromName, fromEmail, replyTo, status, variables } = req.body;
 
-                const template = await getTemplateById(templateId, userId);
+                const template = await getTemplateById(templateId, brandId);
 
                 if (!template) {
                     return res.status(404).json({ message: 'Template not found' });
-                }
-
-                if (template.brandId.toString() !== brandId) {
-                    return res.status(403).json({ message: 'Template does not belong to this brand' });
                 }
 
                 const updateData = {};
@@ -85,7 +81,7 @@ export default async function handler(req, res) {
                     updateData.variables = variables;
                 }
 
-                const success = await updateTemplate(templateId, userId, updateData);
+                const success = await updateTemplate(templateId, brandId, updateData);
 
                 if (success) {
                     return res.status(200).json({ message: 'Template updated successfully' });
@@ -101,17 +97,13 @@ export default async function handler(req, res) {
         // DELETE request - delete a template
         if (req.method === 'DELETE') {
             try {
-                const template = await getTemplateById(templateId, userId);
+                const template = await getTemplateById(templateId, brandId);
 
                 if (!template) {
                     return res.status(404).json({ message: 'Template not found' });
                 }
 
-                if (template.brandId.toString() !== brandId) {
-                    return res.status(403).json({ message: 'Template does not belong to this brand' });
-                }
-
-                const success = await deleteTemplate(templateId, userId);
+                const success = await deleteTemplate(templateId, brandId);
 
                 if (success) {
                     return res.status(200).json({ message: 'Template deleted successfully' });

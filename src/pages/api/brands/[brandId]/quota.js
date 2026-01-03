@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getBrandById } from '@/services/brandService';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 // In-memory cache
 const quotaCache = new Map();
@@ -47,13 +48,15 @@ export default async function handler(req, res) {
             return res.status(200).json(cached.data);
         }
 
+        // Check permission (VIEW_BRAND allows owners and team members)
+        const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.VIEW_BRAND);
+        if (!authCheck.authorized) {
+            return res.status(authCheck.status).json({ message: authCheck.message });
+        }
+
         const brand = await getBrandById(brandId, true);
         if (!brand) {
             return res.status(404).json({ message: 'Brand not found' });
-        }
-
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
         }
 
         const provider = brand.emailProvider || 'ses';

@@ -4,8 +4,9 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getCampaignById, updateCampaign, deleteCampaign } from '@/services/campaignService';
 import { getBrandById } from '@/services/brandService';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 import mongoose from 'mongoose';
-import { emailCampaignQueue, schedulerQueue } from '@/lib/queue';
+import initializeQueues from '@/lib/queue';
 import Segment from '@/models/Segment';
 import Contact from '@/models/Contact';
 
@@ -249,27 +250,24 @@ export default async function handler(req, res) {
             return res.status(400).json({ message: 'Missing required parameters' });
         }
 
-        // Check if the brand belongs to the user
+        // Check if the brand exists
         const brand = await getBrandById(brandId);
         if (!brand) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
-        }
-
         // GET request - get a specific campaign
         if (req.method === 'GET') {
+            // Check permission (VIEW_CAMPAIGNS allows owners and team members)
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.VIEW_CAMPAIGNS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
             try {
-                const campaign = await getCampaignById(id, userId);
+                const campaign = await getCampaignById(id, brandId);
 
                 if (!campaign) {
                     return res.status(404).json({ message: 'Campaign not found' });
-                }
-
-                if (campaign.brandId.toString() !== brandId) {
-                    return res.status(403).json({ message: 'Campaign does not belong to this brand' });
                 }
 
                 return res.status(200).json(campaign);
@@ -281,11 +279,18 @@ export default async function handler(req, res) {
 
         // PUT request - update a campaign
         if (req.method === 'PUT') {
+            // Check permission (EDIT_CAMPAIGNS required for updating campaigns)
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_CAMPAIGNS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
+
             try {
                 const {
                     name,
                     subject,
                     content,
+                    editorMode,
                     fromName,
                     fromEmail,
                     replyTo,
@@ -297,14 +302,10 @@ export default async function handler(req, res) {
                     warmupConfig,
                 } = req.body;
 
-                const campaign = await getCampaignById(id, userId);
+                const campaign = await getCampaignById(id, brandId);
 
                 if (!campaign) {
                     return res.status(404).json({ message: 'Campaign not found' });
-                }
-
-                if (campaign.brandId.toString() !== brandId) {
-                    return res.status(403).json({ message: 'Campaign does not belong to this brand' });
                 }
 
                 const updateData = {};
@@ -312,6 +313,7 @@ export default async function handler(req, res) {
                 if (name) updateData.name = name;
                 if (subject) updateData.subject = subject;
                 if (content !== undefined) updateData.content = content;
+                if (editorMode) updateData.editorMode = editorMode;
                 if (fromName) updateData.fromName = fromName;
                 if (fromEmail) updateData.fromEmail = fromEmail;
                 if (replyTo) updateData.replyTo = replyTo;
@@ -324,6 +326,9 @@ export default async function handler(req, res) {
                     if (brand.status !== 'active') {
                         return res.status(400).json({ message: 'AWS SES credentials not configured for this brand' });
                     }
+
+                    // Initialize queues
+                    const { emailCampaignQueue, schedulerQueue } = await initializeQueues();
 
                     // Get the effective list and segment IDs
                     const effectiveListIds = contactListIds || campaign.contactListIds || [];
@@ -514,7 +519,7 @@ export default async function handler(req, res) {
                     updateData.status = status;
                 }
 
-                const success = await updateCampaign(id, userId, updateData);
+                const success = await updateCampaign(id, brandId, updateData);
 
                 if (success) {
                     return res.status(200).json({ message: 'Campaign updated successfully' });
@@ -529,22 +534,24 @@ export default async function handler(req, res) {
 
         // DELETE request - delete a campaign
         if (req.method === 'DELETE') {
+            // Check permission (EDIT_CAMPAIGNS required for deleting campaigns)
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_CAMPAIGNS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
+
             try {
-                const campaign = await getCampaignById(id, userId);
+                const campaign = await getCampaignById(id, brandId);
 
                 if (!campaign) {
                     return res.status(404).json({ message: 'Campaign not found' });
-                }
-
-                if (campaign.brandId.toString() !== brandId) {
-                    return res.status(403).json({ message: 'Campaign does not belong to this brand' });
                 }
 
                 if (campaign.status !== 'draft') {
                     return res.status(400).json({ message: 'Only draft campaigns can be deleted' });
                 }
 
-                const success = await deleteCampaign(id, userId);
+                const success = await deleteCampaign(id, brandId);
 
                 if (success) {
                     return res.status(200).json({ message: 'Campaign deleted successfully' });

@@ -6,6 +6,7 @@ import { getBrandById } from '@/services/brandService';
 import Segment from '@/models/Segment';
 import Contact from '@/models/Contact';
 import mongoose from 'mongoose';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 function buildSegmentQuery(segment, brandId) {
     const baseQuery = {
@@ -132,12 +133,16 @@ export default async function handler(req, res) {
         const { brandId } = req.query;
 
         const brand = await getBrandById(brandId);
-        if (!brand || brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized' });
+        if (!brand) {
+            return res.status(404).json({ message: 'Brand not found' });
         }
 
         // GET: List all segments
         if (req.method === 'GET') {
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.VIEW_CONTACTS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
             const segments = await Segment.find({
                 brandId: new mongoose.Types.ObjectId(brandId),
                 userId: new mongoose.Types.ObjectId(userId),
@@ -165,6 +170,11 @@ export default async function handler(req, res) {
 
         // POST: Create a new segment
         if (req.method === 'POST') {
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_CONTACTS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
+
             const { name, description, type, conditions, contactListIds } = req.body;
 
             if (!name) {

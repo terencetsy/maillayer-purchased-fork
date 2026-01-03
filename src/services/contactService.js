@@ -7,10 +7,10 @@ import mongoose from 'mongoose';
 export async function getActiveContactsCount(listId, brandId, userId) {
     await connectToDatabase();
 
+    // Filter by brandId only - authorization is handled at the API layer
     const count = await Contact.countDocuments({
         listId: new mongoose.Types.ObjectId(listId),
         brandId: new mongoose.Types.ObjectId(brandId),
-        userId: new mongoose.Types.ObjectId(userId),
         isUnsubscribed: { $ne: true }, // Exclude unsubscribed contacts
     });
 
@@ -21,9 +21,9 @@ export async function getActiveContactsCount(listId, brandId, userId) {
 export async function getContactListsByBrandId(brandId, userId) {
     await connectToDatabase();
 
+    // Filter by brandId only - authorization is handled at the API layer
     const contactLists = await ContactList.find({
         brandId: new mongoose.Types.ObjectId(brandId),
-        userId: new mongoose.Types.ObjectId(userId),
     }).sort({ createdAt: -1 });
 
     return contactLists;
@@ -33,10 +33,10 @@ export async function getContactListsByBrandId(brandId, userId) {
 export async function getContactListById(listId, brandId, userId) {
     await connectToDatabase();
 
+    // Filter by brandId only - authorization is handled at the API layer
     const contactList = await ContactList.findOne({
         _id: new mongoose.Types.ObjectId(listId),
         brandId: new mongoose.Types.ObjectId(brandId),
-        userId: new mongoose.Types.ObjectId(userId),
     });
 
     return contactList;
@@ -60,11 +60,11 @@ export async function createContactList(listData) {
 export async function updateContactList(listId, brandId, userId, updateData) {
     await connectToDatabase();
 
+    // Filter by brandId only - authorization is handled at the API layer
     const contactList = await ContactList.findOneAndUpdate(
         {
             _id: new mongoose.Types.ObjectId(listId),
             brandId: new mongoose.Types.ObjectId(brandId),
-            userId: new mongoose.Types.ObjectId(userId),
         },
         {
             ...updateData,
@@ -80,18 +80,17 @@ export async function updateContactList(listId, brandId, userId, updateData) {
 export async function deleteContactList(listId, brandId, userId) {
     await connectToDatabase();
 
+    // Filter by brandId only - authorization is handled at the API layer
     // Delete all contacts in the list
     await Contact.deleteMany({
         listId: new mongoose.Types.ObjectId(listId),
         brandId: new mongoose.Types.ObjectId(brandId),
-        userId: new mongoose.Types.ObjectId(userId),
     });
 
     // Delete the list itself
     const result = await ContactList.deleteOne({
         _id: new mongoose.Types.ObjectId(listId),
         brandId: new mongoose.Types.ObjectId(brandId),
-        userId: new mongoose.Types.ObjectId(userId),
     });
 
     return result.deletedCount > 0;
@@ -106,11 +105,10 @@ export async function getContactsByListId(listId, brandId, userId, options = {})
     const skip = (page - 1) * limit;
     const sortDirection = sortOrder === 'desc' ? -1 : 1;
 
-    // Build the query
+    // Filter by brandId only - authorization is handled at the API layer
     const query = {
         listId: new mongoose.Types.ObjectId(listId),
         brandId: new mongoose.Types.ObjectId(brandId),
-        userId: new mongoose.Types.ObjectId(userId),
     };
 
     // Add search filter if provided
@@ -138,11 +136,10 @@ export async function getContactsByListId(listId, brandId, userId, options = {})
 }
 
 // Add contacts to a list
-// Add contacts to a list
 export async function addContactsToList(listId, brandId, userId, contacts, skipDuplicates = false) {
     await connectToDatabase();
 
-    // Prepare contacts for insertion
+    // Prepare contacts for insertion - still include userId for record keeping
     const contactsToInsert = contacts.map((contact) => ({
         ...contact,
         email: contact.email.toLowerCase().trim(),
@@ -227,12 +224,11 @@ export async function deleteContactsFromList(listId, brandId, userId, contactIds
     // Convert string IDs to ObjectIds
     const objectIds = contactIds.map((id) => new mongoose.Types.ObjectId(id));
 
-    // Delete the contacts
+    // Filter by brandId only - authorization is handled at the API layer
     const result = await Contact.deleteMany({
         _id: { $in: objectIds },
         listId: new mongoose.Types.ObjectId(listId),
         brandId: new mongoose.Types.ObjectId(brandId),
-        userId: new mongoose.Types.ObjectId(userId),
     });
 
     // Update the contact count in the list

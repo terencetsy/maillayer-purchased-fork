@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import BrandLayout from '@/components/BrandLayout';
-import { Settings, Save, Globe, Mail, Shield, Trash, AlertCircle, CheckCircle, Loader, Sliders, Webhook, Copy, ExternalLink, ChevronRight } from 'lucide-react';
+import { Settings, Save, Globe, Mail, Shield, Trash, AlertCircle, CheckCircle, Loader, Sliders, Webhook, Copy, ExternalLink, ChevronRight, Users, UserPlus, Trash2, X, Check } from 'lucide-react';
 import { AWS_SES_REGIONS } from '@/constants/awsRegions';
 
 export default function BrandSettings() {
@@ -52,6 +52,11 @@ export default function BrandSettings() {
     // Webhook copy state
     const [copiedWebhook, setCopiedWebhook] = useState(false);
 
+    // Team state
+    const [teamMembers, setTeamMembers] = useState([]);
+    const [isLoadingTeam, setIsLoadingTeam] = useState(false);
+    const [showInviteModal, setShowInviteModal] = useState(false);
+
     const getWebhookBaseUrl = () => {
         if (typeof window !== 'undefined') {
             return window.location.origin;
@@ -75,6 +80,27 @@ export default function BrandSettings() {
             fetchBrandDetails();
         }
     }, [status, id, router]);
+
+    useEffect(() => {
+        if (activeTab === 'team' && id && brand?.userRole === 'owner') {
+            fetchTeamMembers();
+        }
+    }, [activeTab, id, brand?.userRole]);
+
+    const fetchTeamMembers = async () => {
+        setIsLoadingTeam(true);
+        try {
+            const res = await fetch(`/api/brands/${id}/team`, { credentials: 'same-origin' });
+            if (res.ok) {
+                const data = await res.json();
+                setTeamMembers(data);
+            }
+        } catch (error) {
+            console.error('Error fetching team:', error);
+        } finally {
+            setIsLoadingTeam(false);
+        }
+    };
 
     useEffect(() => {
         if (brand) {
@@ -197,11 +223,15 @@ export default function BrandSettings() {
         }
     };
 
+    // Filter tabs based on user role - only owners can see Team and Danger Zone
+    const isOwner = brand?.userRole === 'owner';
+
     const tabs = [
         { id: 'general', label: 'General', icon: Globe },
         { id: 'sending', label: 'Sending', icon: Mail },
         { id: 'provider', label: 'Email Provider', icon: Sliders },
-        { id: 'advanced', label: 'Danger Zone', icon: Trash },
+        ...(isOwner ? [{ id: 'team', label: 'Team', icon: Users }] : []),
+        ...(isOwner ? [{ id: 'advanced', label: 'Danger Zone', icon: Trash }] : []),
     ];
 
     const renderSettingsTab = () => {
@@ -474,6 +504,17 @@ export default function BrandSettings() {
                     </form>
                 );
 
+            case 'team':
+                return (
+                    <TeamTab
+                        brandId={id}
+                        teamMembers={teamMembers}
+                        isLoading={isLoadingTeam}
+                        onRefresh={fetchTeamMembers}
+                        onInvite={() => setShowInviteModal(true)}
+                    />
+                );
+
             case 'advanced':
                 return (
                     <div className="danger-section">
@@ -598,6 +639,14 @@ export default function BrandSettings() {
                     </div>
                 </div>
             </div>
+
+            {/* Invite Modal */}
+            <InviteModal
+                brandId={id}
+                isOpen={showInviteModal}
+                onClose={() => setShowInviteModal(false)}
+                onSuccess={fetchTeamMembers}
+            />
 
             <style jsx>{`
                 .settings-page {
@@ -753,6 +802,18 @@ export default function BrandSettings() {
                     color: #fafafa;
                     font-size: 14px;
                     transition: all 0.15s;
+                }
+
+                .settings-content :global(.form-row select) {
+                    appearance: none;
+                    -webkit-appearance: none;
+                    -moz-appearance: none;
+                    padding-right: 36px;
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+                    background-repeat: no-repeat;
+                    background-position: right 12px center;
+                    background-size: 16px;
+                    cursor: pointer;
                 }
 
                 .settings-content :global(.form-row input:focus),
@@ -1174,6 +1235,775 @@ function WebhookSetup({ provider, webhookUrl, onCopy, copied, domain }) {
                     text-decoration: underline;
                 }
             `}</style>
+        </div>
+    );
+}
+
+// Team Tab Component
+function TeamTab({ brandId, teamMembers, isLoading, onRefresh, onInvite }) {
+    const [copiedId, setCopiedId] = useState(null);
+
+    const handleCopyInvite = async (memberId) => {
+        try {
+            const res = await fetch(`/api/brands/${brandId}/team/${memberId}/regenerate`, {
+                method: 'POST',
+                credentials: 'same-origin',
+            });
+            if (res.ok) {
+                const { inviteUrl } = await res.json();
+                await navigator.clipboard.writeText(inviteUrl);
+                setCopiedId(memberId);
+                setTimeout(() => setCopiedId(null), 2000);
+            }
+        } catch (error) {
+            console.error('Error copying invite:', error);
+        }
+    };
+
+    const handleRemove = async (memberId) => {
+        if (!confirm('Remove this team member?')) return;
+
+        try {
+            const res = await fetch(`/api/brands/${brandId}/team/${memberId}`, {
+                method: 'DELETE',
+                credentials: 'same-origin',
+            });
+            if (res.ok) {
+                onRefresh();
+            }
+        } catch (error) {
+            console.error('Error removing member:', error);
+        }
+    };
+
+    const handleRoleChange = async (memberId, newRole) => {
+        try {
+            const res = await fetch(`/api/brands/${brandId}/team/${memberId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: newRole }),
+                credentials: 'same-origin',
+            });
+            if (res.ok) {
+                onRefresh();
+            }
+        } catch (error) {
+            console.error('Error updating role:', error);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="team-loading">
+                <Loader size={20} className="spin" />
+                <span>Loading team...</span>
+            </div>
+        );
+    }
+
+    return (
+        <div className="team-section">
+            <div className="team-header">
+                <div className="team-header-info">
+                    <h3>Team Members</h3>
+                    <p>Invite team members to collaborate on this brand</p>
+                </div>
+                <button className="invite-btn" onClick={onInvite}>
+                    <UserPlus size={14} />
+                    Invite Member
+                </button>
+            </div>
+
+            {teamMembers.length === 0 ? (
+                <div className="team-empty">
+                    <Users size={32} />
+                    <p>No team members yet</p>
+                    <span>Invite your first team member to get started</span>
+                </div>
+            ) : (
+                <div className="team-list">
+                    {teamMembers.map((member) => (
+                        <div key={member._id} className="team-member">
+                            <div className="member-info">
+                                <div className="member-avatar">
+                                    {member.userId?.name?.[0] || member.email[0].toUpperCase()}
+                                </div>
+                                <div className="member-details">
+                                    <span className="member-name">
+                                        {member.userId?.name || member.email}
+                                    </span>
+                                    <span className="member-email">{member.email}</span>
+                                </div>
+                            </div>
+
+                            <div className="member-status">
+                                {member.status === 'pending' ? (
+                                    <span className="status-badge pending">Pending</span>
+                                ) : (
+                                    <span className="status-badge active">Active</span>
+                                )}
+                            </div>
+
+                            <div className="member-role">
+                                <select
+                                    value={member.role}
+                                    onChange={(e) => handleRoleChange(member._id, e.target.value)}
+                                >
+                                    <option value="viewer">Viewer</option>
+                                    <option value="editor">Editor</option>
+                                </select>
+                            </div>
+
+                            <div className="member-actions">
+                                {member.status === 'pending' && (
+                                    <button
+                                        className="action-btn"
+                                        onClick={() => handleCopyInvite(member._id)}
+                                        title="Copy invite link"
+                                    >
+                                        {copiedId === member._id ? (
+                                            <Check size={14} />
+                                        ) : (
+                                            <Copy size={14} />
+                                        )}
+                                    </button>
+                                )}
+                                <button
+                                    className="action-btn danger"
+                                    onClick={() => handleRemove(member._id)}
+                                    title="Remove member"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <style jsx>{`
+                .team-section {
+                    padding: 0;
+                }
+
+                .team-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 24px;
+                }
+
+                .team-header-info h3 {
+                    margin: 0 0 4px;
+                    font-size: 15px;
+                    font-weight: 600;
+                    color: #fafafa;
+                }
+
+                .team-header-info p {
+                    margin: 0;
+                    font-size: 13px;
+                    color: #71717a;
+                }
+
+                .invite-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 8px 14px;
+                    background: #fafafa;
+                    border: none;
+                    border-radius: 6px;
+                    color: #0a0a0a;
+                    font-size: 13px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.15s;
+                }
+
+                .invite-btn:hover {
+                    background: #e4e4e7;
+                }
+
+                .team-empty {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 48px 24px;
+                    background: rgba(255,255,255,0.02);
+                    border: 1px dashed rgba(255,255,255,0.1);
+                    border-radius: 8px;
+                    color: #52525b;
+                }
+
+                .team-empty p {
+                    margin: 12px 0 4px;
+                    font-size: 14px;
+                    color: #71717a;
+                }
+
+                .team-empty span {
+                    font-size: 13px;
+                }
+
+                .team-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+
+                .team-member {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 12px 16px;
+                    background: rgba(255,255,255,0.02);
+                    border: 1px solid rgba(255,255,255,0.06);
+                    border-radius: 8px;
+                    transition: all 0.15s;
+                }
+
+                .team-member:hover {
+                    background: rgba(255,255,255,0.04);
+                }
+
+                .member-info {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                .member-avatar {
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: rgba(99, 102, 241, 0.2);
+                    border-radius: 50%;
+                    color: #818cf8;
+                    font-size: 14px;
+                    font-weight: 600;
+                    flex-shrink: 0;
+                }
+
+                .member-details {
+                    display: flex;
+                    flex-direction: column;
+                    min-width: 0;
+                }
+
+                .member-name {
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #fafafa;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .member-email {
+                    font-size: 12px;
+                    color: #71717a;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .member-status {
+                    flex-shrink: 0;
+                }
+
+                .status-badge {
+                    display: inline-block;
+                    padding: 4px 8px;
+                    font-size: 11px;
+                    font-weight: 500;
+                    border-radius: 4px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.02em;
+                }
+
+                .status-badge.pending {
+                    background: rgba(245, 158, 11, 0.15);
+                    color: #f59e0b;
+                }
+
+                .status-badge.active {
+                    background: rgba(34, 197, 94, 0.15);
+                    color: #22c55e;
+                }
+
+                .member-role {
+                    flex-shrink: 0;
+                }
+
+                .member-role select {
+                    appearance: none;
+                    -webkit-appearance: none;
+                    -moz-appearance: none;
+                    padding: 6px 28px 6px 10px;
+                    background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.08);
+                    border-radius: 4px;
+                    color: #a1a1aa;
+                    font-size: 12px;
+                    cursor: pointer;
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+                    background-repeat: no-repeat;
+                    background-position: right 8px center;
+                    background-size: 14px;
+                }
+
+                .member-role select:focus {
+                    outline: none;
+                    border-color: rgba(255,255,255,0.15);
+                }
+
+                .member-role select option {
+                    background: #1c1c1c;
+                    color: #fafafa;
+                }
+
+                .member-actions {
+                    display: flex;
+                    gap: 4px;
+                    flex-shrink: 0;
+                }
+
+                .action-btn {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 32px;
+                    height: 32px;
+                    background: transparent;
+                    border: 1px solid rgba(255,255,255,0.08);
+                    border-radius: 6px;
+                    color: #71717a;
+                    cursor: pointer;
+                    transition: all 0.15s;
+                }
+
+                .action-btn:hover {
+                    background: rgba(255,255,255,0.05);
+                    color: #a1a1aa;
+                }
+
+                .action-btn.danger:hover {
+                    background: rgba(239, 68, 68, 0.1);
+                    border-color: rgba(239, 68, 68, 0.2);
+                    color: #ef4444;
+                }
+
+                .team-loading {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    padding: 48px 24px;
+                    color: #71717a;
+                    font-size: 13px;
+                }
+            `}</style>
+        </div>
+    );
+}
+
+// Invite Modal Component
+function InviteModal({ brandId, isOpen, onClose, onSuccess }) {
+    const [email, setEmail] = useState('');
+    const [role, setRole] = useState('viewer');
+    const [inviteUrl, setInviteUrl] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [copied, setCopied] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const res = await fetch(`/api/brands/${brandId}/team`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, role }),
+                credentials: 'same-origin',
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.message);
+            }
+
+            setInviteUrl(data.inviteUrl);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(inviteUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleClose = () => {
+        setEmail('');
+        setRole('viewer');
+        setInviteUrl('');
+        setError('');
+        onSuccess?.();
+        onClose();
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="modal-overlay" onClick={handleClose}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h3>Invite Team Member</h3>
+                    <button className="close-btn" onClick={handleClose}>
+                        <X size={18} />
+                    </button>
+                </div>
+
+                {!inviteUrl ? (
+                    <form onSubmit={handleSubmit} className="modal-body">
+                        {error && (
+                            <div className="modal-alert error">
+                                <AlertCircle size={14} />
+                                {error}
+                            </div>
+                        )}
+
+                        <div className="form-group">
+                            <label>Email Address</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="teammate@example.com"
+                                required
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Role</label>
+                            <select value={role} onChange={(e) => setRole(e.target.value)}>
+                                <option value="viewer">Viewer - Read-only access</option>
+                                <option value="editor">Editor - Full access except team management</option>
+                            </select>
+                        </div>
+
+                        <div className="modal-footer">
+                            <button type="button" className="btn-secondary" onClick={handleClose}>
+                                Cancel
+                            </button>
+                            <button type="submit" className="btn-primary" disabled={isLoading}>
+                                {isLoading ? (
+                                    <>
+                                        <Loader size={14} className="spin" />
+                                        Creating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Mail size={14} />
+                                        Create Invite
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                ) : (
+                    <div className="modal-body success-view">
+                        <div className="success-icon">
+                            <CheckCircle size={32} />
+                        </div>
+                        <h4>Invitation Created!</h4>
+                        <p>Share this link with {email}:</p>
+
+                        <div className="invite-url-box">
+                            <code>{inviteUrl}</code>
+                            <button onClick={handleCopy} title="Copy link">
+                                {copied ? <Check size={14} /> : <Copy size={14} />}
+                            </button>
+                        </div>
+
+                        <p className="hint">This link expires in 7 days</p>
+
+                        <button className="btn-primary full-width" onClick={handleClose}>
+                            Done
+                        </button>
+                    </div>
+                )}
+
+                <style jsx>{`
+                    .modal-overlay {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: rgba(0, 0, 0, 0.7);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 1000;
+                        padding: 24px;
+                    }
+
+                    .modal {
+                        width: 100%;
+                        max-width: 420px;
+                        background: #1c1c1c;
+                        border: 1px solid rgba(255,255,255,0.1);
+                        border-radius: 12px;
+                        overflow: hidden;
+                    }
+
+                    .modal-header {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        padding: 16px 20px;
+                        border-bottom: 1px solid rgba(255,255,255,0.06);
+                    }
+
+                    .modal-header h3 {
+                        margin: 0;
+                        font-size: 16px;
+                        font-weight: 600;
+                        color: #fafafa;
+                    }
+
+                    .close-btn {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 32px;
+                        height: 32px;
+                        background: transparent;
+                        border: none;
+                        color: #71717a;
+                        cursor: pointer;
+                        border-radius: 6px;
+                        transition: all 0.15s;
+                    }
+
+                    .close-btn:hover {
+                        background: rgba(255,255,255,0.05);
+                        color: #a1a1aa;
+                    }
+
+                    .modal-body {
+                        padding: 20px;
+                    }
+
+                    .modal-alert {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        padding: 10px 12px;
+                        border-radius: 6px;
+                        font-size: 13px;
+                        margin-bottom: 16px;
+                    }
+
+                    .modal-alert.error {
+                        background: rgba(239, 68, 68, 0.1);
+                        border: 1px solid rgba(239, 68, 68, 0.2);
+                        color: #ef4444;
+                    }
+
+                    .form-group {
+                        margin-bottom: 16px;
+                    }
+
+                    .form-group label {
+                        display: block;
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: #a1a1aa;
+                        margin-bottom: 6px;
+                    }
+
+                    .form-group input,
+                    .form-group select {
+                        width: 100%;
+                        padding: 10px 12px;
+                        background: rgba(255,255,255,0.03);
+                        border: 1px solid rgba(255,255,255,0.08);
+                        border-radius: 6px;
+                        color: #fafafa;
+                        font-size: 14px;
+                        transition: all 0.15s;
+                    }
+
+                    .form-group select {
+                        appearance: none;
+                        -webkit-appearance: none;
+                        -moz-appearance: none;
+                        padding-right: 36px;
+                        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+                        background-repeat: no-repeat;
+                        background-position: right 12px center;
+                        background-size: 16px;
+                        cursor: pointer;
+                    }
+
+                    .form-group input:focus,
+                    .form-group select:focus {
+                        outline: none;
+                        border-color: rgba(255,255,255,0.15);
+                        background: rgba(255,255,255,0.05);
+                    }
+
+                    .form-group input::placeholder {
+                        color: #52525b;
+                    }
+
+                    .form-group select option {
+                        background: #1c1c1c;
+                        color: #fafafa;
+                    }
+
+                    .modal-footer {
+                        display: flex;
+                        gap: 10px;
+                        justify-content: flex-end;
+                        margin-top: 20px;
+                        padding-top: 16px;
+                        border-top: 1px solid rgba(255,255,255,0.06);
+                    }
+
+                    .btn-secondary {
+                        padding: 10px 16px;
+                        background: transparent;
+                        border: 1px solid rgba(255,255,255,0.1);
+                        border-radius: 6px;
+                        color: #a1a1aa;
+                        font-size: 13px;
+                        cursor: pointer;
+                        transition: all 0.15s;
+                    }
+
+                    .btn-secondary:hover {
+                        background: rgba(255,255,255,0.05);
+                    }
+
+                    .btn-primary {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 6px;
+                        padding: 10px 16px;
+                        background: #fafafa;
+                        border: none;
+                        border-radius: 6px;
+                        color: #0a0a0a;
+                        font-size: 13px;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.15s;
+                    }
+
+                    .btn-primary:hover {
+                        background: #e4e4e7;
+                    }
+
+                    .btn-primary:disabled {
+                        opacity: 0.6;
+                        cursor: not-allowed;
+                    }
+
+                    .btn-primary.full-width {
+                        width: 100%;
+                        justify-content: center;
+                    }
+
+                    .success-view {
+                        text-align: center;
+                    }
+
+                    .success-icon {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 56px;
+                        height: 56px;
+                        margin: 0 auto 16px;
+                        background: rgba(34, 197, 94, 0.15);
+                        border-radius: 50%;
+                        color: #22c55e;
+                    }
+
+                    .success-view h4 {
+                        margin: 0 0 8px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        color: #fafafa;
+                    }
+
+                    .success-view p {
+                        margin: 0 0 16px;
+                        font-size: 13px;
+                        color: #71717a;
+                    }
+
+                    .invite-url-box {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        padding: 10px 12px;
+                        background: rgba(0,0,0,0.3);
+                        border: 1px solid rgba(255,255,255,0.08);
+                        border-radius: 6px;
+                        margin-bottom: 12px;
+                    }
+
+                    .invite-url-box code {
+                        flex: 1;
+                        font-size: 12px;
+                        color: #22c55e;
+                        word-break: break-all;
+                        text-align: left;
+                    }
+
+                    .invite-url-box button {
+                        flex-shrink: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 28px;
+                        height: 28px;
+                        background: rgba(255,255,255,0.05);
+                        border: none;
+                        border-radius: 4px;
+                        color: #71717a;
+                        cursor: pointer;
+                        transition: all 0.15s;
+                    }
+
+                    .invite-url-box button:hover {
+                        background: rgba(255,255,255,0.1);
+                        color: #fafafa;
+                    }
+
+                    .hint {
+                        font-size: 12px;
+                        color: #52525b;
+                        margin-bottom: 20px;
+                    }
+                `}</style>
+            </div>
         </div>
     );
 }

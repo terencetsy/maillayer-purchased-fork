@@ -6,9 +6,9 @@ import mongoose from 'mongoose';
 export async function getIntegrationsByBrandId(brandId, userId) {
     await connectToDatabase();
 
+    // Filter by brandId only - authorization is handled at the API layer
     const integrations = await Integration.find({
         brandId: new mongoose.Types.ObjectId(brandId),
-        userId: new mongoose.Types.ObjectId(userId),
     }).sort({ createdAt: -1 });
 
     return integrations;
@@ -18,10 +18,10 @@ export async function getIntegrationsByBrandId(brandId, userId) {
 export async function getIntegrationById(integrationId, brandId, userId) {
     await connectToDatabase();
 
+    // Filter by brandId only - authorization is handled at the API layer
     const integration = await Integration.findOne({
         _id: new mongoose.Types.ObjectId(integrationId),
         brandId: new mongoose.Types.ObjectId(brandId),
-        userId: new mongoose.Types.ObjectId(userId),
     });
 
     return integration;
@@ -31,10 +31,10 @@ export async function getIntegrationById(integrationId, brandId, userId) {
 export async function getIntegrationByType(type, brandId, userId) {
     await connectToDatabase();
 
+    // Filter by brandId only - authorization is handled at the API layer
     const integration = await Integration.findOne({
         type,
         brandId: new mongoose.Types.ObjectId(brandId),
-        userId: new mongoose.Types.ObjectId(userId),
     });
 
     return integration;
@@ -75,11 +75,11 @@ export async function updateIntegration(integrationId, brandId, userId, updateDa
     }
 
     try {
+        // Filter by brandId only - authorization is handled at the API layer
         const integration = await Integration.findOneAndUpdate(
             {
                 _id: new mongoose.Types.ObjectId(integrationId),
                 brandId: new mongoose.Types.ObjectId(brandId),
-                userId: new mongoose.Types.ObjectId(userId),
             },
             {
                 ...dataToUpdate,
@@ -102,10 +102,10 @@ export async function updateIntegration(integrationId, brandId, userId, updateDa
 export async function deleteIntegration(integrationId, brandId, userId) {
     await connectToDatabase();
 
+    // Filter by brandId only - authorization is handled at the API layer
     const result = await Integration.deleteOne({
         _id: new mongoose.Types.ObjectId(integrationId),
         brandId: new mongoose.Types.ObjectId(brandId),
-        userId: new mongoose.Types.ObjectId(userId),
     });
 
     return result.deletedCount > 0;

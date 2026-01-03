@@ -4,6 +4,7 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getCampaignById, createCampaign } from '@/services/campaignService';
 import { getBrandById } from '@/services/brandService';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -30,18 +31,20 @@ export default async function handler(req, res) {
             return res.status(400).json({ message: 'Missing required parameters' });
         }
 
-        // Check if the brand belongs to the user
+        // Check if the brand exists
         const brand = await getBrandById(brandId);
         if (!brand) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
+        // Check permission (EDIT_CAMPAIGNS required for duplicating campaigns)
+        const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_CAMPAIGNS);
+        if (!authCheck.authorized) {
+            return res.status(authCheck.status).json({ message: authCheck.message });
         }
 
         // Get the original campaign
-        const campaign = await getCampaignById(id, userId);
+        const campaign = await getCampaignById(id, brandId);
 
         if (!campaign) {
             return res.status(404).json({ message: 'Campaign not found' });

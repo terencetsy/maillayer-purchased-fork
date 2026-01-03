@@ -3,8 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getBrandById } from '@/services/brandService';
-import { getTransactionalTemplate, updateTransactionalTemplate } from '@/services/transactionalService';
+import { getTemplateById, updateTemplate } from '@/services/transactionalService';
 import { v4 as uuidv4 } from 'uuid';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -36,8 +37,10 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: 'Brand not found' });
         }
 
-        if (brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized to access this brand' });
+        // Check permission - publishing is an edit operation
+        const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_TRANSACTIONAL);
+        if (!authCheck.authorized) {
+            return res.status(authCheck.status).json({ message: authCheck.message });
         }
 
         // Check if brand is ready to send emails
@@ -46,7 +49,7 @@ export default async function handler(req, res) {
         }
 
         // Get the template
-        const template = await getTransactionalTemplate(templateId, brandId, userId);
+        const template = await getTemplateById(templateId, brandId);
         if (!template) {
             return res.status(404).json({ message: 'Template not found' });
         }
@@ -65,11 +68,14 @@ export default async function handler(req, res) {
             publishedAt: new Date(),
         };
 
-        const updatedTemplate = await updateTransactionalTemplate(templateId, brandId, userId, updateData);
+        const success = await updateTemplate(templateId, brandId, updateData);
 
-        if (!updatedTemplate) {
+        if (!success) {
             return res.status(500).json({ message: 'Failed to publish template' });
         }
+
+        // Fetch the updated template to return
+        const updatedTemplate = await getTemplateById(templateId, brandId);
 
         res.status(200).json({
             message: 'Template published successfully',

@@ -5,6 +5,7 @@ import connectToDatabase from '@/lib/mongodb';
 import { getBrandById } from '@/services/brandService';
 import Contact from '@/models/Contact';
 import mongoose from 'mongoose';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -19,12 +20,16 @@ export default async function handler(req, res) {
         const { brandId } = req.query;
 
         const brand = await getBrandById(brandId);
-        if (!brand || brand.userId.toString() !== userId) {
-            return res.status(403).json({ message: 'Not authorized' });
+        if (!brand) {
+            return res.status(404).json({ message: 'Brand not found' });
         }
 
         // GET: Get all unique tags for this brand
         if (req.method === 'GET') {
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.VIEW_CONTACTS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
             const tags = await Contact.distinct('tags', {
                 brandId: new mongoose.Types.ObjectId(brandId),
             });
@@ -39,6 +44,11 @@ export default async function handler(req, res) {
 
         // POST: Add tags to contacts
         if (req.method === 'POST') {
+            const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_CONTACTS);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.status).json({ message: authCheck.message });
+            }
+
             const { contactIds, tags, action = 'add' } = req.body;
 
             if (!contactIds || !Array.isArray(contactIds) || contactIds.length === 0) {

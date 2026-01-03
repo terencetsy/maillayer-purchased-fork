@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
 import connectToDatabase from '@/lib/mongodb';
 import { getBrandById, updateBrand, deleteBrand } from '@/services/brandService';
+import { checkBrandPermission, PERMISSIONS } from '@/lib/authorization';
 
 export default async function handler(req, res) {
     try {
@@ -25,6 +26,12 @@ export default async function handler(req, res) {
         // GET request - get brand details
         if (req.method === 'GET') {
             try {
+                // Check permission (VIEW_BRAND allows owners and team members)
+                const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.VIEW_BRAND);
+                if (!authCheck.authorized) {
+                    return res.status(authCheck.status).json({ message: authCheck.message });
+                }
+
                 const includeSecrets = req.query.includeSecrets === 'true';
                 const brand = await getBrandById(brandId, includeSecrets);
 
@@ -32,12 +39,11 @@ export default async function handler(req, res) {
                     return res.status(404).json({ message: 'Brand not found' });
                 }
 
-                // Verify owner
-                if (brand.userId.toString() !== userId) {
-                    return res.status(403).json({ message: 'Not authorized to access this brand' });
-                }
-
-                return res.status(200).json(brand);
+                // Add user's role to the response
+                return res.status(200).json({
+                    ...brand,
+                    userRole: authCheck.accessInfo.role,
+                });
             } catch (error) {
                 console.error('Error fetching brand:', error);
                 return res.status(500).json({ message: 'Error fetching brand' });
@@ -47,15 +53,10 @@ export default async function handler(req, res) {
         // PUT request - update brand
         if (req.method === 'PUT') {
             try {
-                const brand = await getBrandById(brandId);
-
-                if (!brand) {
-                    return res.status(404).json({ message: 'Brand not found' });
-                }
-
-                // Verify owner
-                if (brand.userId.toString() !== userId) {
-                    return res.status(403).json({ message: 'Not authorized to update this brand' });
+                // Check permission (EDIT_SETTINGS required for updating brand)
+                const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.EDIT_SETTINGS);
+                if (!authCheck.authorized) {
+                    return res.status(authCheck.status).json({ message: authCheck.message });
                 }
 
                 const { name, awsRegion, awsAccessKey, awsSecretKey, sendingDomain, fromName, fromEmail, replyToEmail, status } = req.body;
@@ -85,18 +86,13 @@ export default async function handler(req, res) {
             }
         }
 
-        // DELETE request - delete brand
+        // DELETE request - delete brand (owner only)
         if (req.method === 'DELETE') {
             try {
-                const brand = await getBrandById(brandId);
-
-                if (!brand) {
-                    return res.status(404).json({ message: 'Brand not found' });
-                }
-
-                // Verify owner
-                if (brand.userId.toString() !== userId) {
-                    return res.status(403).json({ message: 'Not authorized to delete this brand' });
+                // Check permission (DELETE_BRAND is owner-only)
+                const authCheck = await checkBrandPermission(brandId, userId, PERMISSIONS.DELETE_BRAND);
+                if (!authCheck.authorized) {
+                    return res.status(authCheck.status).json({ message: authCheck.message });
                 }
 
                 const success = await deleteBrand(brandId);

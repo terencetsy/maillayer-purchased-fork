@@ -428,10 +428,10 @@ export default function Signup() {
                     gap: 8px;
                     width: 100%;
                     padding: 12px 20px;
-                    background: #fafafa;
+                    background: #171717;
                     border: none;
                     border-radius: 8px;
-                    color: #0a0a0a;
+                    color: #fafafa;
                     font-size: 14px;
                     font-weight: 500;
                     cursor: pointer;
@@ -440,7 +440,7 @@ export default function Signup() {
                 }
 
                 .auth-submit:hover:not(:disabled) {
-                    background: #e4e4e7;
+                    background: #262626;
                 }
 
                 .auth-submit:disabled {
